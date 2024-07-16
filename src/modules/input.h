@@ -267,6 +267,7 @@ bool	IsActionPressed(i32 action_id)
 {
 	Action	*action = _GetAction(action_id);
 	if (action == NULL) {
+		TraceLog(LOG_WARNING, "IsActionPressed: action_id %d, not found", action_id);
 		return false;
 	}
 	return (action->pressed);
@@ -276,6 +277,7 @@ bool	IsActionReleased(i32 action_id)
 {
 	Action	*action = _GetAction(action_id);
 	if (action == NULL) {
+		TraceLog(LOG_WARNING, "IsActionReleased: action_id %d, not found", action_id);
 		return false;
 	}
 	return (action->released);
@@ -285,6 +287,7 @@ bool	IsActionDown(i32 action_id)
 {
 	Action	*action = _GetAction(action_id);
 	if (action == NULL) {
+		TraceLog(LOG_WARNING, "IsActionDown: action_id %d, not found", action_id);
 		return false;
 	}
 	return (action->down);

@@ -5,7 +5,9 @@ RAYLIB= ./external/raylib-5.0/src
 CC= gcc
 CC_WINDOWS= x86_64-w64-mingw32-gcc
 
-CFLAGS= -I$(RAYLIB) -I$(RAYLIB)/external -std=c99
+XILIB = libxilib.so
+
+CFLAGS= -I$(RAYLIB) -I$(RAYLIB)/external -I./src/modules/ -std=c99
 DEBUG_FLAGS= -g3 -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wdouble-promotion \
              -fsanitize=address -fsanitize=undefined -fsanitize-trap \
              #-Wconversion  -Wno-sign-conversion -Werror \
@@ -17,21 +19,38 @@ WEB_DATA_DIR= --preload-file assets
 WEB_EXPORTED_FUNCTIONS= -sEXPORTED_FUNCTIONS=_pause_game,_main
 WEBFLAGS = $(WEB_EXPORTED_FUNCTIONS) $(WEB_DATA_DIR) -s ALLOW_MEMORY_GROWTH=1 -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s STACK_SIZE=1mb -Os -s ASYNCIFY -s USE_GLFW=3 -DPLATFORM_WEB -sGL_ENABLE_GET_PROC_ADDRESS
 
-RM= rm -f
-
-SRC_ENGINE = $(wildcard src/*.c)
+SRC_ENGINE = src/main.c
 SRC_GAME = $(wildcard src/game_code/*.c)
-
 SRC= $(SRC_ENGINE) $(SRC_GAME)
 
+OBJ_ENGINE=  OBJ_GAME= $(notdir $(SRC_GAME:.c=.o))
 OBJ= $(notdir $(SRC:.c=.o))
 
 DEPENDENCIES= $(SRC) $(wildcard src/game_code/*.h) $(wildcard src/modules/*.h)
 
-$(NAME): $(DEPENDENCIES)
+RM= rm -f
+
+# $(NAME): $(DEPENDENCIES)
+# 	@make -C $(RAYLIB) RAYLIB_LIBTYPE=SHARED
+# 	$(CC) $(CFLAGS) $(DEBUG_FLAGS) -c $(SRC)
+# 	$(CC) $(OBJ) $(CFLAGS) $(DEBUG_FLAGS) -Wl,-rpath=$(RAYLIB)/ -lraylib $(RFLAGS) -o $(NAME)
+
+HOT_FLAGS = -DHOT_RELOAD -Wl,-rpath=$(RAYLIB)/ -Wl,-rpath=./ -lraylib -L.
+
+hot: $(DEPENDANCIES) src/game_code/game.h
 	@make -C $(RAYLIB) RAYLIB_LIBTYPE=SHARED
-	$(CC) $(CFLAGS) $(DEBUG_FLAGS) -c $(SRC)
-	$(CC) $(OBJ) $(CFLAGS) $(DEBUG_FLAGS) -Wl,-rpath=$(RAYLIB)/ -lraylib $(RFLAGS) -o $(NAME)
+	$(MAKE) $(XILIB)
+	$(MAKE) $(NAME).so 
+	$(MAKE) $(NAME) 
+
+$(NAME): $(SRC_ENGINE)
+	$(CC) $(CFLAGS) $(DEBUG_FLAGS) $(RFLAGS) $(HOT_FLAGS) -lxilib $(SRC_ENGINE) -o $(NAME)
+
+$(NAME).so: $(SRC_GAME) $(wildcard src/game_code/*.h) $(wildcard src/modules/*.h)
+	$(CC) $(CFLAGS) $(DEBUG_FLAGS) $(HOT_FLAGS) -fpic -shared $(SRC_GAME) -o $(NAME).so
+
+$(XILIB): src/implementations.c
+	$(CC) $(CFLAGS) $(DEBUG_FLAGS) -fpic -shared src/implementations.c -o $(XILIB)
 
 static: $(DEPENDENCIES)
 	@make -C $(RAYLIB)
@@ -57,7 +76,7 @@ web: $(DEPENDENCIES)
 web_run: $(web)
 	emrun ./index.html
 
-run: $(NAME)
+run: $(HOT)
 	./$(NAME)
 
 all: $(NAME)
@@ -65,18 +84,25 @@ all: $(NAME)
 bear: 
 	bear -- make
 
+cleana: 
+	$(RM) $(OBJ)
+	$(RM) $(NAME)
+	$(RM) $(NAME).so
+
 clean:
 	@make -C $(RAYLIB) clean
-	@$(RM) $(OBJ)
+	$(RM) $(OBJ)
 
 fclean: clean
 	@make -C $(RAYLIB) clean
 	$(RM) $(NAME)
+	$(RM) $(NAME).so
 	$(RM) $(NAME).html
 	$(RM) $(NAME).js
 	$(RM) $(NAME).wasm
 	$(RM) $(NAME).exe
 	$(RM) $(NAME).data
+
 
 re: fclean all
 
