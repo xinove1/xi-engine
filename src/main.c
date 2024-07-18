@@ -7,6 +7,7 @@
 
 static inline void	reload_game_lib(GameFunctions *game);
 static inline void	*dl_load_func(void *libhandle, char *name);
+static void	register_actions();
 
 static bool	QuitGame = false;
 
@@ -32,6 +33,8 @@ int	main()
 	InitAudioDevice();
 	SetTargetFPS(60);
 	SetExitKey(0);
+	
+	register_actions();
 
 	screen = LoadRenderTexture(window_size.x, window_size.y);
 	//SetTextureFilter(screen.texture, TEXTURE_FILTER_BILINEAR);  
@@ -56,7 +59,7 @@ int	main()
 		virtualMouse.y = (mouse.y - (GetScreenHeight() - (window_size.y *screen_scale))*0.5f)/screen_scale;
 		virtualMouse = Vector2Clamp(virtualMouse, (Vector2){ 0, 0 }, (Vector2){ (float)window_size.x, (float)window_size.y});
 
-		//Apply the same transformation as the virtual mouse to the real mouse (i.e. to work with raygui)
+		// Apply the same transformation as the virtual mouse to the real mouse (i.e. to work with raygui)
 		SetMouseOffset(-(GetScreenWidth() - (window_size.x*screen_scale))*0.5f, -(GetScreenHeight() - (window_size.y*screen_scale))*0.5f);
 		SetMouseScale(1 / screen_scale, 1 / screen_scale);
 
@@ -123,4 +126,60 @@ static inline void	*dl_load_func(void *libhandle, char *name)
 	#else
 		return (NULL);
 	#endif
+}
+
+static void	register_actions()
+{
+	SetGamePadId(0);
+
+	RegisterActionName(RIGHT, "right");
+	RegisterInputKeyAction(RIGHT, KEY_D);
+	RegisterInputKeyAction(RIGHT, KEY_RIGHT);
+	RegisterGamePadButtonAction(RIGHT, GAMEPAD_BUTTON_LEFT_FACE_RIGHT);
+	RegisterGamePadAxisAction(RIGHT, GAMEPAD_AXIS_LEFT_X, 0.5f);
+
+
+	RegisterActionName(LEFT, "left");
+	RegisterInputKeyAction(LEFT, KEY_A);
+	RegisterInputKeyAction(LEFT, KEY_LEFT);
+	RegisterGamePadButtonAction(LEFT, GAMEPAD_BUTTON_LEFT_FACE_LEFT);
+	RegisterGamePadAxisAction(LEFT, GAMEPAD_AXIS_LEFT_X, -0.5f);
+
+
+	RegisterActionName(UP, "up");
+	RegisterInputKeyAction(UP, KEY_W);
+	RegisterInputKeyAction(UP, KEY_UP);
+	RegisterGamePadButtonAction(UP, GAMEPAD_BUTTON_LEFT_FACE_UP);
+	RegisterGamePadAxisAction(UP, GAMEPAD_AXIS_LEFT_Y, -0.5f);
+
+
+	RegisterActionName(DOWN, "down");
+	RegisterInputKeyAction(DOWN, KEY_S);
+	RegisterInputKeyAction(DOWN, KEY_DOWN);
+	RegisterGamePadButtonAction(DOWN, GAMEPAD_BUTTON_LEFT_FACE_DOWN);
+	RegisterGamePadAxisAction(DOWN, GAMEPAD_AXIS_LEFT_Y, 0.5f);
+
+
+	RegisterActionName(ACTION_1, "action_1");
+	RegisterInputKeyAction(ACTION_1, KEY_J);
+	RegisterInputKeyAction(ACTION_1, KEY_X);
+	RegisterGamePadButtonAction(ACTION_1, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
+	RegisterGamePadAxisAction(ACTION_1, GAMEPAD_AXIS_RIGHT_TRIGGER, 0.7f);
+
+
+	RegisterActionName(ACTION_2, "action_2");
+	RegisterInputKeyAction(ACTION_2, KEY_K);
+	RegisterInputKeyAction(ACTION_2, KEY_Z);
+	RegisterGamePadButtonAction(ACTION_2, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT);
+
+
+	RegisterActionName(ACTION_3, "action_3");
+	RegisterInputKeyAction(ACTION_3, KEY_SPACE);
+	RegisterGamePadButtonAction(ACTION_3, GAMEPAD_BUTTON_RIGHT_FACE_LEFT);
+
+
+	RegisterActionName(OPEN_MENU, "open_menu");
+	RegisterInputKeyAction(OPEN_MENU, KEY_ESCAPE);
+	RegisterInputKeyAction(OPEN_MENU, KEY_E);
+	RegisterGamePadButtonAction(OPEN_MENU, GAMEPAD_BUTTON_MIDDLE_RIGHT);
 }

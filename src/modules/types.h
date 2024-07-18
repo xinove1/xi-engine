@@ -8,6 +8,7 @@
 // Utilities
 # define MAX(a, b) ((a)>(b)? (a) : (b))
 # define MIN(a, b) ((a)<(b)? (a) : (b))
+
 // Alias for raylib types
 typedef Vector2 V2;
 typedef Rectangle Rect;
@@ -18,6 +19,7 @@ typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
 typedef i32 b32;
+typedef char byte;
 
 typedef uint8_t u8;
 typedef uint16_t u16;

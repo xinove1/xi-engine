@@ -21,7 +21,7 @@ WEBFLAGS = $(WEB_EXPORTED_FUNCTIONS) $(WEB_DATA_DIR) -s ALLOW_MEMORY_GROWTH=1 -s
 
 SRC_ENGINE = src/main.c
 SRC_GAME = $(wildcard src/game_code/*.c)
-SRC= $(SRC_ENGINE) $(SRC_GAME)
+SRC= $(SRC_ENGINE) $(SRC_GAME) src/implementations.c
 
 OBJ_ENGINE=  OBJ_GAME= $(notdir $(SRC_GAME:.c=.o))
 OBJ= $(notdir $(SRC:.c=.o))
@@ -46,10 +46,10 @@ hot: $(DEPENDANCIES) src/game_code/game.h
 $(NAME): $(SRC_ENGINE)
 	$(CC) $(CFLAGS) $(DEBUG_FLAGS) $(RFLAGS) $(HOT_FLAGS) -lxilib $(SRC_ENGINE) -o $(NAME)
 
-$(NAME).so: $(SRC_GAME) $(wildcard src/game_code/*.h) $(wildcard src/modules/*.h)
+$(NAME).so: $(SRC_GAME) $(wildcard src/game_code/*.h)
 	$(CC) $(CFLAGS) $(DEBUG_FLAGS) $(HOT_FLAGS) -fpic -shared $(SRC_GAME) -o $(NAME).so
 
-$(XILIB): src/implementations.c
+$(XILIB): src/implementations.c $(wildcard src/modules/*.h)
 	$(CC) $(CFLAGS) $(DEBUG_FLAGS) -fpic -shared src/implementations.c -o $(XILIB)
 
 static: $(DEPENDENCIES)
@@ -76,7 +76,7 @@ web: $(DEPENDENCIES)
 web_run: $(web)
 	emrun ./index.html
 
-run: $(HOT)
+run: hot
 	./$(NAME)
 
 all: $(NAME)
@@ -88,6 +88,7 @@ cleana:
 	$(RM) $(OBJ)
 	$(RM) $(NAME)
 	$(RM) $(NAME).so
+	$(RM) $(XILIB)
 
 clean:
 	@make -C $(RAYLIB) clean
@@ -96,6 +97,7 @@ clean:
 fclean: clean
 	@make -C $(RAYLIB) clean
 	$(RM) $(NAME)
+	$(RM) $(XILIB)
 	$(RM) $(NAME).so
 	$(RM) $(NAME).html
 	$(RM) $(NAME).js

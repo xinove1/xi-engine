@@ -6,3 +6,10 @@
 
 #define XI_COLLISION_IMPLEMENTATION
 #include "collision.h"
+
+#define XI_LIST_IMPLEMENTATION
+#include "list.h"
+
+#define XI_ARENAS_IMPLEMENTATION
+#include "arenas.h"
+
