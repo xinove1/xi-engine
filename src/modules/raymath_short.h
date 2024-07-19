@@ -1,7 +1,7 @@
 #ifndef RAYMATH_SHORT_H_
 # define RAYMATH_SHORT_H_
 # include "types.h"
-#include <math.h>
+# include <math.h>
 
 #ifdef RAYMATH_SHORT_IMPLEMENTATION
 # define RMSAPI extern inline

@@ -8,15 +8,15 @@ CC_WINDOWS= x86_64-w64-mingw32-gcc
 XILIB = libxilib.so
 
 CFLAGS= -I$(RAYLIB) -I$(RAYLIB)/external -I./src/modules/ -std=c99
-DEBUG_FLAGS= -g3 -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wdouble-promotion \
+DEBUG_FLAGS= -g3 -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
              -fsanitize=address -fsanitize=undefined -fsanitize-trap \
-             #-Wconversion  -Wno-sign-conversion -Werror \
+             #-Wconversion  -Wno-sign-conversion -Werror -Wdouble-promotion \
 
 RFLAGS= -lGL -lm -lpthread -ldl -lrt -lX11
 RFLAGS_WINDOWS= -lopengl32 -lgdi32 -lwinmm
 
 WEB_DATA_DIR= --preload-file assets
-WEB_EXPORTED_FUNCTIONS= -sEXPORTED_FUNCTIONS=_pause_game,_main
+WEB_EXPORTED_FUNCTIONS= -sEXPORTED_FUNCTIONS=_main
 WEBFLAGS = $(WEB_EXPORTED_FUNCTIONS) $(WEB_DATA_DIR) -s ALLOW_MEMORY_GROWTH=1 -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s STACK_SIZE=1mb -Os -s ASYNCIFY -s USE_GLFW=3 -DPLATFORM_WEB -sGL_ENABLE_GET_PROC_ADDRESS
 
 SRC_ENGINE = src/main.c
@@ -43,7 +43,7 @@ hot: $(DEPENDANCIES) src/game_code/game.h
 	$(MAKE) $(NAME).so 
 	$(MAKE) $(NAME) 
 
-$(NAME): $(SRC_ENGINE)
+$(NAME): $(SRC_ENGINE) $(wildcard src/modules/*.h)
 	$(CC) $(CFLAGS) $(DEBUG_FLAGS) $(RFLAGS) $(HOT_FLAGS) -lxilib $(SRC_ENGINE) -o $(NAME)
 
 $(NAME).so: $(SRC_GAME) $(wildcard src/game_code/*.h)

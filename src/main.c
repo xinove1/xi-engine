@@ -17,6 +17,9 @@ int	main()
 	V2	window_size = {640, 360};
 	GameData	data = {
 		.canvas_size = window_size,
+		.paused = false,
+		.current_level = NULL,
+		.menu_screen = false,
 	};
 
 	GameFunctions	game = {0};
@@ -50,6 +53,8 @@ int	main()
 			game.pos_reload(&data);
 		}
 		#endif
+
+		PoolActions();
 
 		float screen_scale = MIN((float)GetScreenWidth()/window_size.x, (float)GetScreenHeight() / window_size.y);
 		// Update virtual mouse (clamped mouse value behind game screen)

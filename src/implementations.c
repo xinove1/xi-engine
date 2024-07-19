@@ -1,3 +1,6 @@
+#define RAYMATH_SHORT_IMPLEMENTATION
+#include "raymath_short.h"
+
 #define XI_UI_IMPLEMENTATION
 #include "ui.h"
 
@@ -12,6 +15,3 @@
 
 #define XI_ARENAS_IMPLEMENTATION
 #include "arenas.h"
-
-#define RAYMATH_SHORT_IMPLEMENTATION
-#include "raymath_short.h"

@@ -15,8 +15,13 @@ inline Rect	RectV2(V2 pos, V2 size) {
 inline V2	V2RectPos(Rect rect) {
 	return ((V2) {rect.x, rect.y});
 }
+
 inline V2	V2RectSize(Rect rect) {
 	return ((V2) {rect.width, rect.height});
+}
+
+inline bool	V2Compare(V2 a, V2 b) {
+	return (a.x == b.x && a.y == b.y);
 }
 
 void	draw_grid_ex(V2 position, V2 grid_size, int tile_size, float line_thickness, Color color) 
