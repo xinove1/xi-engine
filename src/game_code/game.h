@@ -3,12 +3,42 @@
 
 # include "raylib.h"
 # include "raymath.h"
+# include "raymath_short.h"
 # include "types.h"
+
+#define TILE 16
+
+typedef enum {EntityPlayer, EntityStatic, EntitysCount} EntitysTypes;
+
+typedef struct
+{
+	EntitysTypes	type;
+	V2	pos;
+	Color	color; 
+} Entity;
+
+typedef struct
+{
+	EntitysTypes	type;
+	V2	pos;
+	Color	color; 
+	V2	look_dir; 
+} PlayerEntity;
+
+typedef struct
+{
+	char	*name;
+	int	*map;
+	V2	map_sz;
+	Entity	**entitys;
+	int	max_entitys;
+	PlayerEntity player;
+} GameLevel;
 
 typedef struct {
 	V2	canvas_size;
 	bool	paused;
-	V2	pos;
+	GameLevel	*current_level;
 } GameData;
 
 typedef struct GameFunctions

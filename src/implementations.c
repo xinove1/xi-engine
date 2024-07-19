@@ -13,3 +13,5 @@
 #define XI_ARENAS_IMPLEMENTATION
 #include "arenas.h"
 
+#define RAYMATH_SHORT_IMPLEMENTATION
+#include "raymath_short.h"

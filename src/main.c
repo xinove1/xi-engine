@@ -28,7 +28,7 @@ int	main()
 	#endif
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-	InitWindow(window_size.x, window_size.y, "Xi engine");
+	InitWindow(window_size.x, window_size.y, "Sokaban");
 	SetWindowState(FLAG_WINDOW_MAXIMIZED);
 	InitAudioDevice();
 	SetTargetFPS(60);
