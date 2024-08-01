@@ -9,68 +9,68 @@
 # include "types.h"
 
 typedef struct {
-	Font	font;
-	int	size;
-	int	spacing;
-	Color	tint;
-	Color	tint_hover;
+	Font  font;
+	i32   size;
+	i32   spacing;
+	Color tint;
+	Color tint_hover;
 } FontConfig;
 
-typedef enum {UiAlignCentralized, UiAlignLeft, UiAlignRight, UiAlignmentCount} UiAlignmentTypes;
+typedef enum {UiAlignCentralized, UiAlignLeft, UiAlignRight, UiAlignmentCount} UiAlignmentTypes_e;
 
 typedef struct
 {
-	UiAlignmentTypes	alignment;
-	FontConfig		font;
-	bool			draw_container_bounds;
-	bool			play_sound;
-	bool			draw_selector;
-	bool			take_key_input;
-	//float			padding_;
-	float			padding_row;
-	float			padding_collumn;
-	float			padding_element; // Padding between element and its box, ex: the text in a button and the rec representing it
-	float			padding_border; // Padding between element and border of container
-	//Color			color_;
-	Color			color_font;
-	Color			color_font_highlight;
-	Color			color_background;
-	Color			color_borders;
+	UiAlignmentTypes_e alignment;
+	FontConfig font;
+	b32	   draw_container_bounds;
+	b32	   play_sound;
+	b32	   draw_selector;
+	b32	   take_key_input;
+	//float	   padding_;
+	f32	   padding_row;
+	f32	   padding_collumn;
+	f32	   padding_element; // Padding between element and its box, ex: the text in a button and the rec representing it
+	f32	   padding_border; // Padding between element and border of container
+	//Color	   color_;
+	Color	   color_font;
+	Color	   color_font_highlight;
+	Color	   color_background;
+	Color	   color_borders;
 } UiConfig;
 
 typedef struct
 {
-	V2	pos;
-	bool	hide;
-	float	width; // Width of the longest element added
-	float	height; // Height of the elements NOTE  not being used, only in sliderbar
-	float	at_x; // Position after last lement added
-	float	at_y;
-	int	id_count; 
-	int	id_current;
-	UiConfig	config;
+	V2	 pos;
+	b32	 hide;
+	f32	 width; // Width of the longest element added
+	f32	 height; // Height of the elements NOTE  not being used, only in sliderbar
+	f32	 at_x; // Position after last lement added
+	f32	 at_y;
+	i32	 id_count; 
+	i32	 id_current;
+	UiConfig config;
 	// For When Title Bar is used
 	// TODO  Set option to disable dragging
-	bool	mouse_dragging;
-	V2	mouse_last_pos;
+	b32	 mouse_dragging;
+	V2	 mouse_last_pos;
 } UiContainer;
 
-void	SetClickedSound(Sound *sound);
-void	SetSelectorTexture(Texture2D *texture);
-void	SetSelectorTextureTint(Color tint);
+void SetClickedSound(Sound *sound);
+void SetSelectorTexture(Texture2D *texture);
+void SetSelectorTextureTint(Color tint);
 
-UiContainer	CreateContainer(V2 pos, float width, UiConfig config);
-UiConfig	GetDefaultUiConfig(); 
-void		SetDefaultUiConfig(UiConfig config);
-void	UiBegin(UiContainer *container);
-void	UiEnd(UiContainer *container);
-void	UiText(UiContainer *container, char *text, bool draw_bounds);
-void	UiTextEx(UiContainer *container, UiConfig config, char *text, bool draw_bounds, FontConfig font);
-bool	UiTextButton(UiContainer *container, char *text);
-bool	UiTextButtonEx(UiContainer *container, UiConfig config, char *text, FontConfig font);
-bool	UiSlider(UiContainer *container, float *value, float min, float max);
-bool	UiSliderEx(UiContainer *container, UiConfig config, V2 size, float *value, float min, float max);
-void	UiTitleBarEx(UiContainer *container, UiConfig config, char *title, FontConfig font, Color bounds_color);
+UiContainer CreateContainer(V2 pos, f32 width, UiConfig config);
+UiConfig    GetDefaultUiConfig(); 
+void        SetDefaultUiConfig(UiConfig config);
+void        UiBegin(UiContainer *container);
+void        UiEnd(UiContainer *container);
+void        UiText(UiContainer *container, byte *text, b32 draw_bounds);
+void        UiTextEx(UiContainer *container, UiConfig config, byte *text, b32 draw_bounds, FontConfig font);
+bool        UiTextButton(UiContainer *container, byte *text);
+bool        UiTextButtonEx(UiContainer *container, UiConfig config, byte *text, FontConfig font);
+bool        UiSlider(UiContainer *container, f32 *value, f32 min, f32 max);
+bool        UiSliderEx(UiContainer *container, UiConfig config, V2 size, f32 *value, f32 min, f32 max);
+void        UiTitleBarEx(UiContainer *container, UiConfig config, byte *title, FontConfig font, Color bounds_color);
 
 #endif
 
@@ -78,27 +78,27 @@ void	UiTitleBarEx(UiContainer *container, UiConfig config, char *title, FontConf
 
 // NOLINTBEGIN(misc-definitions-in-headers)
 
-static void	_draw_selector(V2 offset, V2 target_bounds);
-static void	_take_input(UiContainer *container);
-static void	_play_clicked_sound();
+static void _draw_selector(V2 offset, V2 target_bounds);
+static void _take_input(UiContainer *container);
+static void _play_clicked_sound();
 
-static Texture2D	*SelectorTexture = NULL; 
-static Color		SelectorTint = RAYWHITE;
-static Sound		*ClickedSound = NULL;
-static bool		CheckMouse = false;
-static UiConfig		DefaultConfig = {}; // TODO  Fill 
+static Texture2D *SelectorTexture = NULL; 
+static Color     SelectorTint = RAYWHITE;
+static Sound     *ClickedSound = NULL;
+static b32       CheckMouse = false;
+static UiConfig  DefaultConfig = {}; // TODO  Fill 
 
-void	SetSelectorTexture(Texture2D *texture)
+void SetSelectorTexture(Texture2D *texture)
 {
 	SelectorTexture = texture;
 }
 
-void	SetSelectorTextureTint(Color tint)
+void SetSelectorTextureTint(Color tint)
 {
 	SelectorTint = tint;
 }
 
-void	SetClickedSound(Sound *sound)
+void SetClickedSound(Sound *sound)
 {
 	ClickedSound = sound;
 }
@@ -108,12 +108,12 @@ UiConfig	GetDefaultUiConfig()
 	return (DefaultConfig);
 }
 
-void	SetDefaultUiConfig(UiConfig config) 
+void SetDefaultUiConfig(UiConfig config) 
 {
 	DefaultConfig = config;
 }
 
-UiContainer	CreateContainer(V2 pos, float width, UiConfig config)
+UiContainer CreateContainer(V2 pos, f32 width, UiConfig config)
 {
 	return ((UiContainer) {
 		.pos = pos,
@@ -130,7 +130,7 @@ UiContainer	CreateContainer(V2 pos, float width, UiConfig config)
 	});
 }
 
-void	UiBegin(UiContainer *container) 
+void UiBegin(UiContainer *container) 
 {
 	if (container->config.draw_container_bounds && !container->hide) {
 		V2	pos = container->pos;
@@ -154,31 +154,31 @@ void	UiBegin(UiContainer *container)
 	}
 }
 
-void	UiEnd(UiContainer *container)
+void UiEnd(UiContainer *container)
 {
 	if (container->config.take_key_input) _take_input(container);
 }
 
 
-void	UiTitleBarEx(UiContainer *container, UiConfig config, char *title, FontConfig font, Color bounds_color)
+void UiTitleBarEx(UiContainer *container, UiConfig config, byte *title, FontConfig font, Color bounds_color)
 {
-	V2	pos = {container->at_x, container->at_y};
-	V2	text_size = MeasureTextEx(font.font, title, font.size, font.spacing);
+	V2 pos = {container->at_x, container->at_y};
+	V2 text_size = MeasureTextEx(font.font, title, font.size, font.spacing);
 	if (config.alignment == UiAlignCentralized) {
 		pos.x -= text_size.x * 0.5f;
 	}
-	V2	text_pos  = {pos.x + config.padding_element, pos.y + config.padding_element};
+	V2 text_pos  = {pos.x + config.padding_element, pos.y + config.padding_element};
 
-	V2	hide_size = {text_size.x * 0.1f, text_size.y * 0.6f};
-	V2	hide_pos = {text_pos.x + text_size.x + config.padding_collumn, text_pos.y + ((text_size.y - hide_size.y) * 0.5f)};
-	Color	hide_color = config.color_font;
-	Rect	hide_rect = {hide_pos.x, hide_pos.y, hide_size.x, hide_size.y};
+	V2    hide_size = {text_size.x * 0.1f, text_size.y * 0.6f};
+	V2    hide_pos = {text_pos.x + text_size.x + config.padding_collumn, text_pos.y + ((text_size.y - hide_size.y) * 0.5f)};
+	Color hide_color = config.color_font;
+	Rect  hide_rect = {hide_pos.x, hide_pos.y, hide_size.x, hide_size.y};
 
-	V2	size = {.x = text_size.x + (config.padding_element * 2) + ((hide_pos.x + hide_size.x) - (text_pos.x + text_size.x)),
-			.y = text_size.y + (config.padding_element * 2)};
-	Rect	rec = {pos.x, pos.y, size.x, size.y};
+	V2 size = {.x = text_size.x + (config.padding_element * 2) + ((hide_pos.x + hide_size.x) - (text_pos.x + text_size.x)),
+		   .y = text_size.y + (config.padding_element * 2)};
+	Rect rec = {pos.x, pos.y, size.x, size.y};
 
-	V2	mouse_pos = GetMousePosition();
+	V2 mouse_pos = GetMousePosition();
 	if (CheckCollisionPointRec(mouse_pos, hide_rect)) {
 		hide_color = config.color_font_highlight;
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -209,7 +209,7 @@ void	UiTitleBarEx(UiContainer *container, UiConfig config, char *title, FontConf
 	}
 }
 
-void	UiText(UiContainer *container, char *text, bool draw_bounds) 
+void UiText(UiContainer *container, byte *text, b32 draw_bounds) 
 {
 	if (container->hide == true) { return; }
 	if (!IsFontReady(container->config.font.font)) {
@@ -220,16 +220,16 @@ void	UiText(UiContainer *container, char *text, bool draw_bounds)
 
 //#define Testfunc(str, ...) _Testfunc((str), (GameData){.quit = false, __VA_ARGS__})
 
-void	UiTextEx(UiContainer *container, UiConfig config, char *text, bool draw_bounds, FontConfig font) 
+void UiTextEx(UiContainer *container, UiConfig config, byte *text, b32 draw_bounds, FontConfig font) 
 {
 	if (container->hide == true) { return; }
-	V2	text_size = MeasureTextEx(font.font, text, font.size, font.spacing);
-	V2	pos = {container->at_x + config.padding_border, container->at_y};
+	V2 text_size = MeasureTextEx(font.font, text, font.size, font.spacing);
+	V2 pos = {container->at_x + config.padding_border, container->at_y};
 	if (config.alignment == UiAlignCentralized) {
 		pos.x -= text_size.x * 0.5f;
 	}
-	V2	text_pos = {pos.x + config.padding_element, pos.y + config.padding_element};
-	V2	size = {.x = text_size.x + config.padding_element * 2,
+	V2 text_pos = {pos.x + config.padding_element, pos.y + config.padding_element};
+	V2 size = {.x = text_size.x + config.padding_element * 2,
 			.y = text_size.y + config.padding_element * 2 };
 
 	if (draw_bounds) {
@@ -245,7 +245,7 @@ void	UiTextEx(UiContainer *container, UiConfig config, char *text, bool draw_bou
 	}
 }
 
-bool	UiTextButton(UiContainer *container, char *text)
+bool UiTextButton(UiContainer *container, byte *text)
 {
 	if (container->hide == true) { return(false); }
 	if (!IsFontReady(container->config.font.font)) {
@@ -255,23 +255,23 @@ bool	UiTextButton(UiContainer *container, char *text)
 	return (UiTextButtonEx(container, container->config, text, container->config.font));
 }
 
-bool	UiTextButtonEx(UiContainer *container, UiConfig config, char *text, FontConfig font)
+bool UiTextButtonEx(UiContainer *container, UiConfig config, byte *text, FontConfig font)
 {
 	if (container->hide == true) { return(false); }
-	V2	text_size = MeasureTextEx(font.font, text, font.size, font.spacing);
-	V2	pos = {container->at_x + config.padding_border, container->at_y};
+	V2 text_size = MeasureTextEx(font.font, text, font.size, font.spacing);
+	V2 pos = {container->at_x + config.padding_border, container->at_y};
 	if (config.alignment == UiAlignCentralized) {
 		pos.x -= text_size.x * 0.5f;
 	}
-	V2	text_pos = {pos.x + config.padding_element, pos.y + config.padding_element};
-	V2	size = {.x = text_size.x + config.padding_element * 2,
+	V2 text_pos = {pos.x + config.padding_element, pos.y + config.padding_element};
+	V2 size = {.x = text_size.x + config.padding_element * 2,
 			.y = text_size.y + config.padding_element * 2 };
-	Rect	rect = {pos.x, pos.y, size.x, size.y};
+	Rect rect = {pos.x, pos.y, size.x, size.y};
 
-	Color	color = config.color_font;
-	bool	pressed = false;
-	bool	mouse_inside = false;
-	int	id = container->id_count; 
+	Color color = config.color_font;
+	b32 pressed = false;
+	b32 mouse_inside = false;
+	i32 id = container->id_count; 
 	container->id_count++;
 
 	if (CheckMouse && CheckCollisionPointRec(GetMousePosition(), rect)) {
@@ -301,22 +301,22 @@ bool	UiTextButtonEx(UiContainer *container, UiConfig config, char *text, FontCon
 	return (pressed);
 }
 
-bool	UiSlider(UiContainer *container, float *value, float min, float max)
+bool UiSlider(UiContainer *container, f32 *value, f32 min, f32 max)
 {
 	if (container->hide == true) { return(false); }
-	V2	size = {container->width * 0.8f, container->height};
+	V2 size = {container->width * 0.8f, container->height};
 	return (UiSliderEx(container, container->config, size, value, min, max));
 }
 
-bool	UiSliderEx(UiContainer *container, UiConfig config, V2 size, float *value, float min, float max)
+bool UiSliderEx(UiContainer *container, UiConfig config, V2 size, f32 *value, f32 min, f32 max)
 {
 	if (container->hide == true) { return(false); }
-	bool	pressed = false;
-	bool	mouse_inside = false;
-	V2	offset = {container->at_x, container->at_y};
-	Rect	rect = {offset.x, offset.y, size.x, size.y};
-	int	id = container->id_count; 
-	float	step = 0.1f;
+	b32  pressed = false;
+	b32  mouse_inside = false;
+	V2   offset = {container->at_x, container->at_y};
+	Rect rect = {offset.x, offset.y, size.x, size.y};
+	i32  id = container->id_count; 
+	f32  step = 0.1f;
 	container->id_count++;
 
 	if (config.alignment == UiAlignCentralized) {
@@ -332,7 +332,7 @@ bool	UiSliderEx(UiContainer *container, UiConfig config, V2 size, float *value, 
 		if (config.draw_selector) _draw_selector(offset, size);
 		
 		if (mouse_inside) {
-			float wheel = GetMouseWheelMove();
+			f32 wheel = GetMouseWheelMove();
 			if (wheel == 1.0f || wheel == -1.0f) {
 				*value += step * wheel;	
 				pressed = true;
@@ -357,7 +357,7 @@ bool	UiSliderEx(UiContainer *container, UiConfig config, V2 size, float *value, 
 	if (*value > max) *value = max;
 	if (*value < min) *value = min;
 
-	Rect	rect2 = {rect.x, rect.y, rect.width * (*value), rect.height};
+	Rect rect2 = {rect.x, rect.y, rect.width * (*value), rect.height};
 
 	DrawRectanglePro(rect, (V2){0,0}, 0, GREEN);
 	DrawRectanglePro(rect2, (V2){0,0}, 0, BLUE);
@@ -371,7 +371,7 @@ bool	UiSliderEx(UiContainer *container, UiConfig config, V2 size, float *value, 
 	return (pressed);
 }
 
-static void	_draw_selector(V2 offset, V2 target_bounds)
+static void _draw_selector(V2 offset, V2 target_bounds)
 {
 	if (SelectorTexture == NULL) { 
 		TraceLog(LOG_WARNING, "Ui: draw_selector requested but no texture set.");
@@ -386,7 +386,7 @@ static void	_draw_selector(V2 offset, V2 target_bounds)
 	SelectorTint);
 }
 
-static void	_play_clicked_sound()
+static void _play_clicked_sound()
 {
 	if (ClickedSound == NULL) {
 		TraceLog(LOG_WARNING, "Ui: play_sound requested but no sound set.");
@@ -395,10 +395,10 @@ static void	_play_clicked_sound()
 	PlaySound(*ClickedSound);
 }
 
-static void	_take_input(UiContainer *container)
+static void _take_input(UiContainer *container)
 {
-	int	*current = &container->id_current;
-	int	*count = &container->id_count;
+	i32 *current = &container->id_current;
+	i32 *count = &container->id_count;
 	if (IsActionPressed(UP)) {
 		*current -= 1;
 		if (*current < 0) {
@@ -413,7 +413,7 @@ static void	_take_input(UiContainer *container)
 	}
 }
 
-// void	_Testfunc(char *str, GameData data) 
+// void _Testfunc(char *str, GameData data) 
 // {
 // 	printf("str: %s, data- quit: %d, music_vol: %f\n", str, data.quit, data.music_vol);
 // }

@@ -15,19 +15,20 @@
 /* # define PushStruct(arena, type) PushArray((arena), (type), 1) */
 /* # define PushStructZero(arena, type) PushArrayZero((arena), (type), 1) */
 
-typedef struct List
+typedef struct List List;
+struct List
 {
-	void		*content;
-	struct List	*next;
-} List;
+	void *content;
+	List *next;
+};
 
 typedef struct
 {
-	char	*mem_begin;
-	char	*mem_end;
-	char	*pos;
-	size_t	chunk_sz;
-	List	*freed;
+	byte   *mem_begin;
+	byte   *mem_end;
+	byte   *pos;
+	size_t chunk_sz;
+	List   *freed;
 } Arena;
 
 typedef struct
@@ -36,29 +37,29 @@ typedef struct
 } ArenaCtx;
 
 	// ArenaMem	*mem;
-	// void	(*clean)(ArenaMem *arena);
+	// void (*clean)(ArenaMem *arena);
 // Arena
-Arena	*arena_create(size_t chunk_size);
-Arena	*arena_create_sized(size_t chunk_size, size_t mem_size_scalar);
-void	arena_destroy(Arena *arena);
-void	*linear_alloc(Arena *arena, size_t size); // Linear
-void	*pool_alloc(Arena *arena); // Pool
-void	pool_free(Arena *arena, void *mem);
-void	arena_resize(Arena *arena);
-void	arena_clean(Arena *arena);
+Arena *arena_create(size_t chunk_size);
+Arena *arena_create_sized(size_t chunk_size, size_t mem_size_scalar);
+void arena_destroy(Arena *arena);
+void *linear_alloc(Arena *arena, size_t size); // Linear
+void *pool_alloc(Arena *arena); // Pool
+void pool_free(Arena *arena, void *mem);
+void arena_resize(Arena *arena);
+void arena_clean(Arena *arena);
 
 #endif 
 
 #ifdef XI_ARENAS_IMPLEMENTATION
 // NOLINTBEGIN(misc-definitions-in-headers)
 
-static void	arena_push_freed(Arena *arena);
+static void arena_push_freed(Arena *arena);
 
-Arena	*arena_create(size_t chunk_size)
+Arena *arena_create(size_t chunk_size)
 {
-	Arena	*arena = (Arena*) malloc(sizeof(Arena));
+	Arena *arena = (Arena*) malloc(sizeof(Arena));
 
-	arena->mem_begin = (char *) malloc(ARENA_BLOCK_SIZE);
+	arena->mem_begin = (byte *) malloc(ARENA_BLOCK_SIZE);
 	arena->mem_end = arena->mem_begin + ARENA_BLOCK_SIZE;
 	arena->pos = arena->mem_begin;
 	arena->chunk_sz = chunk_size;
@@ -71,11 +72,11 @@ Arena	*arena_create(size_t chunk_size)
 	return (arena);
 }
 
-Arena	*arena_create_sized(size_t chunk_size, size_t mem_size_scalar)
+Arena *arena_create_sized(size_t chunk_size, size_t mem_size_scalar)
 {
-	Arena	*arena = (Arena*) malloc(sizeof(Arena));
+	Arena *arena = (Arena*) malloc(sizeof(Arena));
 
-	arena->mem_begin = (char *) malloc(ARENA_BLOCK_SIZE * mem_size_scalar);
+	arena->mem_begin = (byte *) malloc(ARENA_BLOCK_SIZE * mem_size_scalar);
 	arena->mem_end = arena->mem_begin + ARENA_BLOCK_SIZE * mem_size_scalar;
 	arena->pos = arena->mem_begin;
 	arena->chunk_sz = chunk_size;
@@ -88,17 +89,17 @@ Arena	*arena_create_sized(size_t chunk_size, size_t mem_size_scalar)
 	return (arena);
 }
 
-void	arena_destroy(Arena *arena)
+void arena_destroy(Arena *arena)
 {
 	free(arena->mem_begin);
 	free(arena);
 }
 
-void	*linear_alloc(Arena *arena, size_t size)
+void *linear_alloc(Arena *arena, size_t size)
 {
 	assert(!arena->chunk_sz);
-	void	*mem = NULL;
-	size_t	size_alloc;
+	void   *mem = NULL;
+	size_t size_alloc;
 
 	size_alloc = size;
 
@@ -112,10 +113,10 @@ void	*linear_alloc(Arena *arena, size_t size)
 	return (mem);
 }
 
-void	*pool_alloc(Arena *arena)
+void *pool_alloc(Arena *arena)
 {
 	assert(arena->chunk_sz);
-	void	*mem = NULL;
+	void *mem = NULL;
 
 	mem = arena->freed;
 	assert(mem != NULL);
@@ -123,9 +124,9 @@ void	*pool_alloc(Arena *arena)
 	return (mem);
 }
 
-void	pool_free(Arena *arena, void *mem)
+void pool_free(Arena *arena, void *mem)
 {
-	assert((char *) mem >= arena->mem_begin && (char *) mem <= arena->mem_end);
+	assert((byte *) mem >= arena->mem_begin && (byte *) mem <= arena->mem_end);
 
 	memset(mem, 0, arena->chunk_sz);
 	List	*node = (List *) mem;
@@ -133,7 +134,7 @@ void	pool_free(Arena *arena, void *mem)
 	arena->freed = node;
 }
 
-void	arena_clean(Arena *arena)
+void arena_clean(Arena *arena)
 {
 	memset(arena->mem_begin, 0, arena->pos - arena->mem_begin);
 	arena->pos = arena->mem_begin;
@@ -141,11 +142,11 @@ void	arena_clean(Arena *arena)
 		arena_push_freed(arena);
 }
 
-static void	arena_push_freed(Arena *arena)
+static void arena_push_freed(Arena *arena)
 {
-	int	size = (arena->mem_end - arena->mem_begin ) / arena->chunk_sz;
+	i32 size = (arena->mem_end - arena->mem_begin ) / arena->chunk_sz;
 
-	for (int i = 0; i < size; i++)
+	for (i32 i = 0; i < size; i++)
 	{
 		List *node = (List *)&arena->mem_begin[i * arena->chunk_sz];
 		node->next = arena->freed;
@@ -153,11 +154,11 @@ static void	arena_push_freed(Arena *arena)
 	}
 }
 
-void	arena_resize(Arena *arena)
+void arena_resize(Arena *arena)
 {
 	assert(0 == 1);
 	TraceLog(LOG_INFO, "Arena being resized\n");
-	arena->mem_begin = (char *)realloc(arena->mem_begin, arena->mem_end - arena->mem_begin + ARENA_BLOCK_SIZE);
+	arena->mem_begin = (byte *)realloc(arena->mem_begin, arena->mem_end - arena->mem_begin + ARENA_BLOCK_SIZE);
 }
 // NOLINTEND(misc-definitions-in-headers)
 #endif

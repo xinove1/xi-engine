@@ -10,62 +10,62 @@
 // } List;
 
 // List
-List	*lstnew(Arena *arena, void *content);
-void	lstadd_front(List **lst, List *new_list);
-int		lstsize(List *lst);
-List	*lstlast(List *lst);
-void	lstadd_back(List **list, List *new_list);
-void	lstdelone(List *lst, void (*del)(void*));
-void	lstclear(List **lst, void (*del)(void*));
-void	lstiter(List *lst, void (*f)(void *));
-List	*lstmap(Arena *arena, List *lst, void *(*f)(void *), void (*del)(void *));
+List *lstnew(Arena *arena, void *content);
+void lstadd_front(List **lst, List *new_list);
+i32  lstsize(List *lst);
+List *lstlast(List *lst);
+void lstadd_back(List **list, List *new_list);
+void lstdelone(List *lst, void (*del)(void*));
+void lstclear(List **lst, void (*del)(void*));
+void lstiter(List *lst, void (*f)(void *));
+List *lstmap(Arena *arena, List *lst, void *(*f)(void *), void (*del)(void *));
 
 #endif
 
 #ifdef XI_LIST_IMPLEMENTATION
 // NOLINTBEGIN(misc-definitions-in-headers)
 
-List	*lstnew(Arena *arena, void *content)
+List *lstnew(Arena *arena, void *content)
 {
-	List	*new;
+	List *n;
 
 	if (!arena) {
-		new = calloc(1, sizeof(List));
+		n = (List *) calloc(1, sizeof(List));
 	} else if (arena->chunk_sz) {
-		new = pool_alloc(arena);
+		n = (List *) pool_alloc(arena);
 	} else {
-		new = linear_alloc(arena, sizeof(List));
+		n = (List *) linear_alloc(arena, sizeof(List));
 	}
-	if (!new) {
+	if (!n) {
 		return (NULL);
 	}
-	new->content = content;
-	new->next = NULL;
-	return (new);
+	n->content = content;
+	n->next = NULL;
+	return (n);
 }
 
-void	lstadd_back(List **list, List *new)
+void lstadd_back(List **list, List *n)
 {
 	List	*i;
 
 	if (*list == NULL) {
-		*list = new;
+		*list = n;
 	} else {
 		assert(*list);
 		i = lstlast(*list);
-		i->next = new;
+		i->next = n;
 	}
 }
 
-void	lstadd_front(List **lst, List *new)
+void lstadd_front(List **lst, List *n)
 {
-	new->next = *lst;
-	*lst = new;
+	n->next = *lst;
+	*lst = n;
 }
 
-void	lstiter(List *lst, void (*f)(void *))
+void lstiter(List *lst, void (*f)(void *))
 {
-	List	*i;
+	List *i;
 
 	i = lst;
 	while (i) {
@@ -74,9 +74,9 @@ void	lstiter(List *lst, void (*f)(void *))
 	}
 }
 
-List	*lstlast(List *lst)
+List *lstlast(List *lst)
 {
-	List	*i;
+	List *i;
 
 	if (!lst) {
 		return (NULL);
@@ -88,10 +88,10 @@ List	*lstlast(List *lst)
 	return (i);
 }
 
-int	lstsize(List *lst)
+int lstsize(List *lst)
 {
-	int		i;
-	List	*j;
+	i32  i;
+	List *j;
 
 	i = 0;
 	j = lst;
@@ -102,9 +102,9 @@ int	lstsize(List *lst)
 	return (i);
 }
 
-void	lstclear(List **lst, void (*del)(void*))
+void lstclear(List **lst, void (*del)(void*))
 {
-	List	*tmp;
+	List *tmp;
 
 	if (!lst) {
 		return ;
@@ -118,17 +118,17 @@ void	lstclear(List **lst, void (*del)(void*))
 	lst = NULL;
 }
 
-void	lstdelone(List *lst, void (*del)(void*))
+void lstdelone(List *lst, void (*del)(void*))
 {
 	del(lst->content);
 	free(lst);
 }
 
-List	*lstmap(Arena *arena, List *lst, void *(*f)(void *), void (*del)(void *))
+List *lstmap(Arena *arena, List *lst, void *(*f)(void *), void (*del)(void *))
 {
-	List	*i;
-	List	*newlst;
-	List	*tmp;
+	List *i;
+	List *newlst;
+	List *tmp;
 
 	if (!lst) {
 		return (NULL);
