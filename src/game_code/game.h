@@ -105,4 +105,12 @@ void	init_editor(GameData *data);
 void	update_editor();
 void	draw_editor();
  
+
+// exemple
+// void _Testfunc(byte *str, GameData data) 
+// {
+// 	printf("str: %s, data- quit: %d, music_vol: %f\n", str, data.quit, data.music_vol);
+// }
+// #define Testfunc(str, ...) _Testfunc((str), (GameData){.quit = false, __VA_ARGS__})
+
 #endif // GAME_H_

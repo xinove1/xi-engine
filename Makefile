@@ -91,7 +91,6 @@ cleana:
 	$(RM) $(XILIB)
 
 clean:
-	@make -C $(RAYLIB) clean
 	$(RM) $(OBJ)
 
 fclean: clean

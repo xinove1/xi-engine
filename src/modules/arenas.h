@@ -15,6 +15,12 @@
 /* # define PushStruct(arena, type) PushArray((arena), (type), 1) */
 /* # define PushStructZero(arena, type) PushArrayZero((arena), (type), 1) */
 
+// NOTES  Ideas for Arena rewrite:
+// - Global Scratch arena, which is used when a NULL arena pointer is passed to alloc funcs
+// - Arena which stack mem instead of heap, ex: https://mynameistrez.github.io/2024/04/09/static-arrays-are-the-best-vectors.html
+// - Simplify alloc to 1 func, with the type of alloc being a var in the arena struct (Remember to use unions if each type has a different var that it need's to work)
+// - Remove arena re-size concept, if needed more memory get a new arena
+
 typedef struct List List;
 struct List
 {
