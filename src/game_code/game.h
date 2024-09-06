@@ -4,7 +4,7 @@
 # include "raylib.h"
 # include "raymath.h"
 # include "raymath_short.h"
-# include "types.h"
+# include "core.h"
 # include "ui.h"
 # include <assert.h>
 # include <stdio.h>
@@ -76,10 +76,6 @@ GameFunctions	game_init_functions();
 
 // Utils
 V2	ExpDecayV2(V2 a, V2 b, float decay);
-Rect	RectV2(V2 pos, V2 size);
-V2	V2RectPos(Rect rect);
-V2	V2RectSize(Rect rect);
-bool	V2Compare(V2 a, V2 b);
 void	draw_grid_ex(V2 position, V2 grid_size, int tile_size, float line_thickness, Color color);
 void	draw_grid(V2 position, V2 grid_size, int tile_size);
 

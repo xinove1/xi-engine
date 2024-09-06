@@ -21,7 +21,7 @@ private void	init(GameData *data)
 	Data = data;
 	init_editor(data);
 
-	Data->menu = CreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
+	Data->menu = UiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
 			.alignment = UiAlignCentralized,
 			.font = (FontConfig) {
 				.font = GetFontDefault(),

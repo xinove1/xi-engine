@@ -1,5 +1,5 @@
 #include "game_code/game.h"
-#include "types.h"
+#include "core.h"
 #include "input.h"
 #ifdef HOT_RELOAD
 # include "dlfcn.h"

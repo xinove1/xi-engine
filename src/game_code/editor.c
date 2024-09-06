@@ -9,7 +9,7 @@ void	init_editor(GameData *data)
 	Data = data;
 	E = &data->editor;
 
-	E->panel = CreateContainer((V2) {Data->canvas_size.x * 0.8f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
+	E->panel = UiCreateContainer((V2) {Data->canvas_size.x * 0.8f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
 			.alignment = UiAlignLeft,
 			.font = (FontConfig) {
 				.font = GetFontDefault(),

@@ -1,7 +1,7 @@
 #ifndef XI_INPUT_ACTIONS_H
 # define XI_INPUT_ACTIONS_H
 
-# include "types.h"
+# include "core.h"
 
 // Comment out or redefine if needed
 typedef enum {LEFT, RIGHT, UP, DOWN, ACTION_1, ACTION_2, ACTION_3, OPEN_MENU, INPUT_ACTION_COUNT} InputActions_e;

@@ -3,7 +3,7 @@
 # include <stdlib.h>
 # include <string.h>
 # include <assert.h>
-# include "types.h"
+# include "core.h"
 
 # ifndef ARENA_BLOCK_SIZE
 #  define ARENA_BLOCK_SIZE 1024
