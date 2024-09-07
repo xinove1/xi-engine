@@ -5,24 +5,24 @@
 # include "dlfcn.h"
 #endif
 
-static inline void	reload_game_lib(GameFunctions *game);
-static inline void	*dl_load_func(void *libhandle, char *name);
-static void	register_actions();
+internal inline void reload_game_lib(GameFunctions *game);
+internal inline void *dl_load_func(void *libhandle, char *name);
+internal void register_actions();
 
-static bool	QuitGame = false;
+global b32 QuitGame = false;
+global RenderTexture2D ScreenTexture;
 
-int	main()
+int main()
 {
-	RenderTexture2D	screen;
-	V2	window_size = {640, 360};
-	GameData	data = {
+	V2 window_size = {640, 360};
+	GameData data = {
 		.canvas_size = window_size,
 		.paused = false,
 		.current_level = NULL,
 		.menu_screen = false,
 	};
 
-	GameFunctions	game = {0};
+	GameFunctions game = {0};
 
 	#ifdef HOT_RELOAD
 		reload_game_lib(&game);
@@ -30,7 +30,7 @@ int	main()
 		game = game_init_functions();
 	#endif
 
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_MAXIMIZED);
 	InitWindow(window_size.x, window_size.y, "Sokaban");
 	SetWindowState(FLAG_WINDOW_MAXIMIZED);
 	InitAudioDevice();
@@ -39,9 +39,9 @@ int	main()
 	
 	register_actions();
 
-	screen = LoadRenderTexture(window_size.x, window_size.y);
+	ScreenTexture = LoadRenderTexture(window_size.x, window_size.y);
 	//SetTextureFilter(screen.texture, TEXTURE_FILTER_BILINEAR);  
-	SetTextureFilter(screen.texture, TEXTURE_FILTER_ANISOTROPIC_16X);  
+	SetTextureFilter(ScreenTexture.texture, TEXTURE_FILTER_ANISOTROPIC_16X);  
 
 	game.init(&data);
 
@@ -56,48 +56,50 @@ int	main()
 
 		PoolActions();
 
-		float screen_scale = MIN((float)GetScreenWidth()/window_size.x, (float)GetScreenHeight() / window_size.y);
+		i32 screen_scale = MIN(GetScreenWidth() / window_size.x, GetScreenHeight() / window_size.y);
+		if (screen_scale <= 0) screen_scale = 1;
+		V2 window_size_scaled = V2Scale(window_size, screen_scale);
+		//printf("screen_scale: %d \n", screen_scale);
+
 		// Update virtual mouse (clamped mouse value behind game screen)
-		Vector2 mouse = GetMousePosition();
-		Vector2 virtualMouse = { 0 };
-		virtualMouse.x = (mouse.x - (GetScreenWidth() - (window_size.x *screen_scale))*0.5f)/screen_scale;
-		virtualMouse.y = (mouse.y - (GetScreenHeight() - (window_size.y *screen_scale))*0.5f)/screen_scale;
-		virtualMouse = Vector2Clamp(virtualMouse, (Vector2){ 0, 0 }, (Vector2){ (float)window_size.x, (float)window_size.y});
+		// V2 mouse = GetMousePosition();
+		// V2 mouse_virtual = { 0 };
+		// mouse_virtual.x = (mouse.x - (GetScreenWidth() - window_size_scaled.x) * 0.5f) / screen_scale;
+		// mouse_virtual.y = (mouse.y - (GetScreenHeight() - window_size_scaled.y) * 0.5f) / screen_scale;
+		// mouse_virtual = V2Clamp(mouse_virtual, V2Zero(), Data.window_size);
 
 		// Apply the same transformation as the virtual mouse to the real mouse (i.e. to work with raygui)
-		SetMouseOffset(-(GetScreenWidth() - (window_size.x*screen_scale))*0.5f, -(GetScreenHeight() - (window_size.y*screen_scale))*0.5f);
-		SetMouseScale(1 / screen_scale, 1 / screen_scale);
+		SetMouseOffset(-(GetScreenWidth() - window_size_scaled.x) * 0.5f, -(GetScreenHeight() - window_size_scaled.y) * 0.5f);
+		SetMouseScale(1 / (f32)screen_scale, 1 / (f32)screen_scale);
 
 		game.update();
 
-		BeginTextureMode(screen);
-		{
+		BeginTextureMode(ScreenTexture); {
 			ClearBackground(RAYWHITE);
 			game.draw();
-		}
-		EndTextureMode();
+		} EndTextureMode();
 
-		BeginDrawing();
-		{
+		BeginDrawing(); {
 			ClearBackground(BLACK);
 			// Draw render texture to screen, properly scaled
-			DrawTexturePro(screen.texture,
-		  (Rect){0.0f, 0.0f, (float) screen.texture.width, (float) -screen.texture.height},
-		  (Rect){(GetScreenWidth() - ((float) window_size.x*screen_scale)) * 0.5f, (GetScreenHeight() - ((float) window_size.y*screen_scale)) * 0.5f,
-		  (float)window_size.x * screen_scale, (float)window_size.y * screen_scale },
-		  (Vector2){ 0, 0 },
-		  0.0f,
-			WHITE);
+			DrawTexturePro(ScreenTexture.texture,
+				(Rect){0, 0, ScreenTexture.texture.width, -ScreenTexture.texture.height}, // Source
+				(Rect){.x = (i32) ((GetScreenWidth() - window_size_scaled.x) * 0.5f), 
+					 .y = (i32) ((GetScreenHeight() - window_size_scaled.y) * 0.5f),
+					 .width = window_size_scaled.x, .height = window_size_scaled.y }, // Dest
+				V2Zero(),
+				0.0f,
+				WHITE);
 			DrawText(TextFormat("%d", GetFPS()), 30, 30, 30, RED);
-		}
-		EndDrawing();
+		} EndDrawing();
 	}
+
 	CloseWindow();
 	CloseAudioDevice();
 	return (0);
 }
 
-static inline void	reload_game_lib(GameFunctions *game) 
+static inline void reload_game_lib(GameFunctions *game) 
 {
 	#ifdef HOT_RELOAD
 
@@ -120,7 +122,7 @@ static inline void	reload_game_lib(GameFunctions *game)
 	#endif
 }
 
-static inline void	*dl_load_func(void *libhandle, char *name)
+internal inline void *dl_load_func(void *libhandle, char *name)
 {
 	#ifdef HOT_RELOAD
 	void	*func = dlsym(libhandle, name);
@@ -133,7 +135,7 @@ static inline void	*dl_load_func(void *libhandle, char *name)
 	#endif
 }
 
-static void	register_actions()
+internal void register_actions()
 {
 	SetGamePadId(0);
 
