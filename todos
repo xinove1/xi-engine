@@ -1,0 +1,55 @@
+# 'Engine' Layer
+  - [ ] Reload .so automaticaly on file change, (see nob.h)
+  - [ ] Move update loop to alter func to cater to web build
+        - [ ] Complain if WEB and HOTRELOAD are active at the same time
+ ## Rewrite main.c so it dosent care about the game implementation
+    - [ ] Only hold void * instead of having to know about GameDataStruct
+    - [ ] Separate data such as window_size and volume and such configuration on its on struct.
+    - [ ] Move register Action from main to game
+
+# Change build system
+  - Get nob.h and understand at least the basics
+    - Move build to it
+  - See Amalgameted build is a good idea, probaly of using nob
+
+# Rewrite Memory Arenas
+- [ ] Default Global scratch arena, use in alloc funcs when NULL is passed in *arena arg
+  - [ ] Func to global clear scratch arena
+
+# Lenght String lib - Gather from libft funcs and adapt
+
+# Metaprogram
+  - Integrate directly on nob.c
+  - Generate loading assets and embedding them on a release build
+  - Generate Introspection and serialization code
+
+# Integrate & Test Ui libs, and leave them as an option
+  - [ ] Microgui
+  - [ ] Clay
+  - [ ] Nuklear
+
+# Gather Relevant Code from BrickGames, 1BitRogue
+  - [ ] Pathfinding
+  - [ ] GridRayCasting
+  - [X] Proper window scaling
+  - [X] Update Modules
+
+# Base64 Encode - for easier serialization?
+ https://nachtimwald.com/2017/11/18/base64-encode-and-decode-in-c/
+
+# Save&Load user config, aka volume etc
+ - SQL lite? ini files?
+
+# Systems
+ ## Assets system
+   'xxd -i'
+ ## Sprite Concept
+    - Holds id of texture/image and region of that represents it
+    - Animation based on that ^
+ ## Audio System
+
+# Optional & Extras
+ ## Input key recording for debugging
+    - [ ] See if builtin raylib func for this is good
+ ## Add virtual screen concept
+ ## Integrate lua

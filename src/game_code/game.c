@@ -7,16 +7,16 @@
 # define private static
 #endif
 
-static bool check_actuators(GameLevel *level);
-static bool move_player(GameLevel *level, Entity *p, V2 dir);
-static bool move_mixable(GameLevel *level, Entity *p, V2 dir);
+internal b32 check_actuators(GameLevel *level);
+internal b32 move_player(GameLevel *level, Entity *p, V2 dir);
+internal b32 move_mixable(GameLevel *level, Entity *p, V2 dir);
 
-static GameData  *Data = NULL;
-static GameLevel *Level= NULL;
-static Entity *Player= NULL;
-static bool WonLevel = false; // TODO  Temporary, change it
+global GameData  *Data = NULL;
+global GameLevel *Level= NULL;
+global Entity *Player= NULL;
+global b32 WonLevel = false; // TODO  Temporary, change it
 
-private void	init(GameData *data)
+private void init(GameData *data)
 {
 	Data = data;
 	init_editor(data);
@@ -62,7 +62,7 @@ private void	init(GameData *data)
 		// NOTE  Player Entitys always need to be first to be created
 		Player = create_entity(level, (Entity) {
 			.type = EntityPlayer,
-			.pos = (V2) { (int) map_size.x / 2, (int) map_size.y / 2}, // NOLINT para de reclamar do int meu irmao pqp
+			.pos = (V2) { (i32) map_size.x / 2, (i32) map_size.y / 2}, // NOLINT para de reclamar do int meu irmao pqp
 			.color = BLUE,
 		});
 
@@ -95,7 +95,7 @@ private void	init(GameData *data)
 	}
 }
 
-private void	update()
+private void update()
 {
 	assert(Data && Level && Player);
 	if (Data->menu_screen) {
@@ -134,7 +134,7 @@ private void	update()
 	update_editor();
 }
 
-private void	draw()
+private void draw()
 {
 	if (Data->menu_screen) {
 		UiContainer *c = &Data->menu;
@@ -161,14 +161,14 @@ private void	draw()
 	DrawRectangle(Level->map_offset.x, Level->map_offset.y, Level->map_sz.x * TILE, Level->map_sz.y * TILE, WHITE);
 
 	// Draw Actuators
-	for (int i = 0; i < MAX_ACTUATORS; i++) {
+	for (i32 i = 0; i < MAX_ACTUATORS; i++) {
 		Entity e = Level->actuators[i];
 		if (e.type == EntityEmpty) break;
 		DrawRectangleV(V2Add(V2Scale(e.pos, TILE), Level->map_offset), (V2) {TILE, TILE}, e.color);
 	}
 
 	// Draw Entitys
-	for (int i = 0; i < Level->entity_count; i++) {
+	for (i32 i = 0; i < Level->entity_count; i++) {
 		Entity e = Level->entitys[i];
 		if (e.type == EntityEmpty) continue ;
 		DrawRectangleV(V2Add(V2Scale(e.pos, TILE), Level->map_offset), (V2) {TILE, TILE}, e.color);
@@ -183,11 +183,11 @@ private void	draw()
 	draw_editor();
 }
 
-private void	pre_reload()
+private void pre_reload()
 {
 }
 
-private void	pos_reload(GameData *data)
+private void pos_reload(GameData *data)
 {
 	Data = data;
 	Level = data->current_level;
@@ -208,7 +208,7 @@ GameFunctions	game_init_functions()
 	};
 }
 
-static bool move_player(GameLevel *level, Entity *p, V2 dir)
+static b32 move_player(GameLevel *level, Entity *p, V2 dir)
 {
 	V2 where = V2Add(p->pos, dir);
 
@@ -230,7 +230,7 @@ static bool move_player(GameLevel *level, Entity *p, V2 dir)
 	return (move_entity(Level, p, where));
 }
 
-static bool move_mixable(GameLevel *level, Entity *p, V2 dir)
+static b32 move_mixable(GameLevel *level, Entity *p, V2 dir)
 {
 	V2 where = V2Add(p->pos, dir);
 
@@ -243,15 +243,15 @@ static bool move_mixable(GameLevel *level, Entity *p, V2 dir)
 	return (move_entity(level, p, where));;
 }
 
-static bool check_actuators(GameLevel *level)
+static b32 check_actuators(GameLevel *level)
 {
-	bool	all_set = true;
+	b32 all_set = true;
 
-	for (int i = 0; i < MAX_ACTUATORS; i++) {
+	for (i32 i = 0; i < MAX_ACTUATORS; i++) {
 		Entity e = Level->actuators[i];
 		if (e.type == EntityEmpty) break;
 
-		int	something_on_top = get_map_pos(level, e.pos);
+		i32 something_on_top = get_map_pos(level, e.pos);
 		if (something_on_top == -1) {
 			all_set = false;
 		}

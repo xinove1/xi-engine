@@ -1,9 +1,9 @@
 #include "game.h"
 
-static GameData *Data = NULL;
-static GameEditor *E = NULL;
+global GameData *Data = NULL;
+global GameEditor *E = NULL;
 
-void	init_editor(GameData *data)
+void init_editor(GameData *data)
 {
 	TraceLog(LOG_INFO, "Initting Editor");
 	Data = data;
@@ -33,10 +33,10 @@ void	init_editor(GameData *data)
 	});
 }
 
-void	update_editor()
+void update_editor()
 {
-	V2	mouse_pos = V2Subtract(GetMousePosition(), Data->current_level->map_offset);
-	E->selected_tile = (V2) {(int) mouse_pos.x / TILE, (int) mouse_pos.y / TILE}; //NOLINT
+	V2 mouse_pos = V2Subtract(GetMousePosition(), Data->current_level->map_offset);
+	E->selected_tile = (V2) {(i32) mouse_pos.x / TILE, (i32) mouse_pos.y / TILE}; //NOLINT
 	if (E->selected_tile.x < 0 || E->selected_tile.x >= Data->current_level->map_sz.x || E->selected_tile.y < 0 || E->selected_tile.y >= Data->current_level->map_sz.y) {
 		E->dragging = false;
 		E->dragged_entity = NULL;
@@ -69,7 +69,7 @@ void	update_editor()
 	}
 }
 
-void	draw_editor()
+void draw_editor()
 {
 	{
 		UiContainer *panel = &E->panel;
@@ -93,7 +93,7 @@ void	draw_editor()
 
 	// Highlight Actuators
 	// TODO  Better indicator that it is a Actuator bellow
-	for (int i = 0; i < Data->current_level->actuators_count; i++) {
+	for (i32 i = 0; i < Data->current_level->actuators_count; i++) {
 		Entity *act = &Data->current_level->actuators[i];
 		if (get_map_pos(Data->current_level, act->pos) != -1) {
 			Color color = ColorAlpha(act->color, 0.4f);

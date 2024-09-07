@@ -1,10 +1,10 @@
 #include "game.h"
 
-bool move_entity(GameLevel *level, Entity *e, V2 where)
+b32 move_entity(GameLevel *level, Entity *e, V2 where)
 {
 	assert(level && e);
-	bool moved = true;
-	V2	size = level->map_sz;
+	b32 moved = true;
+	V2 size = level->map_sz;
 	if (where.x < 0 || where.x >= size.x ||
 	    where.y < 0 || where.y >= size.y) {
 		TraceLog(LOG_WARNING, "move_entity: Trying to Move Entity to outside of map bounds.");
@@ -24,11 +24,11 @@ bool move_entity(GameLevel *level, Entity *e, V2 where)
 	return (moved);
 }
 
-bool move_entity_swap(GameLevel *level, Entity *e, V2 where) 
+b32 move_entity_swap(GameLevel *level, Entity *e, V2 where) 
 {
 	assert(level && e);
-	bool moved = true;
-	V2	size = level->map_sz;
+	b32 moved = true;
+	V2 size = level->map_sz;
 	if (where.x < 0 || where.x >= size.x ||
 	    where.y < 0 || where.y >= size.y) {
 		TraceLog(LOG_WARNING, "move_entity: Trying to Move Entity to outside of map bounds.");
@@ -48,33 +48,33 @@ bool move_entity_swap(GameLevel *level, Entity *e, V2 where)
 	return (moved);
 }
 
-int get_map_pos(GameLevel *level, V2 pos)
+i32 get_map_pos(GameLevel *level, V2 pos)
 {
 	assert(level);
 	if (pos.x < 0 || pos.x >= level->map_sz.x || pos.y < 0 || pos.y >= level->map_sz.y) {
 		TraceLog(LOG_FATAL, "get_map_pos: Pos outside of map bounds %f, %f", pos.x, pos.y);
 	}
-	return (level->map[(int) ((pos.y * level->map_sz.x) + pos.x)] );
+	return (level->map[(i32) ((pos.y * level->map_sz.x) + pos.x)] );
 }
 
-void set_map_pos(GameLevel *level, V2 pos, int value)
+void set_map_pos(GameLevel *level, V2 pos, i32 value)
 {
 	assert(level);
 	if (pos.x < 0 || pos.x >= level->map_sz.x || pos.y < 0 || pos.y >= level->map_sz.y) {
 		TraceLog(LOG_FATAL, "set_map_pos: Pos outside of map bounds %f, %f", pos.x, pos.y);
 	}
-	level->map[(int) ((pos.y * level->map_sz.x) + pos.x)] = value;
+	level->map[(i32) ((pos.y * level->map_sz.x) + pos.x)] = value;
 }
 
 Entity *get_map_entity(GameLevel *level, V2 pos)
 {
 	assert(level);
-	int id = get_map_pos(level, pos);
+	i32 id = get_map_pos(level, pos);
 	if (id == -1) return NULL;
 	return (get_entity(level, id));
 }
 
-Entity *get_entity(GameLevel *level, int entity_id)
+Entity *get_entity(GameLevel *level, i32 entity_id)
 {
 	assert(level);
 	assert(entity_id >= 0 && entity_id < level->max_entitys);
@@ -82,7 +82,7 @@ Entity *get_entity(GameLevel *level, int entity_id)
 }
 
 // TODO  Actually deal with a EntityEmpty in other places, such as create entity
-void	delete_entity(GameLevel *level, Entity *e)
+void delete_entity(GameLevel *level, Entity *e)
 {
 	assert(level && e);
 	if (e->type == EntityActuator) {
@@ -95,7 +95,7 @@ void	delete_entity(GameLevel *level, Entity *e)
 Entity *get_actuator(GameLevel *level, V2 pos) 
 {
 	assert(level);
-	for (int i = 0; i < level->actuators_count; i++) {
+	for (i32 i = 0; i < level->actuators_count; i++) {
 		Entity *act = &level->actuators[i];
 		if (V2Compare(act->pos, pos)) {
 			return (act);
@@ -111,7 +111,7 @@ Entity *create_entity_empty(GameLevel *level)
 	TraceLog(LOG_INFO, "Creating entity, entity_count: %d", level->entity_count);
 	Entity *e = NULL;
 	e = get_entity(level, level->entity_count);
-	int *p = (int *) &e->id; 
+	i32 *p = (i32 *) &e->id; 
 	*p = level->entity_count;
 	level->entity_count++;
 	return (e);
@@ -150,14 +150,14 @@ Entity *create_actuator(GameLevel *level, Entity d)
 GameLevel *create_level(char *name, V2 map_size, V2 canvas_size)
 {
 	V2 map_size_screen = V2Scale(map_size, TILE);
-	int map_size_int = map_size.x * map_size.y;
+	i32 map_size_int = map_size.x * map_size.y;
 	V2 canvas_middle = V2Scale(canvas_size, 0.5f);
-	int max_entitys = map_size_int;
+	i32 max_entitys = map_size_int;
 
 	GameLevel *level = malloc(sizeof(GameLevel));
 	*level = (GameLevel) {
 		.name = name,
-		.map = malloc(sizeof(int) * map_size_int),
+		.map = malloc(sizeof(i32) * map_size_int),
 		.map_sz = map_size,
 		.map_offset = (V2) {canvas_middle.x - (map_size_screen.x * 0.5f), canvas_middle.y - (map_size_screen.y * 0.5f)},
 		.entitys = malloc(sizeof(Entity) * max_entitys),
@@ -166,14 +166,14 @@ GameLevel *create_level(char *name, V2 map_size, V2 canvas_size)
 		//.actuators = {0},
 		.actuators_count = 0,
 	};
-	memset(level->map, -1, sizeof(int) * map_size_int);
+	memset(level->map, -1, sizeof(i32) * map_size_int);
 	memset(level->entitys, 0, map_size_int);
 	return (level);
 }
 
 void print_entity(Entity e)
 {
-	char *types[EntitysCount + 1] = {"EntityEmpty", "EntityPlayer", "EntityActuator", "EntityMovable", "EntityStatic", "EntitysCount"};
+	cstr *types[EntitysCount + 1] = {"EntityEmpty", "EntityPlayer", "EntityActuator", "EntityMovable", "EntityStatic", "EntitysCount"};
 	printf("Entity: \n");
 	printf("\t type: %s \n", types[e.type]);
 	printf("\t id: %d \n", e.id);
@@ -186,8 +186,8 @@ void print_map(GameLevel *level)
 {
 	assert(level);
 	printf("Map %s size %f, %f\n", level->name, level->map_sz.x, level->map_sz.y);
-	for (int y = 0; y < level->map_sz.y; y++) {
-		for (int x = 0; x < level->map_sz.x; x++) {
+	for (i32 y = 0; y < level->map_sz.y; y++) {
+		for (i32 x = 0; x < level->map_sz.x; x++) {
 			printf("%d, ", get_map_pos(level, (V2) {x, y}));
 		}
 		printf("\n");
