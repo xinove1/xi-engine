@@ -1,6 +1,7 @@
 #ifndef GAME_H_
 # define GAME_H_
 
+# include "../main.h"
 # include "raylib.h"
 # include "raymath.h"
 # include "raymath_short.h"
@@ -10,12 +11,6 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
-
-// Hot reload being enabled implies debug build
-// TODO 
-#ifdef HOT_RELOAD
-# define DEBUG
-#endif
 
 #define TILE 16
 #define MAX_ACTUATORS 5 
@@ -62,15 +57,6 @@ typedef struct {
 	b32 menu_screen;
 	UiContainer menu;
 } GameData;
-
-typedef struct GameFunctions
-{
-	void    (*init)(GameData *data);
-	void    (*update)(void);
-	void    (*draw)(void);
-	void    (*pre_reload)(void);
-	void    (*pos_reload)(GameData *data);
-} GameFunctions;
 
 // Prototype for not hot reloadable version
 GameFunctions game_init_functions();

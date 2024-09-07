@@ -11,17 +11,11 @@ internal void register_actions();
 
 global b32 QuitGame = false;
 global RenderTexture2D ScreenTexture;
+global void *Data;
+global GameConfig Config;
 
 int main()
 {
-	V2 window_size = {640, 360};
-	GameData data = {
-		.canvas_size = window_size,
-		.paused = false,
-		.current_level = NULL,
-		.menu_screen = false,
-	};
-
 	GameFunctions game = {0};
 
 	#ifdef HOT_RELOAD
@@ -30,35 +24,37 @@ int main()
 		game = game_init_functions();
 	#endif
 
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_MAXIMIZED);
-	InitWindow(window_size.x, window_size.y, "Sokaban");
-	SetWindowState(FLAG_WINDOW_MAXIMIZED);
+	Config = game.init_pre_raylib(&Data);
+
+	SetConfigFlags(Config.window_flags);
+	InitWindow(Config.canvas_size.x, Config.canvas_size.y, Config.window_name);
+	SetWindowState(FLAG_WINDOW_MAXIMIZED); // TODO  Move this to GameConfig or UserConfig or something
 	InitAudioDevice();
-	SetTargetFPS(60);
+	SetTargetFPS(Config.target_fps);
 	SetExitKey(0);
 	
 	register_actions();
 
-	ScreenTexture = LoadRenderTexture(window_size.x, window_size.y);
+	ScreenTexture = LoadRenderTexture(Config.canvas_size.x, Config.canvas_size.y);
 	//SetTextureFilter(screen.texture, TEXTURE_FILTER_BILINEAR);  
 	SetTextureFilter(ScreenTexture.texture, TEXTURE_FILTER_ANISOTROPIC_16X);  
 
-	game.init(&data);
+	game.init_pos_raylib();
 
 	while (!WindowShouldClose() && !QuitGame) {
 		#ifdef HOT_RELOAD
 		if (IsKeyPressed(KEY_R)) {
 			game.pre_reload();
 			reload_game_lib(&game);
-			game.pos_reload(&data);
+			game.pos_reload(Data);
 		}
 		#endif
 
 		PoolActions();
 
-		i32 screen_scale = MIN(GetScreenWidth() / window_size.x, GetScreenHeight() / window_size.y);
+		i32 screen_scale = MIN(GetScreenWidth() / Config.canvas_size.x, GetScreenHeight() / Config.canvas_size.y);
 		if (screen_scale <= 0) screen_scale = 1;
-		V2 window_size_scaled = V2Scale(window_size, screen_scale);
+		V2 window_size_scaled = V2Scale(Config.canvas_size, screen_scale);
 		//printf("screen_scale: %d \n", screen_scale);
 
 		// Update virtual mouse (clamped mouse value behind game screen)
@@ -72,7 +68,7 @@ int main()
 		SetMouseOffset(-(GetScreenWidth() - window_size_scaled.x) * 0.5f, -(GetScreenHeight() - window_size_scaled.y) * 0.5f);
 		SetMouseScale(1 / (f32)screen_scale, 1 / (f32)screen_scale);
 
-		game.update();
+		QuitGame = game.update();
 
 		BeginTextureMode(ScreenTexture); {
 			ClearBackground(RAYWHITE);
@@ -99,11 +95,11 @@ int main()
 	return (0);
 }
 
-static inline void reload_game_lib(GameFunctions *game) 
+internal inline void reload_game_lib(GameFunctions *game) 
 {
 	#ifdef HOT_RELOAD
 
-	static void	*libgame = NULL;
+	local void *libgame = NULL;
 	if (libgame != NULL) {
 		dlclose(libgame);
 	}
@@ -112,8 +108,10 @@ static inline void reload_game_lib(GameFunctions *game)
 	if (libgame == NULL) {
 		TraceLog(LOG_FATAL, "ERROR: %s", dlerror());
 	}
+
 	TraceLog(LOG_INFO, "(Re)Loaded gamelib");
-	game->init = dl_load_func(libgame, "init");
+	game->init_pre_raylib = dl_load_func(libgame, "init_pre_raylib");
+	game->init_pos_raylib = dl_load_func(libgame, "init_pos_raylib");
 	game->update = dl_load_func(libgame, "update");
 	game->draw = dl_load_func(libgame, "draw");
 	game->pos_reload = dl_load_func(libgame, "pos_reload");
@@ -125,7 +123,7 @@ static inline void reload_game_lib(GameFunctions *game)
 internal inline void *dl_load_func(void *libhandle, char *name)
 {
 	#ifdef HOT_RELOAD
-	void	*func = dlsym(libhandle, name);
+	void *func = dlsym(libhandle, name);
 	if (func == NULL) {
 		TraceLog(LOG_FATAL, "ERROR: %s", dlerror());
 	}

@@ -2,9 +2,9 @@
 #include "input.h"
  
 #ifdef HOT_RELOAD
-# define private
+# define hot
 #else
-# define private static
+# define hot static
 #endif
 
 internal b32 check_actuators(GameLevel *level);
@@ -16,31 +16,17 @@ global GameLevel *Level= NULL;
 global Entity *Player= NULL;
 global b32 WonLevel = false; // TODO  Temporary, change it
 
-private void init(GameData *data)
+hot GameConfig init_pre_raylib(void **data)
 {
-	Data = data;
-	init_editor(data);
+	Data = calloc(1, sizeof(GameData));
+	*data = Data;
 
-	Data->menu = UiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
-			.alignment = UiAlignCentralized,
-			.font = (FontConfig) {
-				.font = GetFontDefault(),
-				.size = 10,
-				.spacing = 1,
-				.tint = BLACK,
-				.tint_hover = RED,
-			},
-			.draw_container_bounds = true,
-			.play_sound = false,
-			.draw_selector = false,
-			.take_key_input = true,
-			.padding_row = 10,
-			.padding_collumn = 5,
-			.color_background = YELLOW,
-			.color_font = RED,
-			.color_font_highlight = BLACK,
-			.color_borders = BLACK,
-	});
+	*Data = (GameData) {
+		.canvas_size = (V2) {640, 360},
+		.paused = false,
+		.current_level = NULL,
+		.menu_screen = false,
+	};
 
 	// Create sample Level
 	{
@@ -91,18 +77,51 @@ private void init(GameData *data)
 			});
 
 		Level = level;
-		data->current_level = level;
+		Data->current_level = level;
 	}
+
+	return ((GameConfig) {
+		.canvas_size = Data->canvas_size,
+		.window_name = "Sokaban",
+		.window_flags = FLAG_WINDOW_RESIZABLE,
+		.target_fps = 60,
+	});
 }
 
-private void update()
+hot void init_pos_raylib() 
+{
+	init_editor(Data);
+
+	Data->menu = UiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
+			.alignment = UiAlignCentralized,
+			.font = (FontConfig) {
+				.font = GetFontDefault(),
+				.size = 10,
+				.spacing = 1,
+				.tint = BLACK,
+				.tint_hover = RED,
+			},
+			.draw_container_bounds = true,
+			.play_sound = false,
+			.draw_selector = false,
+			.take_key_input = true,
+			.padding_row = 10,
+			.padding_collumn = 5,
+			.color_background = YELLOW,
+			.color_font = RED,
+			.color_font_highlight = BLACK,
+			.color_borders = BLACK,
+	});
+}
+
+hot b32 update()
 {
 	assert(Data && Level && Player);
 	if (Data->menu_screen) {
-		return ;
+		return (false);
 	}
 
-	V2	dir = {0, 0};
+	V2 dir = {0, 0};
 	if (IsActionPressed(RIGHT)) {
 		dir.x += 1;
 	}
@@ -132,9 +151,10 @@ private void update()
 	WonLevel = check_actuators(Level);
 
 	update_editor();
+	return (false);
 }
 
-private void draw()
+hot void draw()
 {
 	if (Data->menu_screen) {
 		UiContainer *c = &Data->menu;
@@ -183,24 +203,25 @@ private void draw()
 	draw_editor();
 }
 
-private void pre_reload()
+hot void pre_reload()
 {
 }
 
-private void pos_reload(GameData *data)
+hot void pos_reload(void *data)
 {
 	Data = data;
-	Level = data->current_level;
-	Player = get_entity(data->current_level, 0);
+	Level = Data->current_level;
+	Player = get_entity(Data->current_level, 0);
 	assert(Player->type == EntityPlayer); // Player Entity should awalys be the first on the entitys array
 	
 	init_editor(data);
 }
 
-GameFunctions	game_init_functions()
+GameFunctions game_init_functions()
 {
 	return (GameFunctions) {
-		.init = &init,
+		.init_pre_raylib = &init_pre_raylib,
+		.init_pos_raylib = &init_pos_raylib,
 		.update = &update,
 		.draw = &draw,
 		.pre_reload = &pre_reload,
@@ -208,7 +229,7 @@ GameFunctions	game_init_functions()
 	};
 }
 
-static b32 move_player(GameLevel *level, Entity *p, V2 dir)
+internal b32 move_player(GameLevel *level, Entity *p, V2 dir)
 {
 	V2 where = V2Add(p->pos, dir);
 
@@ -230,7 +251,7 @@ static b32 move_player(GameLevel *level, Entity *p, V2 dir)
 	return (move_entity(Level, p, where));
 }
 
-static b32 move_mixable(GameLevel *level, Entity *p, V2 dir)
+internal b32 move_mixable(GameLevel *level, Entity *p, V2 dir)
 {
 	V2 where = V2Add(p->pos, dir);
 
@@ -243,7 +264,7 @@ static b32 move_mixable(GameLevel *level, Entity *p, V2 dir)
 	return (move_entity(level, p, where));;
 }
 
-static b32 check_actuators(GameLevel *level)
+internal b32 check_actuators(GameLevel *level)
 {
 	b32 all_set = true;
 
