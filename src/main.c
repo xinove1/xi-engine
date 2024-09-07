@@ -1,14 +1,19 @@
 #include "game_code/game.h"
 #include "core.h"
 #include "input.h"
+#include <sys/stat.h>
+#include <errno.h>
 #ifdef HOT_RELOAD
 # include "dlfcn.h"
 #endif
 
 internal inline void reload_game_lib(GameFunctions *game);
 internal inline void *dl_load_func(void *libhandle, char *name);
+internal inline i32 get_stat_time(cstr *path);
 internal void register_actions();
 
+global cstr *LibGamePath = "./game.so";
+global i32 LibGameTime = 0;
 global b32 QuitGame = false;
 global RenderTexture2D ScreenTexture;
 global void *Data;
@@ -43,7 +48,16 @@ int main()
 
 	while (!WindowShouldClose() && !QuitGame) {
 		#ifdef HOT_RELOAD
-		if (IsKeyPressed(KEY_R)) {
+		// NOTE  this seems pretty hackish but olwell
+		i32 lib_game_current_time = get_stat_time(LibGamePath);
+		static b32 reload = false;
+		static i32 reload_count = 0;
+
+		if (IsKeyPressed(KEY_R) || lib_game_current_time > LibGameTime) reload = true;
+		if (reload) reload_count++;
+		if (reload && reload_count > 5) {
+			reload = false;
+			reload_count = 0;
 			game.pre_reload();
 			reload_game_lib(&game);
 			game.pos_reload(Data);
@@ -98,16 +112,16 @@ int main()
 internal inline void reload_game_lib(GameFunctions *game) 
 {
 	#ifdef HOT_RELOAD
-
 	local void *libgame = NULL;
 	if (libgame != NULL) {
 		dlclose(libgame);
 	}
 
-	libgame = dlopen("./game.so", RTLD_NOW);
+	libgame = dlopen(LibGamePath, RTLD_NOW);
 	if (libgame == NULL) {
 		TraceLog(LOG_FATAL, "ERROR: %s", dlerror());
 	}
+	LibGameTime = get_stat_time(LibGamePath);
 
 	TraceLog(LOG_INFO, "(Re)Loaded gamelib");
 	game->init_pre_raylib = dl_load_func(libgame, "init_pre_raylib");
@@ -118,6 +132,20 @@ internal inline void reload_game_lib(GameFunctions *game)
 	game->pre_reload = dl_load_func(libgame, "pre_reload");
 
 	#endif
+}
+
+internal inline i32 get_stat_time(cstr *path) 
+{
+	struct stat statbuf = {0};
+	if (stat(path, &statbuf) < 0) {
+		// NOTE: if output does not exist it 100% must be rebuilt
+		//if (errno == ENOENT) return 1;
+		TraceLog(LOG_ERROR, "could not stat %s: %s", path, strerror(errno));
+		return (0);
+	}
+	int path_time = statbuf.st_mtime;
+	//printf("path_time: %d \n", path_time);
+	return (path_time);
 }
 
 internal inline void *dl_load_func(void *libhandle, char *name)

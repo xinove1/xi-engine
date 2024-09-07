@@ -1,10 +1,10 @@
 # 'Engine' Layer
-  - [ ] Reload .so automaticaly on file change, (see nob.h)
+  - [X] Reload .so automaticaly on file change, (see nob.h)
   - [ ] Move update loop to alter func to cater to web build
         - [ ] Complain if WEB and HOTRELOAD are active at the same time
  ## Rewrite main.c so it dosent care about the game implementation
-    - [ ] Only hold void * instead of having to know about GameDataStruct
-    - [ ] Separate data such as window_size and volume and such configuration on its on struct.
+    - [x] Only hold void * instead of having to know about GameDataStruct
+    - [x] Separate data such as window_size and volume and such configuration on its on struct.
     - [ ] Move register Action from main to game
 
 # Change build system
