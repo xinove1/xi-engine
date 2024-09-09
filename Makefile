@@ -17,7 +17,7 @@ RFLAGS_WINDOWS= -lopengl32 -lgdi32 -lwinmm
 
 WEB_DATA_DIR= --preload-file assets
 WEB_EXPORTED_FUNCTIONS= -sEXPORTED_FUNCTIONS=_main
-WEBFLAGS = $(WEB_EXPORTED_FUNCTIONS) $(WEB_DATA_DIR) -s ALLOW_MEMORY_GROWTH=1 -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s STACK_SIZE=1mb -Os -s ASYNCIFY -s USE_GLFW=3 -DPLATFORM_WEB -sGL_ENABLE_GET_PROC_ADDRESS
+WEBFLAGS = $(WEB_EXPORTED_FUNCTIONS) $(WEB_DATA_DIR) --shell-file ./template.html --js-library lib.js -s ALLOW_MEMORY_GROWTH=1 -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s STACK_SIZE=1mb -Os -s USE_GLFW=3 -DPLATFORM_WEB -sGL_ENABLE_GET_PROC_ADDRESS
 
 SRC_ENGINE = src/main.c
 SRC_GAME = $(wildcard src/game_code/*.c)
@@ -69,8 +69,8 @@ windows: $(DEPENDENCIES)
 
 web: $(DEPENDENCIES)
 	make -C $(RAYLIB) PLATFORM=PLATFORM_WEB -B EMSDK_PATH=/home/xinove/stuff/emsdk  PYTHON_PATH=/usr/bin/python NODE_PATH=/home/xinove/stuff/emsdk/node/16.20.0_64bit/bin
-	emcc $(CFLAGS) -c $(SRC)
-	emcc $(OBJ) $(RAYLIB)/libraylib.a $(CFLAGS) $(RFLAGS) $(WEBFLAGS) -o $(NAME).js
+	emcc $(CFLAGS) -DPLATFORM_WEB -c $(SRC)
+	emcc $(OBJ) $(RAYLIB)/libraylib.a $(CFLAGS) $(RFLAGS) $(WEBFLAGS) -DPLATFORM_WEB -o $(NAME).html
 #emcc -o game.html game.c -Os -Wall ./path-to/libraylib.a -I. -Ipath-to-raylib-h -L. -Lpath-to-libraylib-a  --shell-file path-to/shell.html
 
 web_run: $(web)

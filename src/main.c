@@ -1,35 +1,36 @@
 #include "game_code/game.h"
-#include "core.h"
-#include "input.h"
 #include <sys/stat.h>
 #include <errno.h>
 #ifdef HOT_RELOAD
-# include "dlfcn.h"
+# include <dlfcn.h>
+#endif
+#ifdef PLATFORM_WEB
+# include <emscripten/emscripten.h>
 #endif
 
 internal inline void reload_game_lib(GameFunctions *game);
 internal inline void *dl_load_func(void *libhandle, char *name);
 internal inline i32 get_stat_time(cstr *path);
 internal void register_actions();
+internal void update_and_draw();
 
 global cstr *LibGamePath = "./game.so";
 global i32 LibGameTime = 0;
 global b32 QuitGame = false;
 global RenderTexture2D ScreenTexture;
-global void *Data;
 global GameConfig Config;
+global GameFunctions Game = {0};
+global void *Data;
 
 int main()
 {
-	GameFunctions game = {0};
-
 	#ifdef HOT_RELOAD
-		reload_game_lib(&game);
+		reload_game_lib(&Game);
 	#else
-		game = game_init_functions();
+		Game = game_init_functions();
 	#endif
 
-	Config = game.init_pre_raylib(&Data);
+	Config = Game.init_pre_raylib(&Data);
 
 	SetConfigFlags(Config.window_flags);
 	InitWindow(Config.canvas_size.x, Config.canvas_size.y, Config.window_name);
@@ -44,69 +45,78 @@ int main()
 	//SetTextureFilter(screen.texture, TEXTURE_FILTER_BILINEAR);  
 	SetTextureFilter(ScreenTexture.texture, TEXTURE_FILTER_ANISOTROPIC_16X);  
 
-	game.init_pos_raylib();
+	Game.init_pos_raylib();
 
-	while (!WindowShouldClose() && !QuitGame) {
-		#ifdef HOT_RELOAD
+	#ifdef PLATFORM_WEB
+		emscripten_set_main_loop(update_and_draw, 0, 1);
+	#else
+		while (!WindowShouldClose() && !QuitGame) {
+			update_and_draw();
+		}
+	#endif
+
+	CloseWindow();
+	CloseAudioDevice();
+	return (0);
+}
+
+internal void update_and_draw()
+{
+	#ifdef HOT_RELOAD
 		// NOTE  this seems pretty hackish but olwell
 		i32 lib_game_current_time = get_stat_time(LibGamePath);
 		static b32 reload = false;
 		static i32 reload_count = 0;
-
+	
 		if (IsKeyPressed(KEY_R) || lib_game_current_time > LibGameTime) reload = true;
 		if (reload) reload_count++;
 		if (reload && reload_count > 5) {
 			reload = false;
 			reload_count = 0;
-			game.pre_reload();
-			reload_game_lib(&game);
-			game.pos_reload(Data);
+			Game.pre_reload();
+			reload_game_lib(&Game);
+			Game.pos_reload(Data);
 		}
-		#endif
+	#endif
 
-		PoolActions();
+	PoolActions();
 
-		i32 screen_scale = MIN(GetScreenWidth() / Config.canvas_size.x, GetScreenHeight() / Config.canvas_size.y);
-		if (screen_scale <= 0) screen_scale = 1;
-		V2 window_size_scaled = V2Scale(Config.canvas_size, screen_scale);
-		//printf("screen_scale: %d \n", screen_scale);
+	i32 screen_scale = MIN(GetScreenWidth() / Config.canvas_size.x, GetScreenHeight() / Config.canvas_size.y);
+	if (screen_scale <= 0) screen_scale = 1;
+	V2 window_size_scaled = V2Scale(Config.canvas_size, screen_scale);
+	//printf("screen_scale: %d \n", screen_scale);
 
-		// Update virtual mouse (clamped mouse value behind game screen)
-		// V2 mouse = GetMousePosition();
-		// V2 mouse_virtual = { 0 };
-		// mouse_virtual.x = (mouse.x - (GetScreenWidth() - window_size_scaled.x) * 0.5f) / screen_scale;
-		// mouse_virtual.y = (mouse.y - (GetScreenHeight() - window_size_scaled.y) * 0.5f) / screen_scale;
-		// mouse_virtual = V2Clamp(mouse_virtual, V2Zero(), Data.window_size);
+	// Update virtual mouse (clamped mouse value behind game screen)
+	// V2 mouse = GetMousePosition();
+	// V2 mouse_virtual = { 0 };
+	// mouse_virtual.x = (mouse.x - (GetScreenWidth() - window_size_scaled.x) * 0.5f) / screen_scale;
+	// mouse_virtual.y = (mouse.y - (GetScreenHeight() - window_size_scaled.y) * 0.5f) / screen_scale;
+	// mouse_virtual = V2Clamp(mouse_virtual, V2Zero(), Data.window_size);
 
-		// Apply the same transformation as the virtual mouse to the real mouse (i.e. to work with raygui)
-		SetMouseOffset(-(GetScreenWidth() - window_size_scaled.x) * 0.5f, -(GetScreenHeight() - window_size_scaled.y) * 0.5f);
-		SetMouseScale(1 / (f32)screen_scale, 1 / (f32)screen_scale);
+	// Apply the same transformation as the virtual mouse to the real mouse (i.e. to work with raygui)
+	SetMouseOffset(-(GetScreenWidth() - window_size_scaled.x) * 0.5f, -(GetScreenHeight() - window_size_scaled.y) * 0.5f);
+	SetMouseScale(1 / (f32)screen_scale, 1 / (f32)screen_scale);
 
-		QuitGame = game.update();
+	QuitGame = Game.update();
 
-		BeginTextureMode(ScreenTexture); {
-			ClearBackground(RAYWHITE);
-			game.draw();
-		} EndTextureMode();
+	BeginTextureMode(ScreenTexture); {
+		ClearBackground(RAYWHITE);
+		Game.draw();
+	} EndTextureMode();
 
-		BeginDrawing(); {
-			ClearBackground(BLACK);
-			// Draw render texture to screen, properly scaled
-			DrawTexturePro(ScreenTexture.texture,
-				(Rect){0, 0, ScreenTexture.texture.width, -ScreenTexture.texture.height}, // Source
-				(Rect){.x = (i32) ((GetScreenWidth() - window_size_scaled.x) * 0.5f), 
-					 .y = (i32) ((GetScreenHeight() - window_size_scaled.y) * 0.5f),
-					 .width = window_size_scaled.x, .height = window_size_scaled.y }, // Dest
-				V2Zero(),
-				0.0f,
-				WHITE);
-			DrawText(TextFormat("%d", GetFPS()), 30, 30, 30, RED);
-		} EndDrawing();
-	}
-
-	CloseWindow();
-	CloseAudioDevice();
-	return (0);
+	BeginDrawing(); {
+		ClearBackground(BLACK);
+		// Draw render texture to screen, properly scaled
+		DrawTexturePro(ScreenTexture.texture,
+		 (Rect){0, 0, ScreenTexture.texture.width, -ScreenTexture.texture.height}, // Source
+		 (Rect){.x = (i32) ((GetScreenWidth() - window_size_scaled.x) * 0.5f), 
+		 .y = (i32) ((GetScreenHeight() - window_size_scaled.y) * 0.5f),
+		 .width = window_size_scaled.x, .height = window_size_scaled.y }, // Dest
+		 V2Zero(),
+		 0.0f,
+		 WHITE);
+		DrawText(TextFormat("%d", GetFPS()), 30, 30, 30, RED);
+	} EndDrawing();
 }
 
 internal inline void reload_game_lib(GameFunctions *game) 
