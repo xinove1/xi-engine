@@ -42,6 +42,10 @@
 #endif
 
 // Utilities
+// 
+#define count_of(a)    (size)(sizeof(a) / sizeof(*(a)))
+#define length_of(s)   (countof(s) - 1)
+
 # define MAX(a, b) ((a)>(b)? (a) : (b))
 # define MIN(a, b) ((a)<(b)? (a) : (b))
 

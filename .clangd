@@ -8,3 +8,11 @@ If:                               # Apply this config conditionally
 
 CompileFlags:
   Add: [-DXI_INPUT_ACTIONS_IMPLEMENTATION, -DXI_UI_IMPLEMENTATION, -DXI_COLLISION_IMPLEMENTATION, -DXI_LIST_IMPLEMENTATION, -DXI_ARENAS_IMPLEMENTATION -I./modules]
+
+---
+
+If:                               # Apply this config conditionally
+  PathMatch: nob.h  
+
+CompileFlags:
+  Add: [-DNOB_IMPLEMENTATION]

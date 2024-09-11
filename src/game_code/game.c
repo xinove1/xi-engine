@@ -137,9 +137,10 @@ hot b32 update()
 	Player->look_dir = dir;
 
 	if (IsKeyPressed(KEY_U)) {
-		print_entity(*Player);
-		print_map(Level);
-		print_level(Level);
+		exit(0);
+		// print_entity(*Player);
+		// print_map(Level);
+		// print_level(Level);
 	}
 
 	// Resolve Collision

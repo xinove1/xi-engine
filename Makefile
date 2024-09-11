@@ -64,8 +64,9 @@ cosmos: $(DEPENDENCIES)
 
 windows: $(DEPENDENCIES)
 	@make -C $(RAYLIB) OS=Windows_NT CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar
-	$(CC_WINDOWS) $(CFLAGS) -c $(SRC)
-	$(CC_WINDOWS) $(OBJ) $(RAYLIB)/libraylib.a $(RFLAGS_WINDOWS) -o $(NAME).exe
+	# $(CC_WINDOWS) $(CFLAGS) -c $(SRC)
+	# $(CC_WINDOWS) $(OBJ) $(RAYLIB)/libraylib.a $(RFLAGS_WINDOWS) -o $(NAME).exe
+	$(CC_WINDOWS) $(CFLAGS) $(SRC) $(RAYLIB)/libraylib.a $(RFLAGS_WINDOWS) -o $(NAME).exe
 
 web: $(DEPENDENCIES)
 	make -C $(RAYLIB) PLATFORM=PLATFORM_WEB -B EMSDK_PATH=/home/xinove/stuff/emsdk  PYTHON_PATH=/usr/bin/python NODE_PATH=/home/xinove/stuff/emsdk/node/16.20.0_64bit/bin

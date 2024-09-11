@@ -14,7 +14,7 @@ internal inline i32 get_stat_time(cstr *path);
 internal void register_actions();
 internal void update_and_draw();
 
-global cstr *LibGamePath = "./game.so";
+global cstr *LibGamePath = "./build/game.so";
 global i32 LibGameTime = 0;
 global b32 QuitGame = false;
 global RenderTexture2D ScreenTexture;
