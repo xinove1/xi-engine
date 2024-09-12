@@ -32,4 +32,6 @@ typedef struct GameFunctions
 
 void ChangeGameConfig(GameConfig config);
 
+extern GameFunctions game_init_functions();
+
 #endif

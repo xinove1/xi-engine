@@ -1,22 +1,28 @@
 # 'Engine' Layer
   - [X] Reload .so automaticaly on file change, (see nob.h)
-  - [ ] Move update loop to alter func to cater to web build
-        - [ ] Complain if WEB and HOTRELOAD are active at the same time
+  - [x] Move update loop to alter func to cater to web build
+        - [-] Complain if WEB and HOTRELOAD are active at the same time
  ## Rewrite main.c so it dosent care about the game implementation
     - [x] Only hold void * instead of having to know about GameDataStruct
     - [x] Separate data such as window_size and volume and such configuration on its on struct.
     - [ ] Move register Action from main to game
 
 # Change build system
-  - Get nob.h and understand at least the basics
-    - Move build to it
-  - See Amalgameted build is a good idea, probaly of using nob
+  - [X] Get nob.h and understand at least the basics
+    - [X] Move build to it
+  - [ ] See Amalgameted build is a good idea
+         -Prob not that useful if we are gonna have all the source files laydout on nob to watch for recompilation,
+         but testing for compilation speed would be interesting
 
 # Rewrite Memory Arenas
 - [ ] Default Global scratch arena, use in alloc funcs when NULL is passed in *arena arg
   - [ ] Func to global clear scratch arena
 
 # Lenght String lib - Gather from libft funcs and adapt
+
+# Steal dynamic arr implementation idea from nob
+  - thought putting on func instead of macro would probaly be a good idea
+  but than typecasting to generic da would annoying, could use macro for that thought
 
 # Metaprogram
   - Integrate directly on nob.c
@@ -47,6 +53,14 @@
     - Holds id of texture/image and region of that represents it
     - Animation based on that ^
  ## Audio System
+ ## Ui System
+    - Change naming scheme to less generic, prefix of Ui -> XiUi (or just Xi, or XUi, ...)
+ ## MicroUi System
+    - Raylib interactions, Abstractions, stuff build on top, etc
+ ## Input System
+    - [ ] func to Reset stored data
+    - [ ] func to unregister keys, etc
+    - Instead of having global data, have it be passed so you can have multiple configs? for like multiple player on same keyboard and stuff, also having various different configs
 
 # Optional & Extras
  ## Input key recording for debugging

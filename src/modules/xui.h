@@ -57,28 +57,28 @@ typedef struct
 	V2	 mouse_last_pos;
 } UiContainer;
 
-void SetClickedSound(Sound *sound);
-void SetSelectorTexture(Texture2D *texture);
-void SetSelectorTextureTint(Color tint);
+void XUISetClickedSound(Sound *sound);
+void XUISetSelectorTexture(Texture2D *texture);
+void XUISetSelectorTextureTint(Color tint);
 
 // TODO  Change Ex functions to not accept font, as it can be easely passed in config 
 // TODO  Change draw_bounds flag in funcs to be an option in config?
 // TODO  Inline Helper funcs, aka not Ex
 
-UiContainer UiCreateContainer(V2 pos, f32 width, UiConfig config);
-UiConfig    UiGetDefaultConfig(); 
-void        UiStartColumn(UiContainer *container, i32 count);
-void        UiSetDefaultConfig(UiConfig config);
-void        UiBegin(UiContainer *container);
-void        UiEnd(UiContainer *container);
-void        UiTitleBarEx(UiContainer *container, UiConfig config, byte *title, FontConfig font, Color bounds_color);
-void        UiText(UiContainer *container, byte *text, b32 draw_bounds);
-void        UiTextEx(UiContainer *container, UiConfig config, byte *text, b32 draw_bounds, FontConfig font);
-b32         UiTextOptionsEx(UiContainer *container, UiConfig config, b32 draw_bounds, byte *text_pre, byte **options, u32 options_size, i32 *selected);
-b32         UiTextButton(UiContainer *container, byte *text);
-b32         UiTextButtonEx(UiContainer *container, UiConfig config, byte *text, FontConfig font);
-b32         UiSlider(UiContainer *container, f32 *value, f32 min, f32 max);
-b32         UiSliderEx(UiContainer *container, UiConfig config, V2 size, f32 *value, f32 min, f32 max);
+UiContainer XUiCreateContainer(V2 pos, f32 width, UiConfig config);
+UiConfig    XUiGetDefaultConfig(); 
+void        XUiStartColumn(UiContainer *container, i32 count);
+void        XUiSetDefaultConfig(UiConfig config);
+void        XUiBegin(UiContainer *container);
+void        XUiEnd(UiContainer *container);
+void        XUiTitleBarEx(UiContainer *container, UiConfig config, byte *title, FontConfig font, Color bounds_color);
+void        XUiText(UiContainer *container, byte *text, b32 draw_bounds);
+void        XUiTextEx(UiContainer *container, UiConfig config, byte *text, b32 draw_bounds, FontConfig font);
+b32         XUiTextOptionsEx(UiContainer *container, UiConfig config, b32 draw_bounds, byte *text_pre, byte **options, u32 options_size, i32 *selected);
+b32         XUiTextButton(UiContainer *container, byte *text);
+b32         XUiTextButtonEx(UiContainer *container, UiConfig config, byte *text, FontConfig font);
+b32         XUiSlider(UiContainer *container, f32 *value, f32 min, f32 max);
+b32         XUiSliderEx(UiContainer *container, UiConfig config, V2 size, f32 *value, f32 min, f32 max);
 
 #endif
 
@@ -99,32 +99,32 @@ global Sound     *ClickedSound = NULL;
 global b32       CheckMouse = false;
 global UiConfig  DefaultConfig = {}; // TODO  Fill with defaults
 
-void SetSelectorTexture(Texture2D *texture)
+void XUISetSelectorTexture(Texture2D *texture)
 {
 	SelectorTexture = texture;
 }
 
-void SetSelectorTextureTint(Color tint)
+void XUISetSelectorTextureTint(Color tint)
 {
 	SelectorTint = tint;
 }
 
-void SetClickedSound(Sound *sound)
+void XUISetClickedSound(Sound *sound)
 {
 	ClickedSound = sound;
 }
 
-UiConfig UiGetDefaultConfig()
+UiConfig XUiGetDefaultConfig()
 {
 	return (DefaultConfig);
 }
 
-void UiSetDefaultConfig(UiConfig config) 
+void XUiSetDefaultConfig(UiConfig config) 
 {
 	DefaultConfig = config;
 }
 
-UiContainer UiCreateContainer(V2 pos, f32 width, UiConfig config)
+UiContainer XUiCreateContainer(V2 pos, f32 width, UiConfig config)
 {
 	return ((UiContainer) {
 		.pos = pos,
@@ -142,11 +142,11 @@ UiContainer UiCreateContainer(V2 pos, f32 width, UiConfig config)
 	});
 }
 
-void UiStartColumn(UiContainer *container, i32 count) {
+void XUiStartColumn(UiContainer *container, i32 count) {
 	container->column_count = count;
 }
 
-void UiBegin(UiContainer *container) 
+void XUiBegin(UiContainer *container) 
 {
 	// TODO  Implement AlignLeft
 	if (container->config.draw_container_bounds && !container->hide) {
@@ -172,7 +172,7 @@ void UiBegin(UiContainer *container)
 	}
 }
 
-void UiEnd(UiContainer *container)
+void XUiEnd(UiContainer *container)
 {
 	if (container->config.take_key_input) _take_input(container);
 
@@ -182,7 +182,7 @@ void UiEnd(UiContainer *container)
 }
 
 
-void UiTitleBarEx(UiContainer *container, UiConfig config, byte *title, FontConfig font, Color bounds_color)
+void XUiTitleBarEx(UiContainer *container, UiConfig config, byte *title, FontConfig font, Color bounds_color)
 {
 	V2 pos = {container->at_x, container->at_y};
 	V2 text_size = MeasureTextEx(font.font, title, font.size, font.spacing);
@@ -232,18 +232,18 @@ void UiTitleBarEx(UiContainer *container, UiConfig config, byte *title, FontConf
 	}
 }
 
-void UiText(UiContainer *container, byte *text, b32 draw_bounds) 
+void XUiText(UiContainer *container, byte *text, b32 draw_bounds) 
 {
 	if (container->hide == true) { return; }
 	if (!IsFontReady(container->config.font.font)) {
 		TraceLog(LOG_WARNING, "UiText: No default font set.");
 	}
-	UiTextEx(container, container->config, text, draw_bounds, container->config.font);
+	XUiTextEx(container, container->config, text, draw_bounds, container->config.font);
 }
 
 //#define Testfunc(str, ...) _Testfunc((str), (GameData){.quit = false, __VA_ARGS__})
 
-void UiTextEx(UiContainer *container, UiConfig config, byte *text, b32 draw_bounds, FontConfig font) 
+void XUiTextEx(UiContainer *container, UiConfig config, byte *text, b32 draw_bounds, FontConfig font) 
 {
 	if (container->hide == true) { return; }
 	V2 text_size = MeasureTextEx(font.font, text, font.size, font.spacing);
@@ -264,17 +264,17 @@ void UiTextEx(UiContainer *container, UiConfig config, byte *text, b32 draw_boun
 	_update_at_pos(container, config, pos, size);
 }
 
-b32 UiTextButton(UiContainer *container, byte *text)
+b32 XUiTextButton(UiContainer *container, byte *text)
 {
 	if (container->hide == true) { return(false); }
 	if (!IsFontReady(container->config.font.font)) {
 		TraceLog(LOG_WARNING, "UiTextButton: No default font set.");
 		return (false);
 	}
-	return (UiTextButtonEx(container, container->config, text, container->config.font));
+	return (XUiTextButtonEx(container, container->config, text, container->config.font));
 }
 
-b32 UiTextButtonEx(UiContainer *container, UiConfig config, byte *text, FontConfig font)
+b32 XUiTextButtonEx(UiContainer *container, UiConfig config, byte *text, FontConfig font)
 {
 	if (container->hide == true) { return(false); }
 	V2 text_size = MeasureTextEx(font.font, text, font.size, font.spacing);
@@ -316,7 +316,7 @@ b32 UiTextButtonEx(UiContainer *container, UiConfig config, byte *text, FontConf
 	return (pressed);
 }
 
-b32        UiTextOptionsEx(UiContainer *container, UiConfig config, b32 draw_bounds, byte *text_pre, byte **options, u32 options_size, i32 *selected)
+b32 XUiTextOptionsEx(UiContainer *container, UiConfig config, b32 draw_bounds, byte *text_pre, byte **options, u32 options_size, i32 *selected)
 {
 	if (container->hide == true) { return (false); }
 	if (*selected < 0 || *selected >= options_size) {
@@ -385,13 +385,13 @@ b32        UiTextOptionsEx(UiContainer *container, UiConfig config, b32 draw_bou
 	return (pressed);
 }
 
-b32 UiSlider(UiContainer *container, f32 *value, f32 min, f32 max)
+b32 XUiSlider(UiContainer *container, f32 *value, f32 min, f32 max)
 {
 	V2 size = {container->width * 0.8f, container->height};
-	return (UiSliderEx(container, container->config, size, value, min, max));
+	return (XUiSliderEx(container, container->config, size, value, min, max));
 }
 
-b32 UiSliderEx(UiContainer *container, UiConfig config, V2 size, f32 *value, f32 min, f32 max)
+b32 XUiSliderEx(UiContainer *container, UiConfig config, V2 size, f32 *value, f32 min, f32 max)
 {
 	if (container->hide == true) { return(false); }
 	if (size.y <= 0) { TraceLog(LOG_WARNING, "UiSliderEx: size.y is 0, won't be able to draw.");};

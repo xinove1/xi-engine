@@ -1,9 +1,15 @@
-#include "game_code/game.h"
-#include <sys/stat.h>
-#include <errno.h>
+#include "main.h"
+#include "core.h"
+#include "input.h"
+#include "raymath_short.h"
+
 #ifdef HOT_RELOAD
 # include <dlfcn.h>
+# include <string.h>
+# include <errno.h>
+# include <sys/stat.h>
 #endif
+
 #ifdef PLATFORM_WEB
 # include <emscripten/emscripten.h>
 #endif
@@ -119,9 +125,10 @@ internal void update_and_draw()
 	} EndDrawing();
 }
 
+#ifdef HOT_RELOAD
+
 internal inline void reload_game_lib(GameFunctions *game) 
 {
-	#ifdef HOT_RELOAD
 	local void *libgame = NULL;
 	if (libgame != NULL) {
 		dlclose(libgame);
@@ -141,7 +148,6 @@ internal inline void reload_game_lib(GameFunctions *game)
 	game->pos_reload = dl_load_func(libgame, "pos_reload");
 	game->pre_reload = dl_load_func(libgame, "pre_reload");
 
-	#endif
 }
 
 internal inline i32 get_stat_time(cstr *path) 
@@ -158,6 +164,7 @@ internal inline i32 get_stat_time(cstr *path)
 	return (path_time);
 }
 
+
 internal inline void *dl_load_func(void *libhandle, char *name)
 {
 	#ifdef HOT_RELOAD
@@ -170,6 +177,8 @@ internal inline void *dl_load_func(void *libhandle, char *name)
 		return (NULL);
 	#endif
 }
+
+#endif // HOT_RELOAD
 
 internal void register_actions()
 {

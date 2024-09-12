@@ -92,7 +92,7 @@ hot void init_pos_raylib()
 {
 	init_editor(Data);
 
-	Data->menu = UiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
+	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
 			.alignment = UiAlignCentralized,
 			.font = (FontConfig) {
 				.font = GetFontDefault(),
@@ -159,19 +159,19 @@ hot void draw()
 {
 	if (Data->menu_screen) {
 		UiContainer *c = &Data->menu;
-		UiBegin(c);
+		XUiBegin(c);
 
-		UiText(c, "Sokaban da silva", true);
+		XUiText(c, "Sokaban da silva", true);
 		
-		if (UiTextButton(c, "Play")) {
+		if (XUiTextButton(c, "Play")) {
 			Data->menu_screen = false;
 		}
 
-		if (UiTextButton(c, "Options")) {
+		if (XUiTextButton(c, "Options")) {
 			printf("Optiooooons\n");
 		}
 
-		UiEnd(c);
+		XUiEnd(c);
 		return ;
 	}
 

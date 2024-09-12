@@ -9,7 +9,7 @@ void init_editor(GameData *data)
 	Data = data;
 	E = &data->editor;
 
-	E->panel = UiCreateContainer((V2) {Data->canvas_size.x * 0.8f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
+	E->panel = XUiCreateContainer((V2) {Data->canvas_size.x * 0.8f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
 			.alignment = UiAlignLeft,
 			.font = (FontConfig) {
 				.font = GetFontDefault(),
@@ -73,12 +73,12 @@ void draw_editor()
 {
 	{
 		UiContainer *panel = &E->panel;
-		UiBegin(panel);
-		UiTitleBarEx(panel, panel->config, "Panel Test", panel->config.font, GRAY);
-		UiText(panel, "dou", true);
-		UiTextButton(panel, "oiii");
-		UiTextButton(panel, "naoo");
-		UiEnd(panel);
+		XUiBegin(panel);
+		XUiTitleBarEx(panel, panel->config, "Panel Test", panel->config.font, GRAY);
+		XUiText(panel, "dou", true);
+		XUiTextButton(panel, "oiii");
+		XUiTextButton(panel, "naoo");
+		XUiEnd(panel);
 	}
 	if (E->selected_tile.x < 0 || E->selected_tile.x >= Data->current_level->map_sz.x || E->selected_tile.y < 0 || E->selected_tile.y >= Data->current_level->map_sz.y) {
 		return ;

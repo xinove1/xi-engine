@@ -2,7 +2,7 @@
 #include "raymath_short.h"
 
 #define XI_UI_IMPLEMENTATION
-#include "ui.h"
+#include "xui.h"
 
 #define XI_INPUT_ACTIONS_IMPLEMENTATION
 #include "input.h"
@@ -15,3 +15,6 @@
 
 #define XI_ARENAS_IMPLEMENTATION
 #include "arenas.h"
+
+#define MICROUI_IMPLEMENTATION
+#include "microui.h"

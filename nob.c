@@ -44,10 +44,11 @@ const global cstr *Dep_EngineLayer[] = {"./src/main.h"};
 
 const global cstr *Src_Modules[] = { "./src/implementations.c", };
 const global cstr *Dep_Modules[] = { 
-	"./src/modules/ui.h", "./src/modules/core.h", 
+	"./src/modules/core.h", 
 	"./src/modules/list.h", "./src/modules/arenas.h", 
 	"./src/modules/collision.h", "./src/modules/raymath_short.h",
-	"./src/modules/input.h",
+	"./src/modules/input.h", 
+	"./src/modules/xui.h",  "./src/modules/microui.h",  "./src/modules/mui.h"
 };
 
 const global cstr *Src_Game[] = { 
