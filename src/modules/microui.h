@@ -722,15 +722,26 @@ void mu_input_text(mu_Context *ctx, const char *text) {
 ** commandlist
 **============================================================================*/
 
+// mu_Command* mu_push_command(mu_Context *ctx, int type, int size) {
+//   mu_Command *cmd = (mu_Command*) (ctx->command_list.items + ctx->command_list.idx);
+//   expect(ctx->command_list.idx + size < MU_COMMANDLIST_SIZE);
+//   cmd->base.type = type;
+//   cmd->base.size = size;
+//   ctx->command_list.idx += size;
+//   return cmd;
+// }
+
 mu_Command* mu_push_command(mu_Context *ctx, int type, int size) {
   mu_Command *cmd = (mu_Command*) (ctx->command_list.items + ctx->command_list.idx);
+  const int al = sizeof(void*) - 1;
+  size = (size + al) & ~al;
+  expect(size % sizeof(void*) == 0);
   expect(ctx->command_list.idx + size < MU_COMMANDLIST_SIZE);
   cmd->base.type = type;
   cmd->base.size = size;
   ctx->command_list.idx += size;
   return cmd;
 }
-
 
 int mu_next_command(mu_Context *ctx, mu_Command **cmd) {
   if (*cmd) {

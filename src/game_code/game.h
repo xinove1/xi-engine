@@ -7,6 +7,8 @@
 # include "raymath_short.h"
 # include "core.h"
 # include "xui.h"
+# include "mui.h"
+# include "microui.h"
 # include <assert.h>
 # include <stdio.h>
 # include <stdlib.h>
@@ -47,6 +49,7 @@ typedef struct
 	b32 dragging;
 	Entity *dragged_entity;
 	UiContainer panel;
+	mu_Context *mu;
 } GameEditor;
 
 typedef struct {

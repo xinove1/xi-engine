@@ -54,7 +54,6 @@
     - Animation based on that ^
  ## Audio System
  ## Ui System
-    - Change naming scheme to less generic, prefix of Ui -> XiUi (or just Xi, or XUi, ...)
  ## MicroUi System
     - Raylib interactions, Abstractions, stuff build on top, etc
  ## Input System

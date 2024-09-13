@@ -33,8 +33,16 @@
 #endif
 
 //#define Trap() 
+#define Expect(x) do {                                               \
+    if (!(x)) {                                                      \
+      fprintf(stderr, "Fatal error: %s:%d: assertion '%s' failed\n", \
+        __FILE__, __LINE__, #x);                                     \
+      Trap();                                                       \
+    }                                                                \
+  } while (0)
 
-#define AssertAlways(x) do{if(!(x)) {Trap();}}while(0)
+//#define AssertAlways(x) do{if(!(x)) {Trap();}}while(0)
+#define AssertAlways(x) Expect(x)
 #if BUILD_DEBUG
 # define Assert(x) AssertAlways(x)
 #else

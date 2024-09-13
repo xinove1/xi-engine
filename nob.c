@@ -29,15 +29,15 @@ const global cstr *DebugFlags[] = {
 	"-Wno-unused-function",
         //"-fsanitize=address", // BUG  remeber that this causes leak on xilib, so not good for long running the game, only for testing for leaks
 	"-fsanitize=undefined",
-	"-fsanitize-trap",
-	"-DDEBUG_BUILD",
+	//"-fsanitize-trap",
+	"-DBUILD_DEBUG",
         //"-Wconversion",
 	//"-Wno-sign-conversion",
 	//"-Werror",
 	//"-Wdouble-promotion",
 };
 const global cstr *SharedFlags[] = { "-I./src/modules/", "-I./external/raylib-5.0/src"};
-const global cstr *HotFlags[] = {"-DHOT_RELOAD", "-Wl,-rpath=./build/", "-lraylib_linux",  "-L./build/", };
+const global cstr *HotFlags[] = {"-DHOT_RELOAD", "-DBUILD_DEBUG", "-Wl,-rpath=./build/", "-lraylib_linux",  "-L./build/", };
 
 const global cstr *Src_EngineLayer[] = {"./src/main.c", };
 const global cstr *Dep_EngineLayer[] = {"./src/main.h"};

@@ -206,6 +206,7 @@ hot void draw()
 
 hot void pre_reload()
 {
+
 }
 
 hot void pos_reload(void *data)

@@ -31,10 +31,27 @@ void init_editor(GameData *data)
 			.color_font_highlight = BLACK,
 			.color_borders = BLACK,
 	});
+
+	E->mu = calloc(1, sizeof(mu_Context));
+	MUiInit(E->mu, NULL);
 }
 
 void update_editor()
 {
+	MUiPoolInput(E->mu);
+	mu_begin(E->mu); {
+		mu_Context *ctx = E->mu;
+		if (mu_begin_window(ctx, "My Window", mu_rect(Data->canvas_size.x * 0.1f, Data->canvas_size.y * 0.1f, 150, 200))) {
+			/* process ui here... */
+			if (mu_button(ctx, "My Button")) {
+				printf("'My Button' was pressed\n");
+			}
+			mu_label(ctx, "This is a label");
+			mu_end_window(ctx);
+		}
+
+	} mu_end(E->mu);
+	
 	V2 mouse_pos = V2Subtract(GetMousePosition(), Data->current_level->map_offset);
 	E->selected_tile = (V2) {(i32) mouse_pos.x / TILE, (i32) mouse_pos.y / TILE}; //NOLINT
 	if (E->selected_tile.x < 0 || E->selected_tile.x >= Data->current_level->map_sz.x || E->selected_tile.y < 0 || E->selected_tile.y >= Data->current_level->map_sz.y) {
@@ -67,10 +84,13 @@ void update_editor()
 		E->dragging = false;
 		E->dragged_entity = NULL;
 	}
+	
 }
 
 void draw_editor()
 {
+	MUiRender(E->mu);
+
 	{
 		UiContainer *panel = &E->panel;
 		XUiBegin(panel);
@@ -80,6 +100,7 @@ void draw_editor()
 		XUiTextButton(panel, "naoo");
 		XUiEnd(panel);
 	}
+
 	if (E->selected_tile.x < 0 || E->selected_tile.x >= Data->current_level->map_sz.x || E->selected_tile.y < 0 || E->selected_tile.y >= Data->current_level->map_sz.y) {
 		return ;
 	}

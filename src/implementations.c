@@ -16,5 +16,9 @@
 #define XI_ARENAS_IMPLEMENTATION
 #include "arenas.h"
 
+#define MUI_IMPLEMENTATION
+#include "mui.h"
+
 #define MICROUI_IMPLEMENTATION
 #include "microui.h"
+
