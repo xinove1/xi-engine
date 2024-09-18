@@ -3,19 +3,24 @@
 # include "core.h"
 # include "raylib.h"
 
+#define ColorFromMu(c) ((Color){c.r, c.g, c.b, c.a})
+#define ColorToMu(c) ((mu_Color){c.r, c.g, c.b, c.a})
+#define RectFromMu(r) ((Rect){r.x, r.y, r.w, r.h})
+#define RectFromMuFixed(r) ((Rect){r.x +1, r.y +1, r.w -1, r.h -1})
+#define RectFromMuFixed2(r) ((Rect){r.x +1, r.y +1, r.w, r.h})
+#define V2FromMu(v) ((V2){v.x, v.y})
+
 void MUiInit(mu_Context *ctx, Font *font);
 void MUiSetSpacing(int spacing);
 void MUiPoolInput(mu_Context *ctx);
 void MUiRender(mu_Context *ctx);
 
+i32 u8_slider(mu_Context *ctx, u8 *value, i32 low, i32 high);
+
 #endif
 
 #ifdef MUI_IMPLEMENTATION
 // NOLINTBEGIN(misc-definitions-in-headers)
-
-#define ColorFromMu(c) ((Color){c.r, c.g, c.b, c.a})
-#define RectFromMu(r) ((Rect){r.x, r.y, r.w, r.h})
-#define V2FromMu(v) ((V2){v.x, v.y})
 #define GetMuFont(f) ((f == NULL) ? GetFontDefault() : *(Font *)f)
 
 typedef struct {
@@ -111,21 +116,20 @@ void MUiRender(mu_Context *ctx)
 {
 	Assert(ctx && "Please pass context in");
 	BeginScissorMode(0, 0, GetScreenWidth(), GetScreenHeight());
-	//printf("hi from render \n");
 	mu_Command *cmd = NULL;
 	while (mu_next_command(ctx, &cmd)) {
 		switch (cmd->type) {
 			case MU_COMMAND_TEXT: {
-				//r_draw_text(cmd->text.str, cmd->text.pos, cmd->text.color);
 				Font font = GetMuFont(cmd->text.font);
 				DrawTextEx(font, cmd->text.str, V2FromMu(cmd->text.pos), ctx->text_height(&font), TextSpacing, ColorFromMu(cmd->text.color));
 			} break ;
 			case MU_COMMAND_RECT: {
-				///r_draw_rect(cmd->rect.rect, cmd->rect.color);
-				DrawRectangleRec(RectFromMu(cmd->rect.rect), ColorFromMu(cmd->rect.color));
+				DrawRectangleRec(RectFromMuFixed(cmd->rect.rect), ColorFromMu(cmd->rect.color));
+			} break;
+			case MU_COMMAND_RECT_BORDER: {
+				DrawRectangleLinesEx(RectFromMuFixed(cmd->rect.rect), 1, ColorFromMu(cmd->rect.color));
 			} break;
 			case MU_COMMAND_ICON: { 
-				//r_draw_icon(cmd->icon.id, cmd->icon.rect, cmd->icon.color); 
 				Color color = ColorFromMu(cmd->icon.color);
 				cstr icon[2] = "!";
 				switch (cmd->icon.id) {
@@ -135,16 +139,26 @@ void MUiRender(mu_Context *ctx)
 					case MU_ICON_EXPANDED: icon[0] = '-'; break;
 					default: Assert(0 && "unreachable");
 				}
-				DrawText(icon, cmd->icon.rect.x, cmd->icon.rect.y, cmd->icon.rect.h, color);
+				DrawText(icon, cmd->icon.rect.x + 1, cmd->icon.rect.y + 1, cmd->icon.rect.h, color);
 			} break;
 			case MU_COMMAND_CLIP: { 
 				EndScissorMode();
 				BeginScissorMode(cmd->clip.rect.x, cmd->clip.rect.y, cmd->clip.rect.w, cmd->clip.rect.h);
-				//r_set_clip_rect(cmd->clip.rect); 
 			} break;
 		}
 	}
 	EndScissorMode();
+}
+
+i32 u8_slider(mu_Context *ctx, u8 *value, i32 low, i32 high) 
+{
+	f32 tmp;// WHY STATIC?
+	mu_push_id(ctx, &value, sizeof(value));
+	tmp = *value;
+	i32 res = mu_slider_ex(ctx, &tmp, low, high, 0, "%.0f", MU_OPT_ALIGNCENTER);
+	*value = tmp;
+	mu_pop_id(ctx);
+	return res;
 }
 
 // NOLINTEND(misc-definitions-in-headers)

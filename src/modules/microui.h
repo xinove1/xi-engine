@@ -38,6 +38,7 @@ enum {
   MU_COMMAND_JUMP = 1,
   MU_COMMAND_CLIP,
   MU_COMMAND_RECT,
+  MU_COMMAND_RECT_BORDER,
   MU_COMMAND_TEXT,
   MU_COMMAND_ICON,
   MU_COMMAND_MAX
@@ -248,6 +249,7 @@ mu_Command* mu_push_command(mu_Context *ctx, int type, int size);
 int mu_next_command(mu_Context *ctx, mu_Command **cmd);
 void mu_set_clip(mu_Context *ctx, mu_Rect rect);
 void mu_draw_rect(mu_Context *ctx, mu_Rect rect, mu_Color color);
+void mu_draw_rect_border(mu_Context *ctx, mu_Rect rect, mu_Color color);
 void mu_draw_box(mu_Context *ctx, mu_Rect rect, mu_Color color);
 void mu_draw_text(mu_Context *ctx, mu_Font font, const char *str, int len, mu_Vec2 pos, mu_Color color);
 void mu_draw_icon(mu_Context *ctx, int id, mu_Rect rect, mu_Color color);
@@ -420,7 +422,8 @@ static void draw_frame(mu_Context *ctx, mu_Rect rect, int colorid) {
       colorid == MU_COLOR_TITLEBG) { return; }
   /* draw border */
   if (ctx->style->colors[MU_COLOR_BORDER].a) {
-    mu_draw_box(ctx, expand_rect(rect, 1), ctx->style->colors[MU_COLOR_BORDER]);
+    //mu_draw_box(ctx, expand_rect(rect, 1), ctx->style->colors[MU_COLOR_BORDER]);
+    mu_draw_rect_border(ctx, rect, ctx->style->colors[MU_COLOR_BORDER]);
   }
 }
 
@@ -777,6 +780,16 @@ void mu_draw_rect(mu_Context *ctx, mu_Rect rect, mu_Color color) {
   rect = intersect_rects(rect, mu_get_clip_rect(ctx));
   if (rect.w > 0 && rect.h > 0) {
     cmd = mu_push_command(ctx, MU_COMMAND_RECT, sizeof(mu_RectCommand));
+    cmd->rect.rect = rect;
+    cmd->rect.color = color;
+  }
+}
+
+void mu_draw_rect_border(mu_Context *ctx, mu_Rect rect, mu_Color color) {
+  mu_Command *cmd;
+  rect = intersect_rects(rect, mu_get_clip_rect(ctx));
+  if (rect.w > 0 && rect.h > 0) {
+    cmd = mu_push_command(ctx, MU_COMMAND_RECT_BORDER, sizeof(mu_RectCommand));
     cmd->rect.rect = rect;
     cmd->rect.color = color;
   }
