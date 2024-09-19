@@ -13,84 +13,83 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
+# include "entitys.h"
+# include "effects.h"
 
-#define TILE 16
-#define MAX_ACTUATORS 5 
+#define da_init(da, limit, items_size)  \
+	do {                            \
+		(da).count = 0;        \
+		(da).capacity = limit; \
+		(da).items = calloc(limit, items_size); \
+	} while (0); \
 
-typedef enum {EntityEmpty, EntityPlayer, EntityActuator, EntityMovable, EntityMixable, EntityStatic, EntitysCount} EntitysTypes;
+//#define da_simple_append(da, item) (da)->items[(da)->count++] = (item)
 
-typedef struct
-{
-	EntitysTypes type;
-	i32 id; // index on entitys array  NOTE  DON'T CHANGE THIS VALUE MANUALLY, how i would love to set this as const but can't have shit in C
-	V2 pos;
-	V2 look_dir; 
-	Color color; 
-} Entity;
+#define da_iterate(da, da_type) da_type __da = da; for (size __i = 0; __i < __da.count; __i++) 
+#define entitys_iterate(da) da_iterate(da, EntityDa)
+#define effects_iterate(da) da_iterate(da, EffectDa)
+#define iterate_get(da) &__da.items[__i]
 
-typedef struct
-{
+typedef struct {
+	byte *items;
+	size count;
+	size capacity;
+} Da;
+
+typedef struct {
 	char *name;
-	i32  *map;
-	V2   map_sz;
-	V2   map_offset; // Offset used For drawing
-	Entity *entitys;
-	i32    max_entitys;
-	i32    entity_count; // Count of how many entitys are currently on entitys array, also used on create entity
-	Entity actuators[MAX_ACTUATORS];
-	i32    actuators_count;
+	EntityDa turrets;
+	EntityDa enemys;
+	EntityDa projectiles;
+	EntityDa spawners;
+	EffectDa effects;
 } GameLevel;
 
 typedef struct
 {
-	V2 selected_tile;
-	b32 putting_new_entity;
-	Entity new_entity;
-	b32 dragging;
-	Entity *dragged_entity;
-	UiContainer panel;
 	mu_Context *mu;
+	Entity *selected;
+	Entity *hovered;
 } GameEditor;
 
 typedef struct {
 	V2 canvas_size;
 	b32 paused;
-	GameLevel *current_level;
-	GameEditor editor;
 	b32 menu_screen;
 	UiContainer menu;
+	GameEditor editor;
+	GameLevel *level;
 } GameData;
+
+// Entitys
+void create_entity(EntityDa *da, Entity entity);
+void create_projectile_(EntityDa *da, V2 from, V2 to, CreateProjectileParams params);
+void damage_entity(GameLevel *rt, Entity *entity, f32 damage);
+b32  entity_died(GameLevel *rt, Entity *entity);
+Entity *get_closest_entity(EntityDa entitys, V2 from);
+Entity *get_closest_entity_range(EntityDa entitys, V2 from, f32 range);
+Entity *check_collision(Rect rec, EntityDa entitys) ;
+void render_entity(Entity *entity);
+
+// Effects
+void apply_effects(EffectDa da);
+Effect create_flash_effect(Entity *target, f32 duration, Color color, void *data_offset, void *data, size data_size);
+void push_effect(EffectDa *da, Effect effect);
 
 // Prototype for not hot reloadable version
 GameFunctions game_init_functions();
 
 // Utils
 V2 ExpDecayV2(V2 a, V2 b, f32 decay);
+b32 IsRecInRange(Rect rec, V2 from, f32 range);
 void draw_grid_ex(V2 position, V2 grid_size, i32 tile_size, f32 line_thickness, Color color);
 void draw_grid(V2 position, V2 grid_size, i32 tile_size);
-
-// Entity & map stuff
-b32 move_entity(GameLevel *level, Entity *e, V2 where);
-b32 move_entity_swap(GameLevel *level, Entity *e, V2 where);
-i32 get_map_pos(GameLevel *level, V2 pos);
-void set_map_pos(GameLevel *level, V2 pos, i32 value);
-Entity *get_entity(GameLevel *level, i32 entity_id);
-Entity *get_map_entity(GameLevel *level, V2 pos);
-Entity *get_actuator(GameLevel *level, V2 pos);
-Entity *create_entity_empty(GameLevel *level);
-Entity *create_entity(GameLevel *level, Entity d);
-void delete_entity(GameLevel *level, Entity *e);
-Entity *create_actuator(GameLevel *level, Entity d);
-GameLevel *create_level(char *name, V2 map_size, V2 canvas_size);
-void print_entity(Entity e);
-void print_map(GameLevel *level);
-void print_level(GameLevel *level);
 
 // Editor stuff
 void init_editor(GameData *data);
 void update_editor();
 void draw_editor();
- 
+void pos_reload_editor(GameData *data);
 
 // exemple
 // void _Testfunc(byte *str, GameData data) 

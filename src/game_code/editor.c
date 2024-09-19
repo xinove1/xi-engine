@@ -1,130 +1,151 @@
 #include "game.h"
+#include "./microui_exemple.c"
 
 global GameData *Data = NULL;
-global GameEditor *E = NULL;
+global GameEditor *Ed = NULL;
+
+internal void edit_entity(Entity *e);
+internal void get_entity_under_mouse();
 
 void init_editor(GameData *data)
 {
 	TraceLog(LOG_INFO, "Initting Editor");
 	Data = data;
-	E = &data->editor;
+	Ed = &data->editor;
 
-	E->panel = XUiCreateContainer((V2) {Data->canvas_size.x * 0.8f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
-			.alignment = UiAlignLeft,
-			.font = (FontConfig) {
-				.font = GetFontDefault(),
-				.size = 10,
-				.spacing = 1,
-				.tint = BLACK,
-				.tint_hover = RED,
-			},
-			.draw_container_bounds = true,
-			.play_sound = false,
-			.draw_selector = false,
-			.take_key_input = false,
-			.padding_row = 10,
-			.padding_collumn = 3,
-			.padding_element = 1.5f,
-			.padding_border = 2,
-			.color_background = YELLOW,
-			.color_font = RED,
-			.color_font_highlight = BLACK,
-			.color_borders = BLACK,
-	});
+	Ed->mu = calloc(1, sizeof(mu_Context));
+	MUiInit(Ed->mu, NULL);
+}
 
-	E->mu = calloc(1, sizeof(mu_Context));
-	MUiInit(E->mu, NULL);
+void pos_reload_editor(GameData *data) 
+{
+	Data = data;
+	Ed = &data->editor;
 }
 
 void update_editor()
 {
-	MUiPoolInput(E->mu);
-	mu_begin(E->mu); {
-		mu_Context *ctx = E->mu;
-		if (mu_begin_window(ctx, "My Window", mu_rect(Data->canvas_size.x * 0.1f, Data->canvas_size.y * 0.1f, 150, 200))) {
-			/* process ui here... */
-			if (mu_button(ctx, "My Button")) {
-				printf("'My Button' was pressed\n");
-			}
-			mu_label(ctx, "This is a label");
+	V2 mouse_pos = GetMousePosition();
+
+	// ----- Ui -----
+	MUiPoolInput(Ed->mu);
+	mu_begin(Ed->mu); {
+		mu_Context *ctx = Ed->mu;
+		if (Ed->selected && mu_begin_window(ctx, "Entity", mu_rect(Data->canvas_size.x * 0.1f, Data->canvas_size.y * 0.1f, 150, 200))) {
+			edit_entity(Ed->selected);
 			mu_end_window(ctx);
 		}
+		style_window(Ed->mu);
+		//process_frame(Ed->mu);
+	} mu_end(Ed->mu);
 
-	} mu_end(E->mu);
-	
-	V2 mouse_pos = V2Subtract(GetMousePosition(), Data->current_level->map_offset);
-	E->selected_tile = (V2) {(i32) mouse_pos.x / TILE, (i32) mouse_pos.y / TILE}; //NOLINT
-	if (E->selected_tile.x < 0 || E->selected_tile.x >= Data->current_level->map_sz.x || E->selected_tile.y < 0 || E->selected_tile.y >= Data->current_level->map_sz.y) {
-		E->dragging = false;
-		E->dragged_entity = NULL;
-		return ;
+	for (int i = 0; i < MU_CONTAINERPOOL_SIZE; i++) {
+		mu_Container container = Ed->mu->containers[i];
+		Rect rec = RectFromMu(container.rect);
+		if (CheckCollisionPointRec(mouse_pos, rec)) return ;
 	}
+
+	// ----- Editor ----- 
 	
-	if (!E->putting_new_entity && !E->dragging && IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-		E->dragged_entity = get_map_entity(Data->current_level, E->selected_tile);
-		if (E->dragged_entity) {
-			E->dragging = true;
-		} else { // Try Actuator
-			E->dragged_entity = get_actuator(Data->current_level, E->selected_tile);
-			if (E->dragged_entity) E->dragging = true;
-		}
+	get_entity_under_mouse();
+
+	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		if (Ed->hovered) {
+			Ed->selected = Ed->hovered;
+			Ed->hovered = NULL;
+		} else Ed->selected = NULL;
 	}
-	
-	if (E->dragging && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-		if (!V2Compare(E->selected_tile, E->dragged_entity->pos)) {
-			if (E->dragged_entity->type == EntityActuator && get_actuator(Data->current_level, E->selected_tile) == NULL) {
-				E->dragged_entity->pos = E->selected_tile;
-			} else if (E->dragged_entity->type != EntityActuator) {
-				move_entity_swap(Data->current_level, E->dragged_entity, E->selected_tile);
-			}
-		}
-		E->dragging = false;
-		E->dragged_entity = NULL;
-	} else if (E->dragging && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) { // Cancel Dragging
-		E->dragging = false;
-		E->dragged_entity = NULL;
-	}
-	
 }
 
 void draw_editor()
 {
-	MUiRender(E->mu);
-
-	{
-		UiContainer *panel = &E->panel;
-		XUiBegin(panel);
-		XUiTitleBarEx(panel, panel->config, "Panel Test", panel->config.font, GRAY);
-		XUiText(panel, "dou", true);
-		XUiTextButton(panel, "oiii");
-		XUiTextButton(panel, "naoo");
-		XUiEnd(panel);
+	Color selected_highlight = BLACK;
+	Color hover_highlight = PURPLE;
+	if (Ed->selected) {
+		DrawRectangleLinesEx(RecV2(Ed->selected->pos, Ed->selected->size), 1, selected_highlight);
+	}
+	if (Ed->hovered) {
+		DrawRectangleLinesEx(RecV2(Ed->hovered->pos, Ed->hovered->size), 1, hover_highlight);
 	}
 
-	if (E->selected_tile.x < 0 || E->selected_tile.x >= Data->current_level->map_sz.x || E->selected_tile.y < 0 || E->selected_tile.y >= Data->current_level->map_sz.y) {
-		return ;
-	}
+	MUiRender(Ed->mu);
+}
 
-	// Draw Current Tile Under Cursor
-	{
-		V2	selected_pos = V2Add(V2Scale(E->selected_tile, TILE), Data->current_level->map_offset);
-		Color	color = ColorAlpha(YELLOW, 0.7f);
-		DrawRectangleLinesEx(RectV2(selected_pos, (V2) {TILE, TILE}), 1, color);
-	}
+internal void edit_entity(Entity *e) 
+{
+	mu_Context *ctx = Ed->mu;
 
-	// Highlight Actuators
-	// TODO  Better indicator that it is a Actuator bellow
-	for (i32 i = 0; i < Data->current_level->actuators_count; i++) {
-		Entity *act = &Data->current_level->actuators[i];
-		if (get_map_pos(Data->current_level, act->pos) != -1) {
-			Color color = ColorAlpha(act->color, 0.4f);
-			DrawRectangleV(V2Add(V2Scale(act->pos, TILE), Data->current_level->map_offset), (V2) {TILE, TILE}, color);
+	mu_label(ctx, EntityTypeNames[e->type]);
+	i32 body_width = mu_get_current_container(ctx)->body.w;
+	i32 width = body_width * 0.30;
+	mu_layout_row(ctx, 3, (int[]) {50, width, -1}, 0);
+	//mu_textbox_ex(ctx, "Position", 8, MU_OPT_ALIGNCENTER);
+	mu_label(ctx, "Position");
+	mu_number_ex(ctx, &e->pos.x, 3, "%.1f", MU_OPT_ALIGNCENTER);
+	mu_number_ex(ctx, &e->pos.y, 3, "%.1f", MU_OPT_ALIGNCENTER);
+
+	mu_label(ctx, "Size");
+	mu_number_ex(ctx, &e->size.x, 3, "%.1f", MU_OPT_ALIGNCENTER);
+	mu_number_ex(ctx, &e->size.y, 3, "%.1f", MU_OPT_ALIGNCENTER);
+
+	width = body_width * 0.15;
+	mu_layout_row(ctx, 6, (int[]) {50, width, width, width, width, -1}, 0);
+	mu_label(ctx, "Color");
+	u8_slider(ctx, &e->color.r, 0, 255);
+	u8_slider(ctx, &e->color.g, 0, 255);
+	u8_slider(ctx, &e->color.b, 0, 255);
+	u8_slider(ctx, &e->color.a, 0, 255);
+	mu_draw_rect(ctx, mu_layout_next(ctx), ColorToMu(e->color));
+}
+
+internal void get_entity_under_mouse() 
+{
+	V2 mouse_pos = GetMousePosition();
+
+	{entitys_iterate(Data->level->turrets) {
+		Entity *e = iterate_get();
+		if (e->type == EntityEmpty) continue;
+
+		Rect e_rec = RecV2(e->pos, e->size);
+		if (CheckCollisionPointRec(mouse_pos, e_rec)) {
+			Ed->hovered = e;
+			return ;
 		}
-	}
+	}}
 
-	// Draw Preview of new position of dragged_entity
-	if (E->dragging && !V2Compare(E->selected_tile, E->dragged_entity->pos)) {
-		Color color = ColorAlpha(E->dragged_entity->color, 0.5f);
-		DrawRectangleV(V2Add(V2Scale(E->selected_tile, TILE), Data->current_level->map_offset), (V2) {TILE, TILE}, color);
-	}
+	{entitys_iterate(Data->level->enemys) {
+		Entity *e = iterate_get();
+		if (e->type == EntityEmpty) continue;
+
+		Rect e_rec = RecV2(e->pos, e->size);
+		if (CheckCollisionPointRec(mouse_pos, e_rec)) {
+			Ed->hovered = e;
+			return ;
+		}
+	}}
+
+	{entitys_iterate(Data->level->projectiles) {
+		Entity *e = iterate_get();
+		if (e->type == EntityEmpty) continue;
+
+		Rect e_rec = RecV2(e->pos, e->size);
+		if (CheckCollisionPointRec(mouse_pos, e_rec)) {
+			Ed->hovered = e;
+			return ;
+		}
+	}}
+	
+	{entitys_iterate(Data->level->spawners) {
+		Entity *e = iterate_get();
+		if (e->type == EntityEmpty) continue;
+
+		Rect e_rec = RecV2(e->pos, e->size);
+		if (CheckCollisionPointRec(mouse_pos, e_rec)) {
+			Ed->hovered = e;
+			return ;
+		}
+	}}
+
+	
+	Ed->hovered = NULL;
 }

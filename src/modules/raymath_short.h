@@ -96,21 +96,29 @@ typedef struct {
 // Creator helpers
 //----------------------------------------------------------------------------------
 
-// Crate Rectangle from to Vectors
-RMSAPI Rect RectV2(V2 pos, V2 size) {
-	return ((Rect) {.x = pos.x, .y = pos.y, .width = size.x, .height = size.y});
+#define Vec2(x, y) (V2) {x, y}
+#define Vec2v(v) (V2) {v, v}
+#define RectPos(rec) (V2) {rec.x, rec.y}
+#define RectSize(rec) (V2) {rec.width, rec.height}
+
+#define Rec(x, y, with, height) (Rect) {.x = x, .y = y, .width = width, .height = height}
+#define RecV2(pos, size) (Rect) {.x = pos.x, .y = pos.y, .width = size.x, .height = size.y}
+
+# define V2Zero() (V2){0, 0}
+# define RectZero() (Rect) {0, 0, 0, 0}
+
+RMSAPI b32 V2Compare(V2 v1, V2 v2) 
+{
+    return (v1.x == v2.x && v1.y == v2.y);
 }
 
-RMSAPI V2 V2RectPos(Rect rect) {
-	return ((V2) {rect.x, rect.y});
+RMSAPI b32 RectCompare(Rect rec1, Rect rec2) 
+{
+    return (rec1.x == rec2.x && rec1.y == rec2.y && rec1.width == rec2.width && rec1.height == rec2.height);
 }
 
-RMSAPI V2 V2RectSize(Rect rect) {
-	return ((V2) {rect.width, rect.height});
-}
-
-RMSAPI V2 V2F32(f32 value) {
-	return ((V2) {value, value});
+RMSAPI V2 V2Absolute(V2 v) {
+	return ((V2) {fabs(v.x), fabs(v.y)});
 }
 
 
@@ -177,13 +185,6 @@ RMSAPI i32 f32Equals(f32 x, f32 y)
 //----------------------------------------------------------------------------------
 // Module Functions Definition - V2 math
 //----------------------------------------------------------------------------------
-RMSAPI b32 V2Compare(V2 v1, V2 v2) 
-{
-    return (v1.x == v2.x && v1.y == v2.y);
-}
-
-// Vector with components value 0.0f
-# define V2Zero() (V2){0, 0}
 // RMSAPI V2 V2Zero(void)
 // {
 //     V2 result = { 0.0f, 0.0f };

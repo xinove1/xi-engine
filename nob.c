@@ -20,6 +20,7 @@ b32 strcmp_many(const cstr *str, const cstr **str_many, i32 str_many_count);
 b32 nob_proc_is_running(Nob_Proc proc);
 
 const global cstr *ProjectOutputName = "game";
+const global cstr *CC = "clang";
 
 const global cstr *DebugFlags[] = {
 	"-g3",
@@ -27,6 +28,7 @@ const global cstr *DebugFlags[] = {
 	"-Wextra",
 	"-Wno-unused-parameter",
 	"-Wno-unused-function",
+	"-Wno-initializer-overrides",
         //"-fsanitize=address", // BUG  remeber that this causes leak on xilib, so not good for long running the game, only for testing for leaks
 	"-fsanitize=undefined",
 	//"-fsanitize-trap",
@@ -53,11 +55,12 @@ const global cstr *Dep_Modules[] = {
 
 const global cstr *Src_Game[] = { 
 	"./src/game_code/game.c",
-	"./src/game_code/entity_and_map.c",
-	"./src/game_code/utils.c",
 	"./src/game_code/editor.c",
+	"./src/game_code/utils.c",
+	"./src/game_code/entitys.c",
+	"./src/game_code/effects.c",
 };
-const global cstr *Dep_Game[] = { "./src/game_code/game.h" };
+const global cstr *Dep_Game[] = { "./src/game_code/game.h", "./src/game_code/entitys.h", "./src/game_code/effects.h", };
 
 // TODO  Be able to toggle it with command line flag
 global b32 Debug = false; 
@@ -215,7 +218,7 @@ internal void build_linux_hot()
 internal void build_engine_layer(Nob_Cmd *cmd)
 {
 	cmd->count = 0;
-	nob_cmd_append(cmd, "cc", "-std=c99");
+	nob_cmd_append(cmd, CC, "-std=c99");
 	nob_cmd_append(cmd, "-lGL", "-lm", "-lpthread", "-ldl", "-lrt", "-lX11",); // raylib
 	nob_da_append_many(cmd, SharedFlags, count_of(SharedFlags));
 	if (Debug) nob_da_append_many(cmd, DebugFlags, count_of(DebugFlags));
@@ -238,7 +241,7 @@ internal void build_engine_layer(Nob_Cmd *cmd)
 internal void build_modules(Nob_Cmd *cmd)
 {
 	cmd->count = 0;
-	nob_cmd_append(cmd, "cc", "-std=c99");
+	nob_cmd_append(cmd, CC, "-std=c99");
 	nob_cmd_append(cmd, "-lGL", "-lm", "-lpthread", "-ldl", "-lrt", "-lX11",); // raylib
 	nob_da_append_many(cmd, SharedFlags, count_of(SharedFlags));
 	if (Debug) nob_da_append_many(cmd, DebugFlags, count_of(DebugFlags));
@@ -253,7 +256,7 @@ internal void build_modules(Nob_Cmd *cmd)
 internal void build_game_lib(Nob_Cmd *cmd)
 {
 	cmd->count = 0;
-	nob_cmd_append(cmd, "cc", "-std=c99");
+	nob_cmd_append(cmd, CC, "-std=c99");
 	nob_cmd_append(cmd, "-lGL", "-lm", "-lpthread", "-ldl", "-lrt", "-lX11",); // raylib
 	nob_da_append_many(cmd, SharedFlags, count_of(SharedFlags));
 	if (Debug) nob_da_append_many(cmd, DebugFlags, count_of(DebugFlags));
@@ -277,7 +280,7 @@ internal void build_linux_static()
 {
 	Nob_Cmd cmd = {0};
 
-	nob_cmd_append(&cmd, "cc");
+	nob_cmd_append(&cmd, CC);
 
 	// Flags
 	nob_cmd_append(&cmd, "-std=c99");

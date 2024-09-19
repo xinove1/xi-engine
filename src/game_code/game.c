@@ -7,14 +7,9 @@
 # define hot static
 #endif
 
-internal b32 check_actuators(GameLevel *level);
-internal b32 move_player(GameLevel *level, Entity *p, V2 dir);
-internal b32 move_mixable(GameLevel *level, Entity *p, V2 dir);
 
 global GameData  *Data = NULL;
 global GameLevel *Level= NULL;
-global Entity *Player= NULL;
-global b32 WonLevel = false; // TODO  Temporary, change it
 
 hot GameConfig init_pre_raylib(void **data)
 {
@@ -23,72 +18,64 @@ hot GameConfig init_pre_raylib(void **data)
 
 	*Data = (GameData) {
 		.canvas_size = (V2) {640, 360},
+		//.canvas_size = (V2) {800, 600},
 		.paused = false,
-		.current_level = NULL,
+		.level = NULL,
 		.menu_screen = false,
 	};
 
-	// Create sample Level
+	// Teste Level
 	{
-		V2 map_size = {15, 10};
-		GameLevel *level = create_level("Teste Level", map_size, Data->canvas_size);
+		Data->level = calloc(1, sizeof(GameLevel));
+		Level = Data->level;
 
-		create_actuator(level, (Entity) {
-			.type = EntityActuator,
-			.color = RED,
-			.pos = (V2) { 2, 2},
+		da_init(Level->enemys, 10, sizeof(Entity));
+		da_init(Level->turrets, 10, sizeof(Entity));
+		da_init(Level->projectiles, 10, sizeof(Entity));
+		da_init(Level->spawners, 10, sizeof(Entity));
+		da_init(Level->effects, 30, sizeof(Effect));
+
+		create_entity(&Level->spawners, (Entity) {
+			.type = EntityEnemySpawner,
+			.pos = Vec2(Data->canvas_size.x - 5, Data->canvas_size.y * 0.5f),
+			.color = GRAY,
+			.size = Vec2v(5),
+			.spawner.rate = 2,
 		});
 
-		create_actuator(level, (Entity) {
-			.type = EntityActuator,
+		create_entity(&Level->turrets, (Entity) {
+			.type = EntityTurret,
+			.pos = Vec2(Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.5f),
+			.size = Vec2(10, 15),
 			.color = RED,
-			.pos = (V2) { 8, 2},
+			.turret.fire_rate = 1.0f,
+			.turret.damage = 4,
+			.turret.range = 30,
+			.health = 100,
 		});
 
-		// NOTE  Player Entitys always need to be first to be created
-		Player = create_entity(level, (Entity) {
-			.type = EntityPlayer,
-			.pos = (V2) { (i32) map_size.x / 2, (i32) map_size.y / 2}, // NOLINT para de reclamar do int meu irmao pqp
-			.color = BLUE,
-		});
-
-		create_entity(level, (Entity) {
-			.type = EntityMovable,
-			.pos = { 3, 3 },
-			.color = GREEN,
-			});
-
-		create_entity(level, (Entity) {
-			.type = EntityMovable,
-			.pos = { 5, 3 },
-			.color = GREEN,
-			});
-
-		create_entity(level, (Entity) {
-			.type = EntityMixable,
-			.pos = { 7, 3 },
-			.color = BLUE,
-			});
-		
-		create_entity(level, (Entity) {
-			.type = EntityMixable,
-			.pos = { 7, 4 },
+		create_entity(&Level->turrets, (Entity) {
+			.type = EntityTurret,
+			.pos = Vec2(Data->canvas_size.x * 0.8f, Data->canvas_size.y * 0.5f),
+			.size = Vec2(10, 5),
 			.color = RED,
-			});
-
-		Level = level;
-		Data->current_level = level;
+			.turret.fire_rate = 1.6f,
+			.turret.damage = 4,
+			.turret.range = 30,
+			.health = 10,
+		});
 	}
+
 
 	return ((GameConfig) {
 		.canvas_size = Data->canvas_size,
-		.window_name = "Sokaban",
+		.window_name = "Tower Defense",
 		.window_flags = FLAG_WINDOW_RESIZABLE,
 		.target_fps = 60,
 	});
 }
 
-hot void init_pos_raylib() 
+hot void init_pos_raylib(void) 
 {
 	init_editor(Data);
 
@@ -114,54 +101,151 @@ hot void init_pos_raylib()
 	});
 }
 
-hot b32 update()
+hot void pre_reload(void)
 {
-	assert(Data && Level && Player);
+
+}
+
+hot void pos_reload(void *data)
+{
+	Data = data;
+	Level = Data->level;
+	
+	pos_reload_editor(Data);
+}
+
+
+hot b32 update(void)
+{
+	assert(Data && Level);
 	if (Data->menu_screen) {
 		return (false);
 	}
 
-	V2 dir = {0, 0};
+	// ----------- Input -----------
+	V2 input_dir = {0, 0};
 	if (IsActionPressed(RIGHT)) {
-		dir.x += 1;
+		input_dir.x += 1;
 	}
 	if (IsActionPressed(LEFT)) {
-		dir.x -= 1;
+		input_dir.x -= 1;
 	}
 	if (IsActionPressed(DOWN)) {
-		dir.y += 1;
+		input_dir.y += 1;
 	}
 	if (IsActionPressed(UP)) {
-		dir.y -= 1;
+		input_dir.y -= 1;
 	}
-	Player->look_dir = dir;
 
 	if (IsKeyPressed(KEY_U)) {
 		exit(0);
-		// print_entity(*Player);
-		// print_map(Level);
-		// print_level(Level);
 	}
 
-	// Resolve Collision
-	if (dir.x != 0 || dir.y != 0) {
-		move_player(Level, Player, dir);
-	}
+	// TODO  Macro for checking if entity is an empty one, continue if that's the case,
+	// and check if its of expected type and give warning if it does not match
+	
+	// ----------- Update Entitys ----------- 
+	
+	// ----------- Enemys ----------- 
+	{entitys_iterate(Level->enemys) {
+		Entity *e = iterate_get();
+		iterate_check_entity(e, EntityEnemy);
 
-	// Run Actuators
-	WonLevel = check_actuators(Level);
+		if (entity_died(Level, e)) continue;
+
+		Entity *target = get_closest_entity(Level->turrets, e->pos);
+		if (!target) continue;
+
+		if (IsRecInRange(RecV2(target->pos, V2Add(target->size, e->size)), e->pos, e->enemy.range)) {
+			e->enemy.attack_rate_count += GetFrameTime();
+			if (e->enemy.attack_rate_count >= e->enemy.attack_rate) {
+				e->enemy.attack_rate_count = 0;
+				damage_entity(Level, target, e->enemy.damage);
+			}
+		} else { // Move Towards Turret
+			V2 dir = V2Normalize(V2Subtract(target->pos, e->pos));
+			e->pos = V2Add(e->pos, V2Scale(dir, e->enemy.speed * GetFrameTime()));
+		}
+	}}
+
+	{entitys_iterate(Level->spawners) {
+		Entity *e = iterate_get();
+		iterate_check_entity(e, EntityEnemySpawner);
+		
+		e->spawner.rate_count += GetFrameTime();
+		if (e->spawner.rate_count >= e->spawner.rate) {
+			e->spawner.rate_count = 0;
+			create_entity(&Level->enemys, (Entity) {
+				.type = EntityEnemy,
+				.size = Vec2(5, 5),
+				.pos = e->pos,
+				.color = BLUE,
+				.health = 50,
+				.enemy.speed = 70,
+				.enemy.melee = true,
+				.enemy.damage = 1,
+				.enemy.range = 5,
+			});
+		}
+	}}
+
+	// ----------- Turrets ----------- 
+	{entitys_iterate(Level->turrets) {
+		Entity *e = iterate_get();
+		iterate_check_entity(e, EntityTurret);
+
+		if (entity_died(Level, e)) continue;
+
+		e->turret.fire_rate_count += GetFrameTime();
+		if (e->turret.fire_rate_count >= e->turret.fire_rate) {
+			e->turret.fire_rate_count = 0;
+			Entity *target = get_closest_entity(Level->enemys, e->pos);
+			if (target) {
+				create_projectile(&Level->projectiles, e->pos, target->pos, .size = Vec2v(3), .targeting = EntityEnemy, .speed = 200, .damage = 10); // NOLINT
+			}
+		}
+	}}
+
+	// ----------- Projectiles ----------- 
+	{entitys_iterate(Level->projectiles) {
+		Entity *e = iterate_get();
+		iterate_check_entity(e, EntityProjectile);
+
+		if (entity_died(Level, e)) continue;
+
+		e->pos = V2Add(e->pos, V2Scale(e->bullet.dir, e->bullet.speed * GetFrameTime()));
+		if (!CheckCollisionRecs(RecV2(V2Zero(), Data->canvas_size), RecV2(e->pos, e->size))) {
+			e->type = EntityEmpty;
+			continue ;
+		}
+
+		EntityDa check_against = {0};
+
+		if (e->bullet.targeting == EntityTurret) check_against = Level->turrets;
+		if (e->bullet.targeting == EntityEnemy) check_against = Level->enemys;
+
+		if (check_against.capacity <= 0) continue;
+		Entity *coll = check_collision(RecV2(e->pos, e->size), check_against);
+		if (coll && coll->type == EntityEnemy) {
+			damage_entity(Level, coll, e->bullet.damage);
+			e->health -= coll->health;
+			continue;
+		}
+	}}
+
+	apply_effects(Level->effects);
 
 	update_editor();
 	return (false);
 }
 
-hot void draw()
+hot void draw(void)
 {
 	if (Data->menu_screen) {
 		UiContainer *c = &Data->menu;
 		XUiBegin(c);
 
-		XUiText(c, "Sokaban da silva", true);
+		XUiText(c, "Tower Defense da silva", true);
 		
 		if (XUiTextButton(c, "Play")) {
 			Data->menu_screen = false;
@@ -175,48 +259,44 @@ hot void draw()
 		return ;
 	}
 
-	// Draw Background outside of map
-	DrawRectangle(0, 0, Data->canvas_size.x, Data->canvas_size.y, BLACK);
+	// // Draw Background outside of map
+	// DrawRectangle(0, 0, Data->canvas_size.x, Data->canvas_size.y, BLACK);
 
-	// Draw Map borders & backgroud/ground of map
-	DrawRectangle(Level->map_offset.x, Level->map_offset.y, Level->map_sz.x * TILE, Level->map_sz.y * TILE, WHITE);
+	// // Draw Map borders & backgroud/ground of map
+	// DrawRectangle(Level->map_offset.x, Level->map_offset.y, Level->map_sz.x * TILE, Level->map_sz.y * TILE, WHITE);
+	//
 
-	// Draw Actuators
-	for (i32 i = 0; i < MAX_ACTUATORS; i++) {
-		Entity e = Level->actuators[i];
-		if (e.type == EntityEmpty) break;
-		DrawRectangleV(V2Add(V2Scale(e.pos, TILE), Level->map_offset), (V2) {TILE, TILE}, e.color);
-	}
+	{entitys_iterate(Level->enemys) {
+		Entity *e = iterate_get();
+		if (e->type == EntityEmpty) continue ;
+		render_entity(e);
+	}}
 
-	// Draw Entitys
-	for (i32 i = 0; i < Level->entity_count; i++) {
-		Entity e = Level->entitys[i];
-		if (e.type == EntityEmpty) continue ;
-		DrawRectangleV(V2Add(V2Scale(e.pos, TILE), Level->map_offset), (V2) {TILE, TILE}, e.color);
-	}
+	{entitys_iterate(Level->turrets) {
+		Entity *e = iterate_get();
+		if (e->type == EntityEmpty) continue;
+		render_entity(e);
+	}}
 
-	if (WonLevel) {
-		V2 canvas_middle = V2Scale(Data->canvas_size, 0.5f);
-		DrawTextEx(GetFontDefault(), "You Won!!", canvas_middle, 12, 1, RED);
-	}
+	{entitys_iterate(Level->projectiles) {
+		Entity *e = iterate_get();
+		if (e->type == EntityEmpty) continue;
+		render_entity(e);
+	}}
+	
+	#ifdef BUILD_DEBUG
+
+	{entitys_iterate(Level->spawners) {
+		Entity *e = iterate_get();
+		if (e->type == EntityEmpty) continue ;
+		render_entity(e);
+	}}
+
+	#endif
+
 
 	// Draw editor
 	draw_editor();
-}
-
-hot void pre_reload()
-{
-
-}
-
-hot void pos_reload(void *data)
-{
-	Data = data;
-	Level = Data->current_level;
-	Player = get_entity(Data->current_level, 0);
-	assert(Player->type == EntityPlayer); // Player Entity should awalys be the first on the entitys array
-	
-	init_editor(data);
 }
 
 GameFunctions game_init_functions()
@@ -229,56 +309,4 @@ GameFunctions game_init_functions()
 		.pre_reload = &pre_reload,
 		.pos_reload = &pos_reload,
 	};
-}
-
-internal b32 move_player(GameLevel *level, Entity *p, V2 dir)
-{
-	V2 where = V2Add(p->pos, dir);
-
-	Entity *e = get_map_entity(level, where);
-	if (e) {
-		switch (e->type) {
-			case EntityMovable:
-				move_entity(level, e, V2Add(e->pos, dir));
-			break ;
-			case EntityMixable:
-				move_mixable(level, e, dir);
-			break ;
-			default:
-		
-			break ;
-		}
-	}
-
-	return (move_entity(Level, p, where));
-}
-
-internal b32 move_mixable(GameLevel *level, Entity *p, V2 dir)
-{
-	V2 where = V2Add(p->pos, dir);
-
-	Entity *e = get_map_entity(level, where);
-	if (e && e->type == EntityMixable) {
-		e->color = GetColor(ColorToInt(e->color) | ColorToInt(p->color));
-		delete_entity(level, p);
-	} 
-
-	return (move_entity(level, p, where));;
-}
-
-internal b32 check_actuators(GameLevel *level)
-{
-	b32 all_set = true;
-
-	for (i32 i = 0; i < MAX_ACTUATORS; i++) {
-		Entity e = Level->actuators[i];
-		if (e.type == EntityEmpty) break;
-
-		i32 something_on_top = get_map_pos(level, e.pos);
-		if (something_on_top == -1) {
-			all_set = false;
-		}
-	}
-
-	return (all_set);
 }
