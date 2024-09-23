@@ -55,7 +55,7 @@ Effect create_flash_effect(Entity *target, f32 duration, Color color, void *data
 	}
 
 	size offset = data_offset - (void*) target;
-	assert(offset + data_size < sizeof(Entity));
+	assert(offset + data_size < (size) sizeof(Entity));
 
 	Effect effect =  {
 		.type = EffectFlashColor,

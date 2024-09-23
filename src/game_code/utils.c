@@ -8,16 +8,6 @@ V2 ExpDecayV2(V2 a, V2 b, f32 decay)
 	return Vector2Add(b, d);
 }
 
-b32 IsRecInRange(Rect rec, V2 from, f32 range) 
-{
-	f32 dist = V2Distance(RectPos(rec), from);
-	if (dist <= range) return true;
-	dist = V2Distance(V2Add(RectPos(rec), RectSize(rec)), from);
-	if (dist <= range) return true;
-
-	return false;
-}
-
 void draw_grid_ex(V2 position, V2 grid_size, i32 tile_size, f32 line_thickness, Color color) 
 {
 	for (i32 y = 0; y < grid_size.y + 1; y++) {

@@ -102,7 +102,7 @@ internal void get_entity_under_mouse()
 {
 	V2 mouse_pos = GetMousePosition();
 
-	{entitys_iterate(Data->level->turrets) {
+	{entitys_iterate(Data->level->entitys) {
 		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue;
 
@@ -112,40 +112,6 @@ internal void get_entity_under_mouse()
 			return ;
 		}
 	}}
-
-	{entitys_iterate(Data->level->enemys) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue;
-
-		Rect e_rec = RecV2(e->pos, e->size);
-		if (CheckCollisionPointRec(mouse_pos, e_rec)) {
-			Ed->hovered = e;
-			return ;
-		}
-	}}
-
-	{entitys_iterate(Data->level->projectiles) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue;
-
-		Rect e_rec = RecV2(e->pos, e->size);
-		if (CheckCollisionPointRec(mouse_pos, e_rec)) {
-			Ed->hovered = e;
-			return ;
-		}
-	}}
-	
-	{entitys_iterate(Data->level->spawners) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue;
-
-		Rect e_rec = RecV2(e->pos, e->size);
-		if (CheckCollisionPointRec(mouse_pos, e_rec)) {
-			Ed->hovered = e;
-			return ;
-		}
-	}}
-
 	
 	Ed->hovered = NULL;
 }

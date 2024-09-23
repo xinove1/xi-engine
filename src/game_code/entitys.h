@@ -10,6 +10,7 @@
 typedef enum {
 	EntityEmpty,
 	EntityTurret,
+	EntityMainTower,
 	EntityProjectile,
 	EntityEnemy,
 	EntityEnemySpawner,
@@ -19,6 +20,7 @@ typedef enum {
 global cstr *EntityTypeNames[] = {
 	"EntityEmpty",
 	"EntityTurret",
+	"EntityMainTower",
 	"EntityProjectile",
 	"EntityEnemy",
 	"EntityEnemySpawner",
@@ -33,6 +35,8 @@ typedef struct {
 	V2 render_pos_offset;
 	Color color; 
 	f32 health;
+	f32 health_max;
+	i32 floor;
 	union {
 		struct {
 			f32 fire_rate;
@@ -50,12 +54,12 @@ typedef struct {
 
 		struct {
 			f32 speed;
+			V2 dir;
 			b32 melee;
 			f32 damage;
 			f32 range;
 			f32 attack_rate;
 			f32 attack_rate_count;
-			Color tmp;
 		} enemy;
 
 		struct {
@@ -86,7 +90,22 @@ typedef struct {
 	Color color;
 } CreateProjectileParams;
 
-#define create_projectile(da, from, to, ...)  \
-	create_projectile_(da, from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
+typedef struct {
+	V2 size;
+	f32 health;
+	Color color;
+	f32 speed;
+	V2 dir;
+	b32 melee;
+	f32 damage;
+	f32 range;
+	f32 attack_rate;
+} CreateEnemyParams;
+
+#define create_projectile(from, to, ...)  \
+	create_projectile_(from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
+
+#define create_enemy(pos, ...) \
+	create_enemy_(pos, (CreateEnemyParams) {__VA_ARGS__})
 
 #endif

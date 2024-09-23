@@ -98,11 +98,10 @@ typedef struct {
 
 #define Vec2(x, y) (V2) {x, y}
 #define Vec2v(v) (V2) {v, v}
-#define RectPos(rec) (V2) {rec.x, rec.y}
-#define RectSize(rec) (V2) {rec.width, rec.height}
-
-#define Rec(x, y, with, height) (Rect) {.x = x, .y = y, .width = width, .height = height}
+#define Rec(x, y, width, height) (Rect) {x, y, width, height}
 #define RecV2(pos, size) (Rect) {.x = pos.x, .y = pos.y, .width = size.x, .height = size.y}
+#define RecPos(rec) (V2) {rec.x, rec.y}
+#define RecSize(rec) (V2) {rec.width, rec.height}
 
 # define V2Zero() (V2){0, 0}
 # define RectZero() (Rect) {0, 0, 0, 0}
@@ -120,6 +119,8 @@ RMSAPI b32 RectCompare(Rect rec1, Rect rec2)
 RMSAPI V2 V2Absolute(V2 v) {
 	return ((V2) {fabs(v.x), fabs(v.y)});
 }
+
+#define V2DirTo(from, to) (V2Normalize(V2Subtract(to, from)))
 
 
 //----------------------------------------------------------------------------------

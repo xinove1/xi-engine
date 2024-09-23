@@ -7,6 +7,7 @@
 # define hot static
 #endif
 
+GameLevel *create_level(GameData *data, size floors);
 
 global GameData  *Data = NULL;
 global GameLevel *Level= NULL;
@@ -24,48 +25,8 @@ hot GameConfig init_pre_raylib(void **data)
 		.menu_screen = false,
 	};
 
-	// Teste Level
-	{
-		Data->level = calloc(1, sizeof(GameLevel));
-		Level = Data->level;
-
-		da_init(Level->enemys, 10, sizeof(Entity));
-		da_init(Level->turrets, 10, sizeof(Entity));
-		da_init(Level->projectiles, 10, sizeof(Entity));
-		da_init(Level->spawners, 10, sizeof(Entity));
-		da_init(Level->effects, 30, sizeof(Effect));
-
-		create_entity(&Level->spawners, (Entity) {
-			.type = EntityEnemySpawner,
-			.pos = Vec2(Data->canvas_size.x - 5, Data->canvas_size.y * 0.5f),
-			.color = GRAY,
-			.size = Vec2v(5),
-			.spawner.rate = 2,
-		});
-
-		create_entity(&Level->turrets, (Entity) {
-			.type = EntityTurret,
-			.pos = Vec2(Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.5f),
-			.size = Vec2(10, 15),
-			.color = RED,
-			.turret.fire_rate = 1.0f,
-			.turret.damage = 4,
-			.turret.range = 30,
-			.health = 100,
-		});
-
-		create_entity(&Level->turrets, (Entity) {
-			.type = EntityTurret,
-			.pos = Vec2(Data->canvas_size.x * 0.8f, Data->canvas_size.y * 0.5f),
-			.size = Vec2(10, 5),
-			.color = RED,
-			.turret.fire_rate = 1.6f,
-			.turret.damage = 4,
-			.turret.range = 30,
-			.health = 10,
-		});
-	}
-
+	Data->level = create_level(Data, 5);
+	Level = Data->level;
 
 	return ((GameConfig) {
 		.canvas_size = Data->canvas_size,
@@ -153,18 +114,18 @@ hot b32 update(void)
 
 		if (entity_died(Level, e)) continue;
 
+		// TODO  change to only look for turret in its lane?
 		Entity *target = get_closest_entity(Level->turrets, e->pos);
 		if (!target) continue;
 
-		if (IsRecInRange(RecV2(target->pos, V2Add(target->size, e->size)), e->pos, e->enemy.range)) {
+		if (EntityInRange(e, target, e->enemy.range)) {
 			e->enemy.attack_rate_count += GetFrameTime();
 			if (e->enemy.attack_rate_count >= e->enemy.attack_rate) {
 				e->enemy.attack_rate_count = 0;
 				damage_entity(Level, target, e->enemy.damage);
 			}
 		} else { // Move Towards Turret
-			V2 dir = V2Normalize(V2Subtract(target->pos, e->pos));
-			e->pos = V2Add(e->pos, V2Scale(dir, e->enemy.speed * GetFrameTime()));
+			e->pos = V2Add(e->pos, V2Scale(e->enemy.dir, e->enemy.speed * GetFrameTime()));
 		}
 	}}
 
@@ -173,19 +134,21 @@ hot b32 update(void)
 		iterate_check_entity(e, EntityEnemySpawner);
 		
 		e->spawner.rate_count += GetFrameTime();
-		if (e->spawner.rate_count >= e->spawner.rate) {
+		if (e->spawner.rate != 0 && e->spawner.rate_count >= e->spawner.rate) {
 			e->spawner.rate_count = 0;
-			create_entity(&Level->enemys, (Entity) {
-				.type = EntityEnemy,
+			V2 pos = V2Add(e->pos, V2Scale(e->size, 0.5f));
+			V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
+			push_entity(&Level->enemys, create_enemy_(pos, (CreateEnemyParams) {
 				.size = Vec2(5, 5),
-				.pos = e->pos,
-				.color = BLUE,
 				.health = 50,
-				.enemy.speed = 70,
-				.enemy.melee = true,
-				.enemy.damage = 1,
-				.enemy.range = 5,
-			});
+				.color = BLUE,
+				.speed = 70,
+				.dir = dir,
+				.melee = true,
+				.damage = 1,
+				.range = 1,
+				.attack_rate = 0.5f
+			}));
 		}
 	}}
 
@@ -197,11 +160,11 @@ hot b32 update(void)
 		if (entity_died(Level, e)) continue;
 
 		e->turret.fire_rate_count += GetFrameTime();
-		if (e->turret.fire_rate_count >= e->turret.fire_rate) {
+		if (e->turret.fire_rate && e->turret.fire_rate_count >= e->turret.fire_rate) {
 			e->turret.fire_rate_count = 0;
 			Entity *target = get_closest_entity(Level->enemys, e->pos);
 			if (target) {
-				create_projectile(&Level->projectiles, e->pos, target->pos, .size = Vec2v(3), .targeting = EntityEnemy, .speed = 200, .damage = 10); // NOLINT
+				push_entity(&Level->projectiles, create_projectile(e->pos, target->pos, .size = Vec2v(3), .targeting = EntityEnemy, .speed = 200, .damage = 10)); // NOLINT
 			}
 		}
 	}}
@@ -232,8 +195,6 @@ hot b32 update(void)
 			continue;
 		}
 	}}
-
-	apply_effects(Level->effects);
 
 	update_editor();
 	return (false);
@@ -266,35 +227,13 @@ hot void draw(void)
 	// DrawRectangle(Level->map_offset.x, Level->map_offset.y, Level->map_sz.x * TILE, Level->map_sz.y * TILE, WHITE);
 	//
 
-	{entitys_iterate(Level->enemys) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue ;
-		render_entity(e);
-	}}
-
-	{entitys_iterate(Level->turrets) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue;
-		render_entity(e);
-	}}
-
-	{entitys_iterate(Level->projectiles) {
+	render_entity(&Level->tower);
+	{entitys_iterate(Level->entitys) {
 		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue;
 		render_entity(e);
 	}}
 	
-	#ifdef BUILD_DEBUG
-
-	{entitys_iterate(Level->spawners) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue ;
-		render_entity(e);
-	}}
-
-	#endif
-
-
 	// Draw editor
 	draw_editor();
 }
@@ -309,4 +248,107 @@ GameFunctions game_init_functions()
 		.pre_reload = &pre_reload,
 		.pos_reload = &pos_reload,
 	};
+}
+
+GameLevel *create_level(GameData *data, size floors) 
+{
+	GameLevel *level = calloc(1, sizeof(GameLevel));
+	f32 floor_height = 20;
+	f32 floor_padding = 5;
+	f32 turret_width = 25;
+	f32 tower_width = 50;
+	f32 tower_health = 400;
+	f32 ground_height = 50;
+
+	// TODO  
+
+	V2 canvas = data->canvas_size;
+	V2 canvas_middle = Vec2(canvas.x * 0.5f, canvas.y * 0.5f);
+	V2 tower_size = Vec2(tower_width, (floor_height * floors) + (floor_padding * floors));
+	V2 tower_pos = Vec2(canvas_middle.x - (tower_size.x * 0.5f), canvas.y - (tower_size.y + ground_height));
+	level->tower = (Entity) {
+		.type = EntityMainTower,
+		.pos = tower_pos,
+		.size = tower_size,
+		.render_size = tower_size,
+		.color = PURPLE,
+		.health = tower_health,
+	};
+
+	// Init Entitys
+	size max_turrets = floors * 2;
+	size max_projectiles = 400;
+	size max_enemys = floors * 10 * 2;
+	size max_spawners = floors * 2;
+	size max_total = max_turrets + max_projectiles + max_enemys + max_spawners;
+	da_init_and_alloc(level->entitys, max_total, sizeof(Entity));
+	level->entitys.count = max_total;
+
+	Entity *p = level->entitys.items;
+	da_init(level->turrets, max_turrets, p);
+	da_init(level->projectiles, max_projectiles, p + max_turrets);
+	da_init(level->enemys, max_enemys, p + max_turrets + max_projectiles);
+	da_init(level->spawners, max_spawners, p + max_turrets + max_projectiles + max_enemys);
+
+	f32 spawn_rate = 1;
+
+	// Spawners
+	for (i32 i = 0; i < max_spawners; i++) {
+		if (i == 0) spawn_rate = 1;
+		else spawn_rate = 0;
+
+		V2 pos = {0, canvas.y - ground_height};
+		i32 floor = 0;
+		// Left side
+		if (i < max_spawners * 0.5f) {
+			floor = i + 1;
+			pos.x = 0;
+		}
+		else { // Right side
+			floor = i - max_spawners/2.f +1;
+			pos.x = canvas.x - turret_width;
+		}
+		pos.y -= (floor_padding + floor_height) * floor;
+		
+		push_entity(&level->spawners, create_entity((Entity) {
+			.type = EntityEnemySpawner,
+			.pos = pos,
+			.color = GRAY,
+			.size = Vec2(turret_width, floor_height),
+			.spawner.rate = spawn_rate,
+			.floor = floor,
+		}));
+	}
+
+	// Turrets
+	for (i32 i = 0; i < max_turrets; i++) {
+		f32 fire_rate = 0;
+		if (i == 0) fire_rate = 1;
+		V2 pos = {0, canvas.y - ground_height};
+		i32 floor = 0;
+		// Left side
+		if (i < max_turrets * 0.5f) {
+			floor = i + 1;
+			pos.x = tower_pos.x -  turret_width;
+		}
+		else { // Right side
+			floor = i - max_turrets/2.f +1;
+			pos.x = tower_pos.x + tower_width;
+		}
+		pos.y -= (floor_padding + floor_height) * floor;
+
+		push_entity(&level->turrets, create_entity((Entity) {
+			.type = EntityTurret,
+			.pos = pos,
+			.size = Vec2(turret_width, floor_height),
+			.color = RED,
+			.turret.fire_rate = fire_rate,
+			.turret.damage = 4,
+			.turret.range = 30,
+			.health = 100,
+			.floor = floor,
+		}));
+	}
+
+	return (level);
 }
