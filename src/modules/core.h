@@ -1,9 +1,9 @@
 #ifndef XI_CORE_H_
 # define XI_CORE_H_
 
-# include "raylib.h"
 # include "stdint.h"
 # include "stddef.h"
+# include "raylib.h"
 
 # define internal         static // Static func
 # define internal_inline  static inline // Static inline func // TODO  better name
@@ -66,9 +66,13 @@
 # define Billion(n)    ((n)*1000000000)
 
 // Alias for raylib types 
-typedef Vector2 V2;
-typedef Vector3 V3;
-typedef Rectangle Rect;
+// struct Vector2;
+// struct Vector3;
+// struct Rectangle;
+
+typedef struct Vector2 V2;
+typedef struct Vector3 V3;
+typedef struct Rectangle Rect;
 
 // Types
 typedef int8_t  i8;

@@ -7,6 +7,8 @@
     - [x] Separate data such as window_size and volume and such configuration on its on struct.
     - [ ] Move register Action from main to game
 
+# Remove raylib from core.h dependacy
+
 # Change build system
   - [X] Get nob.h and understand at least the basics
     - [X] Move build to it

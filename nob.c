@@ -38,8 +38,8 @@ const global cstr *DebugFlags[] = {
 	//"-Werror",
 	//"-Wdouble-promotion",
 };
-const global cstr *SharedFlags[] = { "-I./src/modules/", "-I./external/raylib-5.0/src"};
-const global cstr *HotFlags[] = {"-DHOT_RELOAD", "-DBUILD_DEBUG", "-Wl,-rpath=./build/", "-lraylib_linux",  "-L./build/", };
+const global cstr *SharedFlags[] = { "-I./src/modules/", }; //"-I./external/raylib-5.0/src"
+const global cstr *HotFlags[] = {"-DHOT_RELOAD", "-DBUILD_DEBUG", "-Wl,-rpath=./build/", "-L./build/",  "-lraylib" };
 
 const global cstr *Src_EngineLayer[] = {"./src/main.c", };
 const global cstr *Dep_EngineLayer[] = {"./src/main.h"};
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 	else if (flag_compare(flag, "fclean")) {
 		Nob_Cmd cmd = {0};
 		nob_cmd_append(&cmd, "rm");
-		nob_cmd_append(&cmd, "./build/libraylib_linux.so");
+		nob_cmd_append(&cmd, "./build/libraylib.so.500");
 		nob_cmd_append(&cmd, "./build/libraylib_linux.a");
 		nob_cmd_append(&cmd, "./build/libraylib_web.a");
 		nob_cmd_append(&cmd, "./build/libraylib_windows.a");
@@ -219,10 +219,10 @@ internal void build_engine_layer(Nob_Cmd *cmd)
 {
 	cmd->count = 0;
 	nob_cmd_append(cmd, CC, "-std=c99");
+	nob_da_append_many(cmd, HotFlags, count_of(HotFlags));
 	nob_cmd_append(cmd, "-lGL", "-lm", "-lpthread", "-ldl", "-lrt", "-lX11",); // raylib
 	nob_da_append_many(cmd, SharedFlags, count_of(SharedFlags));
 	if (Debug) nob_da_append_many(cmd, DebugFlags, count_of(DebugFlags));
-	nob_da_append_many(cmd, HotFlags, count_of(HotFlags));
 
 	nob_da_append_many(cmd, Src_EngineLayer, count_of(Src_EngineLayer));
 	
@@ -242,10 +242,10 @@ internal void build_modules(Nob_Cmd *cmd)
 {
 	cmd->count = 0;
 	nob_cmd_append(cmd, CC, "-std=c99");
+	nob_da_append_many(cmd, HotFlags, count_of(HotFlags));
 	nob_cmd_append(cmd, "-lGL", "-lm", "-lpthread", "-ldl", "-lrt", "-lX11",); // raylib
 	nob_da_append_many(cmd, SharedFlags, count_of(SharedFlags));
 	if (Debug) nob_da_append_many(cmd, DebugFlags, count_of(DebugFlags));
-	nob_da_append_many(cmd, HotFlags, count_of(HotFlags));
 	nob_da_append_many(cmd, Src_Modules, count_of(Src_Modules));
 	nob_cmd_append(cmd, "-fpic", "-shared");
 	nob_cmd_append(cmd, "-o", "./build/libxilib.so");
@@ -257,10 +257,10 @@ internal void build_game_lib(Nob_Cmd *cmd)
 {
 	cmd->count = 0;
 	nob_cmd_append(cmd, CC, "-std=c99");
+	nob_da_append_many(cmd, HotFlags, count_of(HotFlags));
 	nob_cmd_append(cmd, "-lGL", "-lm", "-lpthread", "-ldl", "-lrt", "-lX11",); // raylib
 	nob_da_append_many(cmd, SharedFlags, count_of(SharedFlags));
 	if (Debug) nob_da_append_many(cmd, DebugFlags, count_of(DebugFlags));
-	nob_da_append_many(cmd, HotFlags, count_of(HotFlags));
 	nob_da_append_many(cmd, Src_Game, count_of(Src_Game));
 	nob_cmd_append(cmd, "-fpic", "-shared");
 	nob_cmd_append(cmd, "-o", "./build/libxilib.so");
@@ -339,7 +339,7 @@ internal void build_windows()
 internal void raylib_go_rebuild_urself()
 {
 	// TODO  refator to use only one Nob_cmd, reset count to 0 to use
-	if (!nob_file_exists("./build/libraylib_linux.so"))
+	if (!nob_file_exists("./build/libraylib.so.500"))
 	{
 		nob_log(NOB_INFO, "Building raylib linux shared -----\n");
 		Nob_Cmd cmd = {0};
@@ -347,7 +347,7 @@ internal void raylib_go_rebuild_urself()
 		nob_cmd_append(&cmd, "RAYLIB_LIBTYPE=SHARED");
 		if (!nob_cmd_run_sync(cmd)) exit(1);
 
-		if (!nob_copy_file("./external/raylib-5.0/src/libraylib.so", "./build/libraylib_linux.so"))
+		if (!nob_copy_file("./external/raylib-5.0/src/libraylib.so.500", "./build/libraylib.so.500"))
 			exit(1);
 
 		//nob_cmd_free(cmd);
