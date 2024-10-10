@@ -64,6 +64,7 @@ typedef struct
 typedef struct {
 	V2 canvas_size;
 	b32 paused;
+	b32 lost;
 	b32 menu_screen;
 	UiContainer menu;
 	GameEditor editor;
@@ -82,6 +83,7 @@ Entity *get_closest_entity_range(EntityDa entitys, V2 from, f32 range);
 b32 EntityInRange(Entity *from, Entity *to, f32 range);
 Entity *check_collision(Rect rec, EntityDa entitys) ;
 void render_entity(Entity *entity);
+Entity *get_turret(GameData *data, EntityDa towers, i32 floor, i32 side);
 
 // Effects
 void apply_effects(EffectDa da);

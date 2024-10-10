@@ -54,7 +54,6 @@ typedef struct {
 
 		struct {
 			f32 speed;
-			V2 dir;
 			b32 melee;
 			f32 damage;
 			f32 range;
@@ -94,8 +93,8 @@ typedef struct {
 	V2 size;
 	f32 health;
 	Color color;
+	i32 floor;
 	f32 speed;
-	V2 dir;
 	b32 melee;
 	f32 damage;
 	f32 range;

@@ -18,8 +18,8 @@ hot GameConfig init_pre_raylib(void **data)
 	*data = Data;
 
 	*Data = (GameData) {
-		.canvas_size = (V2) {640, 360},
-		//.canvas_size = (V2) {800, 600},
+		//.canvas_size = (V2) {640, 360},
+		.canvas_size = (V2) {1280, 720},
 		.paused = false,
 		.level = NULL,
 		.menu_screen = false,
@@ -79,7 +79,7 @@ hot void pos_reload(void *data)
 hot b32 update(void)
 {
 	assert(Data && Level);
-	if (Data->menu_screen) {
+	if (Data->menu_screen || Data->lost) {
 		return (false);
 	}
 
@@ -114,9 +114,9 @@ hot b32 update(void)
 
 		if (entity_died(Level, e)) continue;
 
-		// TODO  change to only look for turret in its lane?
-		Entity *target = get_closest_entity(Level->turrets, e->pos);
-		if (!target) continue;
+		V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
+		Entity *target = get_turret(Data, Level->turrets, e->floor, dir.x);
+		if (!target) target = &Level->tower; // Attack Main tower instead
 
 		if (EntityInRange(e, target, e->enemy.range)) {
 			e->enemy.attack_rate_count += GetFrameTime();
@@ -125,7 +125,7 @@ hot b32 update(void)
 				damage_entity(Level, target, e->enemy.damage);
 			}
 		} else { // Move Towards Turret
-			e->pos = V2Add(e->pos, V2Scale(e->enemy.dir, e->enemy.speed * GetFrameTime()));
+			e->pos = V2Add(e->pos, V2Scale(dir, e->enemy.speed * GetFrameTime()));
 		}
 	}}
 
@@ -137,16 +137,15 @@ hot b32 update(void)
 		if (e->spawner.rate != 0 && e->spawner.rate_count >= e->spawner.rate) {
 			e->spawner.rate_count = 0;
 			V2 pos = V2Add(e->pos, V2Scale(e->size, 0.5f));
-			V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
 			push_entity(&Level->enemys, create_enemy_(pos, (CreateEnemyParams) {
 				.size = Vec2(5, 5),
 				.health = 50,
 				.color = BLUE,
 				.speed = 70,
-				.dir = dir,
-				.melee = true,
+				.floor = e->floor,
+				.melee = false,
 				.damage = 1,
-				.range = 1,
+				.range = 30,
 				.attack_rate = 0.5f
 			}));
 		}
@@ -196,6 +195,10 @@ hot b32 update(void)
 		}
 	}}
 
+	if (Level->tower.health <= 0) {
+		Data->lost = true;
+	}
+
 	update_editor();
 	return (false);
 }
@@ -233,6 +236,20 @@ hot void draw(void)
 		if (e->type == EntityEmpty) continue;
 		render_entity(e);
 	}}
+
+	{
+		cstr *text = TextFormat("Tower health: %.f/%.f", Level->tower.health, Level->tower.health_max);
+		i32 size = MeasureText(text, 10);
+		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, 12);
+		DrawText(text, pos.x, pos.y, 10, RED);
+	}
+
+	if (Data->lost) {
+		cstr *text = TextFormat("You Lost!");
+		i32 size = MeasureText(text, 20);
+		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, Data->canvas_size.y * 0.5f);
+		DrawText(text, pos.x, pos.y, 20, BLACK);
+	}
 	
 	// Draw editor
 	draw_editor();
@@ -266,14 +283,14 @@ GameLevel *create_level(GameData *data, size floors)
 	V2 canvas_middle = Vec2(canvas.x * 0.5f, canvas.y * 0.5f);
 	V2 tower_size = Vec2(tower_width, (floor_height * floors) + (floor_padding * floors));
 	V2 tower_pos = Vec2(canvas_middle.x - (tower_size.x * 0.5f), canvas.y - (tower_size.y + ground_height));
-	level->tower = (Entity) {
+	level->tower = create_entity((Entity) {
 		.type = EntityMainTower,
 		.pos = tower_pos,
 		.size = tower_size,
 		.render_size = tower_size,
 		.color = PURPLE,
 		.health = tower_health,
-	};
+	});
 
 	// Init Entitys
 	size max_turrets = floors * 2;

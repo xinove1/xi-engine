@@ -7,6 +7,10 @@ void render_entity(Entity *entity)
 	Rect rec = RecV2(V2Add(entity->pos, entity->render_pos_offset), entity->render_size);
 	DrawRectangleRec(rec, entity->color);
 
+	// cstr *text = TextFormat("%d", entity->floor);
+	// i32 text_size = MeasureText(text, 10);
+	// DrawText(text, entity->pos.x, entity->pos.y - text_size * 2, 10, RED);
+
 	return ;
 	if (entity->health_max == 0 || entity->type == EntityProjectile) {
 		//printf("%s has health_max as zero. \n", EntityTypeNames[entity->type]);
@@ -35,15 +39,16 @@ void damage_entity(GameLevel *rt, Entity *entity, f32 damage)
 
 		case EntityTurret:
 		case EntityProjectile:
+		case EntityMainTower:
 		case EntityEnemy:
 		{
+			// TODO  Apply effect
 		//	push_effect(&rt->effects, create_flash_effect(entity, 0.5f, RED, &entity->health, &damage, sizeof(damage)));
 			entity->health -= damage;
-			// TODO  Apply effect
 		} break ;
 
 		default: {
-			TraceLog(LOG_WARNING, "damage_entity: can't damage default");
+			TraceLog(LOG_WARNING, "damage_entity: damaging %s not implemented yet.", EntityTypeNames[entity->type]);
 		} break;
 	}
 }
@@ -191,10 +196,10 @@ Entity create_enemy_(V2 pos, CreateEnemyParams params)
 		.type = EntityEnemy,
 		.pos = pos,
 		.size = params.size,
-		.health = params.health,
 		.color = params.color,
+		.health = params.health,
+		.floor = params.floor,
 		.enemy.speed = params.speed,
-		.enemy.dir = params.dir,
 		.enemy.melee = params.melee,
 		.enemy.damage = params.damage,
 		.enemy.range = params.range,
@@ -202,4 +207,17 @@ Entity create_enemy_(V2 pos, CreateEnemyParams params)
 	});
 
 	return (e);
+}
+
+Entity *get_turret(GameData *data, EntityDa towers, i32 floor, i32 side)
+{
+	{entitys_iterate(towers) {
+		Entity *e = iterate_get();
+		iterate_check_entity(e, EntityTurret);
+		if (e->floor != floor) continue;
+		V2 dir = V2DirTo(e->pos, Vec2(data->canvas_size.x * 0.5f, e->pos.y));
+		if (dir.x == side) return (e);
+	}}
+
+	return NULL;
 }
