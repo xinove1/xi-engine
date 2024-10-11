@@ -1,6 +1,7 @@
 #ifndef ENTITYS_H_
 # define ENTITYS_H_
 # include "core.h"
+# include "render.h"
 
 # define iterate_check_entity(e, expected_type)        \
 	assert(e);                             \
@@ -29,11 +30,10 @@ global cstr *EntityTypeNames[] = {
 
 typedef struct {
 	EntityType type;
+	RenderData render;
+	VEffect veffects[VEffectTypeCount];
 	V2 pos;
 	V2 size;
-	V2 render_size;
-	V2 render_pos_offset;
-	Color color; 
 	f32 health;
 	f32 health_max;
 	i32 floor;
@@ -53,8 +53,8 @@ typedef struct {
 		} bullet;
 
 		struct {
-			f32 speed;
 			b32 melee;
+			f32 speed;
 			f32 damage;
 			f32 range;
 			f32 attack_rate;

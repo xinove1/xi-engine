@@ -58,9 +58,9 @@ const global cstr *Src_Game[] = {
 	"./src/game_code/editor.c",
 	"./src/game_code/utils.c",
 	"./src/game_code/entitys.c",
-	"./src/game_code/effects.c",
+	"./src/game_code/render.c",
 };
-const global cstr *Dep_Game[] = { "./src/game_code/game.h", "./src/game_code/entitys.h", "./src/game_code/effects.h", };
+const global cstr *Dep_Game[] = { "./src/game_code/game.h", "./src/game_code/entitys.h", "./src/game_code/render.h", };
 
 // TODO  Be able to toggle it with command line flag
 global b32 Debug = false; 

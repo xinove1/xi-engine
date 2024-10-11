@@ -1,31 +1,5 @@
 #include "game.h"
 
-void render_entity(Entity *entity)
-{
-	if (entity->type == EntityEmpty) return ;
-
-	Rect rec = RecV2(V2Add(entity->pos, entity->render_pos_offset), entity->render_size);
-	DrawRectangleRec(rec, entity->color);
-
-	// cstr *text = TextFormat("%d", entity->floor);
-	// i32 text_size = MeasureText(text, 10);
-	// DrawText(text, entity->pos.x, entity->pos.y - text_size * 2, 10, RED);
-
-	return ;
-	if (entity->health_max == 0 || entity->type == EntityProjectile) {
-		//printf("%s has health_max as zero. \n", EntityTypeNames[entity->type]);
-		return ;
-	}
-	V2 health_size = Vec2(6, 3);
-	V2 health_pos = RecPos(rec);
-	health_pos.y -= health_size.y + 3;
-	f32 current_health_scalar = entity->health / entity->health_max;
-	Rect health_max = RecV2(health_pos, health_size);
-	Rect health_current = RecV2(health_pos, Vec2(health_size.x * current_health_scalar, health_size.y * 0.9f));
-	DrawRectangleRec(health_max, BLACK);
-	DrawRectangleRec(health_current, RED);
-}
-
 void damage_entity(GameLevel *rt, Entity *entity, f32 damage)
 {
 	assert(entity && rt);
@@ -44,6 +18,8 @@ void damage_entity(GameLevel *rt, Entity *entity, f32 damage)
 		{
 			// TODO  Apply effect
 		//	push_effect(&rt->effects, create_flash_effect(entity, 0.5f, RED, &entity->health, &damage, sizeof(damage)));
+			apply_flash_effect(entity, BLACK, 0.25f);
+			apply_shake_effect(entity, 0.25f);
 			entity->health -= damage;
 		} break ;
 
@@ -161,9 +137,9 @@ void push_entity(EntityDa *da, Entity entity)
 
 Entity create_entity(Entity entity)
 {
-	if (V2Compare(entity.render_size, V2Zero())) {
+	if (V2Compare(entity.render.size, V2Zero())) {
 		//TraceLog(LOG_INFO, "create_entity: entity render_size is zeroed, creating one size.");
-		entity.render_size = entity.size;
+		entity.render.size = entity.size;
 	}
 	if (entity.health_max == 0) {
 		entity.health_max = entity.health;
@@ -180,7 +156,7 @@ Entity create_projectile_(V2 from, V2 to, CreateProjectileParams params)
 		.pos = from,
 		.size = params.size,
 		.health = params.health,
-		.color = params.color,
+		.render.color = params.color,
 		.bullet.targeting = params.targeting,
 		.bullet.dir = dir,
 		.bullet.speed = params.speed,
@@ -196,7 +172,7 @@ Entity create_enemy_(V2 pos, CreateEnemyParams params)
 		.type = EntityEnemy,
 		.pos = pos,
 		.size = params.size,
-		.color = params.color,
+		.render.color = params.color,
 		.health = params.health,
 		.floor = params.floor,
 		.enemy.speed = params.speed,

@@ -13,8 +13,8 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
+# include "render.h"
 # include "entitys.h"
-# include "effects.h"
 
 // TODO  Better name needed for this macros
 #define da_init_and_alloc(da, limit, items_size)  \
@@ -59,6 +59,10 @@ typedef struct
 	mu_Context *mu;
 	Entity *selected;
 	Entity *hovered;
+	b32 debug_window;
+	b32 no_lose;
+	f32 effect_duration;
+	Color effect_color;
 } GameEditor;
 
 typedef struct {
@@ -82,19 +86,22 @@ Entity *get_closest_entity(EntityDa entitys, V2 from);
 Entity *get_closest_entity_range(EntityDa entitys, V2 from, f32 range);
 b32 EntityInRange(Entity *from, Entity *to, f32 range);
 Entity *check_collision(Rect rec, EntityDa entitys) ;
-void render_entity(Entity *entity);
 Entity *get_turret(GameData *data, EntityDa towers, i32 floor, i32 side);
 
-// Effects
-void apply_effects(EffectDa da);
-Effect create_flash_effect(Entity *target, f32 duration, Color color, void *data_offset, void *data, size data_size);
-void push_effect(EffectDa *da, Effect effect);
+// Render
+void render_entity(Entity *entity);
+void update_entity_veffects(Entity *entity);
+void apply_flash_effect(Entity *entity, Color color, f32 duration);
+void apply_shake_effect(Entity *entity, f32 duration);
+
 
 // Prototype for not hot reloadable version
 GameFunctions game_init_functions();
 
 // Utils
 V2 ExpDecayV2(V2 a, V2 b, f32 decay);
+Color ExpDecayColor(Color a, Color b, f32 decay);
+Color lerp_color(Color a, Color b, f32 time);
 void draw_grid_ex(V2 position, V2 grid_size, i32 tile_size, f32 line_thickness, Color color);
 void draw_grid(V2 position, V2 grid_size, i32 tile_size);
 

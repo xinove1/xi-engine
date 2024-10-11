@@ -18,8 +18,8 @@ hot GameConfig init_pre_raylib(void **data)
 	*data = Data;
 
 	*Data = (GameData) {
-		//.canvas_size = (V2) {640, 360},
-		.canvas_size = (V2) {1280, 720},
+		.canvas_size = (V2) {640, 360},
+		//.canvas_size = (V2) {1280, 720},
 		.paused = false,
 		.level = NULL,
 		.menu_screen = false,
@@ -30,7 +30,7 @@ hot GameConfig init_pre_raylib(void **data)
 
 	return ((GameConfig) {
 		.canvas_size = Data->canvas_size,
-		.window_name = "Tower Defense",
+		.window_name = "Cake Defense",
 		.window_flags = FLAG_WINDOW_RESIZABLE,
 		.target_fps = 60,
 	});
@@ -71,7 +71,6 @@ hot void pos_reload(void *data)
 {
 	Data = data;
 	Level = Data->level;
-	
 	pos_reload_editor(Data);
 }
 
@@ -79,9 +78,23 @@ hot void pos_reload(void *data)
 hot b32 update(void)
 {
 	assert(Data && Level);
+
+	update_editor();
+
 	if (Data->menu_screen || Data->lost) {
 		return (false);
 	}
+
+	if (Level->tower.health <= 0) {
+		Data->lost = true;
+	}
+
+	update_entity_veffects(&Level->tower);
+	{entitys_iterate(Level->entitys) {
+		Entity *e = iterate_get();
+		if (e->type == EntityEmpty) continue;
+		update_entity_veffects(e);
+	}}
 
 	// ----------- Input -----------
 	V2 input_dir = {0, 0};
@@ -194,12 +207,6 @@ hot b32 update(void)
 			continue;
 		}
 	}}
-
-	if (Level->tower.health <= 0) {
-		Data->lost = true;
-	}
-
-	update_editor();
 	return (false);
 }
 
@@ -287,8 +294,7 @@ GameLevel *create_level(GameData *data, size floors)
 		.type = EntityMainTower,
 		.pos = tower_pos,
 		.size = tower_size,
-		.render_size = tower_size,
-		.color = PURPLE,
+		.render.color = PURPLE,
 		.health = tower_health,
 	});
 
@@ -330,7 +336,7 @@ GameLevel *create_level(GameData *data, size floors)
 		push_entity(&level->spawners, create_entity((Entity) {
 			.type = EntityEnemySpawner,
 			.pos = pos,
-			.color = GRAY,
+			.render.color = GRAY,
 			.size = Vec2(turret_width, floor_height),
 			.spawner.rate = spawn_rate,
 			.floor = floor,
@@ -358,7 +364,7 @@ GameLevel *create_level(GameData *data, size floors)
 			.type = EntityTurret,
 			.pos = pos,
 			.size = Vec2(turret_width, floor_height),
-			.color = RED,
+			.render.color = RED,
 			.turret.fire_rate = fire_rate,
 			.turret.damage = 4,
 			.turret.range = 30,

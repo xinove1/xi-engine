@@ -122,6 +122,32 @@ RMSAPI V2 V2Absolute(V2 v) {
 
 #define V2DirTo(from, to) (V2Normalize(V2Subtract(to, from)))
 
+RMSAPI Color ColorAdd(Color c1, Color c2) 
+{
+    return ((Color) {c1.r + c2.r, c1.g + c2.g, c1.b + c2.b, c1.a + c2.a});
+}
+
+RMSAPI Color ColorSubtract(Color c1, Color c2) 
+{
+    return ((Color) {c1.r - c2.r, c1.g - c2.g, c1.b - c2.b, c1.a - c2.a});
+}
+
+RMSAPI Color ColorScale(Color color, f32 amount)
+{
+    return ((Color) {color.r * amount, color.g * amount, color.b * amount, color.a * amount});
+}
+
+RMSAPI b32 ColorCompare(Color c1, Color c2)
+{
+    return (c1.r == c2.r && c1.g == c2.g && c1.b == c2.b && c1.a == c2.a);
+}
+
+// Don't compare alpha
+RMSAPI b32 ColorCompar2(Color c1, Color c2) 
+{
+    return (c1.r == c2.r && c1.g == c2.g && c1.b == c2.b);
+}
+
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition - Utils math

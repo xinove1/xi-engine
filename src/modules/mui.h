@@ -8,6 +8,7 @@
 #define RectFromMu(r) ((Rect){r.x, r.y, r.w, r.h})
 #define RectFromMuFixed(r) ((Rect){r.x +1, r.y +1, r.w -1, r.h -1})
 #define RectFromMuFixed2(r) ((Rect){r.x +1, r.y +1, r.w, r.h})
+#define MuRectExpand(r, amount) ((mu_Rect) {r.x - amount, r.y - amount, r.w + amount * 2, r.h + amount * 2});
 #define V2FromMu(v) ((V2){v.x, v.y})
 
 void MUiInit(mu_Context *ctx, Font *font);
@@ -16,6 +17,7 @@ void MUiPoolInput(mu_Context *ctx);
 void MUiRender(mu_Context *ctx);
 
 i32 u8_slider(mu_Context *ctx, u8 *value, i32 low, i32 high);
+int MUiToggleButtonEx(mu_Context *ctx, int *state, int opt);
 
 #endif
 
@@ -158,6 +160,27 @@ i32 u8_slider(mu_Context *ctx, u8 *value, i32 low, i32 high)
 	i32 res = mu_slider_ex(ctx, &tmp, low, high, 0, "%.0f", MU_OPT_ALIGNCENTER);
 	*value = tmp;
 	mu_pop_id(ctx);
+	return res;
+}
+
+int MUiToggleButtonEx(mu_Context *ctx, int *state, int opt) 
+{
+	int res = 0;
+	mu_Id id = mu_get_id(ctx, &state, sizeof(state));
+	mu_Rect r = mu_layout_next(ctx);
+	mu_Rect box = MuRectExpand(r, -2);
+	mu_update_control(ctx, id, r, opt);
+	/* handle click */
+	if (ctx->mouse_pressed == MU_MOUSE_LEFT && ctx->focus == id) {
+		res |= MU_RES_CHANGE;
+		*state = *state ? false : true;
+	}
+	/* draw */
+	mu_draw_control_frame(ctx, id, r, MU_COLOR_BUTTON, opt);
+	if (*state) {
+	//	mu_draw_icon(ctx, MU_ICON_CHECK, r, ctx->style->colors[MU_COLOR_TEXT]);
+		mu_draw_control_frame(ctx, id, box, MU_COLOR_BASE, opt);
+	}
 	return res;
 }
 

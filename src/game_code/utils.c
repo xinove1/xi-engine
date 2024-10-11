@@ -3,9 +3,26 @@
 
 V2 ExpDecayV2(V2 a, V2 b, f32 decay) 
 {
-	V2 d = Vector2Subtract(a, b);
-	d = Vector2Scale(d, expf(-decay * GetFrameTime()));
-	return Vector2Add(b, d);
+	V2 c = Vector2Subtract(a, b);
+	c = Vector2Scale(c, expf(-decay * GetFrameTime()));
+	return Vector2Add(b, c);
+}
+
+Color ExpDecayColor(Color a, Color b, f32 decay) 
+{
+	Color c = ColorSubtract(a, b);
+	c = ColorScale(c, expf(-decay * GetFrameTime()));
+	return ColorAdd(b, c);
+}
+
+Color lerp_color(Color a, Color b, f32 time) 
+{
+	return ((Color) {
+		a.r + (b.r - a.r) * time,
+		a.g + (b.g - a.g) * time,
+		a.b + (b.b - a.b) * time,
+		a.a + (b.a - a.a) * time
+	});
 }
 
 void draw_grid_ex(V2 position, V2 grid_size, i32 tile_size, f32 line_thickness, Color color) 
