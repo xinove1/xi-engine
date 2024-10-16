@@ -1,10 +1,10 @@
 #ifndef GAME_H_
 # define GAME_H_
 
-# include "../main.h"
 # include "raylib.h"
 # include "raymath.h"
 # include "raymath_short.h"
+# include "../main.h"
 # include "core.h"
 # include "xui.h"
 # include "mui.h"
@@ -37,6 +37,7 @@
 #define entitys_iterate(da) da_iterate(da, EntityDa)
 #define effects_iterate(da) da_iterate(da, EffectDa)
 #define iterate_get(da) &__da.items[__i]
+
 
 typedef struct {
 	byte *items;

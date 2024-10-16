@@ -1,3 +1,5 @@
+#include <raylib.h>
+
 #define RAYMATH_SHORT_IMPLEMENTATION
 #include "raymath_short.h"
 

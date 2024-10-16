@@ -1,7 +1,8 @@
-#include "main.h"
+#include "raylib.h"
 #include "core.h"
-#include "input.h"
 #include "raymath_short.h"
+#include "input.h"
+#include "main.h"
 
 #ifdef HOT_RELOAD
 # include <dlfcn.h>

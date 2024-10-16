@@ -11,11 +11,11 @@ void RegisterInputKeyAction(i32 action_id, i32 keycode);
 void RegisterGamePadButtonAction(i32 action_id, i32 gamepad_button);
 void RegisterGamePadAxisAction(i32 action_id, i32 gamepad_axis, f32 trigger_deadzone);
 void SetGamePadId(i32 gamepad); // Which GamePad to use
-bool IsActionPressed(i32 action_id);
-bool IsActionReleased(i32 action_id);
-bool IsActionDown(i32 action_id);
-bool IsMouseMoving();
-bool WasAnyActionDown();
+b32 IsActionPressed(i32 action_id);
+b32 IsActionReleased(i32 action_id);
+b32 IsActionDown(i32 action_id);
+b32 IsMouseMoving();
+b32 WasAnyActionDown();
 void PoolActions();
 void PrintActions();
 
@@ -69,7 +69,7 @@ void SetGamePadId(i32 gamepad)
 	GamePadId = gamepad;
 }
 
-bool _CheckDown(Action *action) 
+b32 _CheckDown(Action *action) 
 {
 	for (i32 i = 0; i < MAX_ACTION_KEYCODES; i++) {
 		if (action->keycodes[i] == -1) break ;
@@ -263,7 +263,7 @@ void RegisterGamePadAxisAction(i32 action_id, i32 gamepad_axis, f32 trigger_poin
 }
 
 
-bool IsActionPressed(i32 action_id)
+b32 IsActionPressed(i32 action_id)
 {
 	Action *action = _GetAction(action_id);
 	if (action == NULL) {
@@ -273,7 +273,7 @@ bool IsActionPressed(i32 action_id)
 	return (action->pressed);
 }
 
-bool IsActionReleased(i32 action_id)
+b32 IsActionReleased(i32 action_id)
 {
 	Action *action = _GetAction(action_id);
 	if (action == NULL) {
@@ -283,7 +283,7 @@ bool IsActionReleased(i32 action_id)
 	return (action->released);
 }
 
-bool IsActionDown(i32 action_id)
+b32 IsActionDown(i32 action_id)
 {
 	Action *action = _GetAction(action_id);
 	if (action == NULL) {
@@ -293,12 +293,12 @@ bool IsActionDown(i32 action_id)
 	return (action->down);
 }
 
-bool IsMouseMoving() 
+b32 IsMouseMoving() 
 {
 	return (MouseMoving);
 }
 
-bool WasAnyActionDown()
+b32 WasAnyActionDown()
 {
 	return (WasActionDown);
 }
