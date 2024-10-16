@@ -232,8 +232,8 @@ int nob_file_exists(const char *file_path);
 #    elif defined(_MSC_VER)
 #       define NOB_REBUILD_URSELF(binary_path, source_path) "cl.exe", nob_temp_sprintf("/Fe:%s", (binary_path)), source_path
 #    endif
-#  else
-#    define NOB_REBUILD_URSELF(binary_path, source_path) "cc", "-o", binary_path, source_path
+#  else // TODO  Adeded -g3 straight up, maybe but on option?
+#    define NOB_REBUILD_URSELF(binary_path, source_path) "cc", "-g3", "-o", binary_path, source_path
 #  endif
 #endif
 
@@ -265,7 +265,46 @@ int nob_file_exists(const char *file_path);
         assert(argc >= 1);                                                                   \
         const char *binary_path = argv[0];                                                   \
                                                                                              \
+        printf("source path: %s, binary_path: %s \n", source_path, binary_path);          \
         int rebuild_is_needed = nob_needs_rebuild(binary_path, &source_path, 1);             \
+        if (rebuild_is_needed < 0) exit(1);                                                  \
+        if (rebuild_is_needed) {                                                             \
+            Nob_String_Builder sb = {0};                                                     \
+            nob_sb_append_cstr(&sb, binary_path);                                            \
+            nob_sb_append_cstr(&sb, ".old");                                                 \
+            nob_sb_append_null(&sb);                                                         \
+                                                                                             \
+            if (!nob_rename(binary_path, sb.items)) exit(1);                                 \
+            Nob_Cmd rebuild = {0};                                                           \
+            nob_cmd_append(&rebuild, NOB_REBUILD_URSELF(binary_path, source_path));          \
+            bool rebuild_succeeded = nob_cmd_run_sync(rebuild);                              \
+            nob_cmd_free(rebuild);                                                           \
+            if (!rebuild_succeeded) {                                                        \
+                nob_rename(sb.items, binary_path);                                           \
+                exit(1);                                                                     \
+            }                                                                                \
+                                                                                             \
+            Nob_Cmd cmd = {0};                                                               \
+            nob_da_append_many(&cmd, argv, argc);                                            \
+            if (!nob_cmd_run_sync(cmd)) exit(1);                                             \
+            exit(0);                                                                         \
+        }                                                                                    \
+    } while(0)
+
+#define NOB_GO_REBUILD_URSELF_MANY(argc, argv, ...) \
+    NOB_GO_REBUILD_URSELF_REQUIREMENTS(argc, argv, \
+                       ((const char*[]){__FILE__, __VA_ARGS__}), \
+                       (sizeof((const char*[]){__FILE__, __VA_ARGS__})/sizeof(const char*)))
+
+#define NOB_GO_REBUILD_URSELF_REQUIREMENTS(argc, argv, requirements, r_count)                                                    \
+    do {                                                                                     \
+        const char *source_path = __FILE__;                                                  \
+        assert(argc >= 1);                                                                   \
+        const char *binary_path = argv[0];                                                   \
+                                                                                             \
+        for (int i = 0; i < (int) r_count; i++ ) { printf("%s\n",requirements[i]);}\
+        printf("source path: %s, binary_path: %s \n", source_path, binary_path);          \
+        int rebuild_is_needed = nob_needs_rebuild(binary_path, requirements, r_count);             \
         if (rebuild_is_needed < 0) exit(1);                                                  \
         if (rebuild_is_needed) {                                                             \
             Nob_String_Builder sb = {0};                                                     \

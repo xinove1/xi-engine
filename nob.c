@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define NO_RAYLIB
 #include "./src/modules/core.h"
 
 #define NOB_IMPLEMENTATION
 #include "./nob.h"
+#include "./meta.c"
 
 internal void build_linux_static();
 internal void build_linux_hot();
@@ -68,7 +70,7 @@ global b32 ReLaunch = true;
 
 int main(int argc, char *argv[]) 
 {
-	NOB_GO_REBUILD_URSELF(argc, argv);
+	NOB_GO_REBUILD_URSELF_MANY(argc, argv, "meta.c");
 
 	if (!nob_mkdir_if_not_exists("./build")) return 1;
 
@@ -80,7 +82,10 @@ int main(int argc, char *argv[])
 	if (argc == 0) flag = "hot_run"; // default build
 	else flag = nob_shift_args(&argc, &argv);
 
-	if (flag_compare(flag, "hot")) {
+	if (flag_compare(flag, "m")) {
+		test("./src/game_code/entitys.h");
+	} 
+	else if (flag_compare(flag, "hot")) {
 		build_linux_hot();
 	} 
 	else if (flag_compare(flag, "linux_static")) {

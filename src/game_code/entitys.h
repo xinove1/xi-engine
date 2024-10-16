@@ -28,7 +28,7 @@ global cstr *EntityTypeNames[] = {
 	"EntityTypeCount"
 };
 
-typedef struct {
+introspect() typedef struct {
 	EntityType type;
 	RenderData render;
 	VEffect veffects[VEffectTypeCount];
