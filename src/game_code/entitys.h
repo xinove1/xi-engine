@@ -1,5 +1,6 @@
 #ifndef ENTITYS_H_
 # define ENTITYS_H_
+# include "raylib.h"
 # include "core.h"
 # include "render.h"
 

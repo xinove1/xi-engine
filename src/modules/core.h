@@ -92,6 +92,12 @@ typedef size_t    usize;
 // will cause collision if included before raylib
 
 #ifdef NO_RAYLIB
+
+# ifndef RL_BOOL_TYPE
+   typedef enum bool { false = 0, true = !false } bool;
+#  define RL_BOOL_TYPE
+# endif
+
 # ifndef RL_COLOR_TYPE
 typedef struct Color {
     unsigned char r;        // Color red value
