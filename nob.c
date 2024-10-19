@@ -5,9 +5,10 @@
 #define NO_RAYLIB
 #include "./src/modules/core.h"
 
+#include "./meta.c"
+
 #define NOB_IMPLEMENTATION
 #include "./nob.h"
-#include "./meta.c"
 
 internal void build_linux_static();
 internal void build_linux_hot();
@@ -40,7 +41,7 @@ const global cstr *DebugFlags[] = {
 	//"-Werror",
 	//"-Wdouble-promotion",
 };
-const global cstr *SharedFlags[] = { "-I./src/modules/", }; //"-I./external/raylib-5.0/src"
+const global cstr *SharedFlags[] = { "-I./src/modules/", "-std=c99" }; //"-I./external/raylib-5.0/src"
 const global cstr *HotFlags[] = {"-DHOT_RELOAD", "-DBUILD_DEBUG", "-Wl,-rpath=./build/", "-L./build/",  "-lraylib" };
 
 const global cstr *Src_EngineLayer[] = {"./src/main.c", };
@@ -82,8 +83,11 @@ int main(int argc, char *argv[])
 	if (argc == 0) flag = "hot_run"; // default build
 	else flag = nob_shift_args(&argc, &argv);
 
-	if (flag_compare(flag, "m")) {
-		test("./src/game_code/entitys.h");
+	if (flag_compare(flag, "r")) {
+		nob_log(NOB_INFO, "Just recompiling, doing nothing");
+	}
+	else if (flag_compare(flag, "m")) {
+		parse_file("./src/game_code/entitys.h");
 	} 
 	else if (flag_compare(flag, "hot")) {
 		build_linux_hot();

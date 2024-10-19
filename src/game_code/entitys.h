@@ -29,7 +29,8 @@ global cstr *EntityTypeNames[] = {
 	"EntityTypeCount"
 };
 
-introspect() typedef struct {
+introspect(type:"tagged_union")
+typedef struct {
 	EntityType type;
 	RenderData render;
 	VEffect veffects[VEffectTypeCount];

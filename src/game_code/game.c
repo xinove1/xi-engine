@@ -60,6 +60,7 @@ hot void init_pos_raylib(void)
 			.color_font_highlight = BLACK,
 			.color_borders = BLACK,
 	});
+
 }
 
 hot void pre_reload(void)
@@ -72,6 +73,9 @@ hot void pos_reload(void *data)
 	Data = data;
 	Level = Data->level;
 	pos_reload_editor(Data);
+	// size offset = offset_of(GameLevel, entitys);
+	// printf("offset: %ld \n", offset);
+	// printf("sizeof entity: %ld \n", sizeof(Entity));
 }
 
 
@@ -252,12 +256,20 @@ hot void draw(void)
 	}
 
 	if (Data->lost) {
-		cstr *text = TextFormat("You Lost!");
+		const cstr *text = TextFormat("You Lost!");
 		i32 size = MeasureText(text, 20);
 		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, Data->canvas_size.y * 0.5f);
 		DrawText(text, pos.x, pos.y, 20, BLACK);
 	}
 	
+	// {
+	// 	size offset = offset_of(GameLevel, tower);
+	// 	Entity *tower = (Entity *) (((u8 *) Level) + offset);
+	// 	const cstr *text = TextFormat("tower health: %.f", tower->health);
+	// 	i32 size = MeasureText(text, 10);
+	// 	V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, 22);
+	// 	DrawText(text, pos.x, pos.y, 10, RED);
+	// }
 	// Draw editor
 	draw_editor();
 }

@@ -232,8 +232,11 @@ int nob_file_exists(const char *file_path);
 #    elif defined(_MSC_VER)
 #       define NOB_REBUILD_URSELF(binary_path, source_path) "cl.exe", nob_temp_sprintf("/Fe:%s", (binary_path)), source_path
 #    endif
-#  else // TODO  Adeded -g3 straight up, maybe but on option?
-#    define NOB_REBUILD_URSELF(binary_path, source_path) "cc", "-g3", "-o", binary_path, source_path
+#  else 
+#    define NOB_REBUILD_URSELF(binary_path, source_path) "cc", "-o", binary_path, source_path
+#    define NOB_REBUILD_URSELF_DEBUG(binary_path, source_path) "cc", \
+                "-g3", "-fsanitize=address", "-fsanitize-trap", "-fsanitize=undefined",  \
+                "-o", binary_path, source_path
 #  endif
 #endif
 
@@ -303,7 +306,6 @@ int nob_file_exists(const char *file_path);
         const char *binary_path = argv[0];                                                   \
                                                                                              \
         for (int i = 0; i < (int) r_count; i++ ) { printf("%s\n",requirements[i]);}\
-        printf("source path: %s, binary_path: %s \n", source_path, binary_path);          \
         int rebuild_is_needed = nob_needs_rebuild(binary_path, requirements, r_count);             \
         if (rebuild_is_needed < 0) exit(1);                                                  \
         if (rebuild_is_needed) {                                                             \
@@ -314,7 +316,7 @@ int nob_file_exists(const char *file_path);
                                                                                              \
             if (!nob_rename(binary_path, sb.items)) exit(1);                                 \
             Nob_Cmd rebuild = {0};                                                           \
-            nob_cmd_append(&rebuild, NOB_REBUILD_URSELF(binary_path, source_path));          \
+            nob_cmd_append(&rebuild, NOB_REBUILD_URSELF_DEBUG(binary_path, source_path));          \
             bool rebuild_succeeded = nob_cmd_run_sync(rebuild);                              \
             nob_cmd_free(rebuild);                                                           \
             if (!rebuild_succeeded) {                                                        \

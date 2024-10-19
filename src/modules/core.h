@@ -55,6 +55,7 @@
 // 
 #define count_of(a)    (size)(sizeof(a) / sizeof(*(a)))
 #define length_of(s)   (countof(s) - 1)
+#define offset_of(s, m) ((size) &((s *) 0)->m)
 
 # define MAX(a, b) ((a)>(b)? (a) : (b))
 # define MIN(a, b) ((a)<(b)? (a) : (b))
