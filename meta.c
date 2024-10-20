@@ -146,23 +146,102 @@ internal cstr *read_file(cstr *path);
 internal cstr *copy_token_text(Token token) ;
 internal Token get_token(Tokenizer *t);
 internal cstr *get_type(Token token);
-internal b32 token_match(Token t, cstr *str);
-internal b32 has_token(Tokenizer *t, TokenType token_type);
+internal void parse_file(cstr *path, IntrospectableDa *introspectables);
+
 internal Introspectable parse_instrospectable(Tokenizer *t);
 internal IntrospectableTypes parse_instrospectable_params(Tokenizer *t);
+internal MetaEnum parse_enum(Tokenizer *t);
 internal MetaStruct parse_struct(Tokenizer *t);
+internal MetaStruct parse_struct_union_struct(Tokenizer *t);
 internal MetaStructTagged parse_struct_tagged(Tokenizer *t);
 internal MetaMember parse_struct_member(Tokenizer *t, Token member_token);
-internal MetaStruct parse_struct_union_struct(Tokenizer *t);
 internal MetaStructDa parse_struct_union(Tokenizer *t);
+internal b32 token_match(Token t, cstr *str);
+internal b32 has_token(Tokenizer *t, TokenType token_type);
 
-void introspect_files(cstr **files, size files_count, cstr *output_file) 
+internal void generate_output(cstr *path, IntrospectableDa *data);
+internal void gen_struct(FILE *f, MetaStruct s);
+internal void gen_struct_tagged(FILE *f, MetaStruct s);
+
+void introspect_files(cstr *output_file, cstr **files, size files_count) 
 {
-	// TODO  Receive list of files to be processed, check files against generated code to see if we actually need to process them
-	// TODO  Receive list of files to be processed, check files against generated code to see if we actually need to process them
+	// TODO  Check files against generated code to see if we actually need to process them
+	
+	IntrospectableDa info;
+	for (i32 i = 0; i < files_count; i++) {
+		nob_log(NOB_INFO, "parsing: %s \n", files[i]);
+		parse_file(files[i], &info);
+	}
+	generate_output(output_file, &info);
 }
 
-void parse_file(cstr *path) 
+void generate_output(cstr *path, IntrospectableDa *data) 
+{
+	FILE *f = fopen(path, "w");
+	// ---- Header begin ----
+	fprintf(f, "#ifndef META_GEN_H_\n");
+	fprintf(f, "# define META_GEN_H_\n");
+	fprintf(f, "\n");
+
+	// ---- MetaTypes ----
+	fprintf(f, "typedef enum { \n");
+	for (i32 i = 0; i < EncounteredTypes.count; i++) {
+		fprintf(f, "\t MetaType_%s,\n", EncounteredTypes.items[i]);
+	}
+	fprintf(f, "\t MetaTypeCount, \n");
+	fprintf(f, "} MetaTypes; \n");
+	fprintf(f, "\n");
+
+	// ---- MetaMember ----
+	fprintf(f, "typedef struct { \n");
+	fprintf(f, "\t MetaTypes type;\n");
+	fprintf(f, "\t cstr *name;\n");
+	fprintf(f, "\t size offset;\n");
+	fprintf(f, "} MetaMember; \n");
+	fprintf(f, "\n");
+
+	// ---- Stuff ---
+
+	for (i32 i = 0; i < data->count; i++) {
+		Introspectable *intro = &data->items[i];
+		switch (intro->type) {
+			case I_Struct: {
+				gen_struct(f, intro->meta_struct);
+			} break;
+			case I_StructTaggedUnion: {
+				gen_struct(f, intro->meta_struct_tagged.meta_struct);
+			} break;
+			case I_Enum: {
+				fprintf(f, "global cstr *%sNames[] = { \n", intro->meta_enum.name);
+				for (i32 i = 0; i < intro->meta_enum.fields.count; i++) {
+					fprintf(f, "\t \"%s\",\n", intro->meta_enum.fields.items[i]);
+				}
+				fprintf(f, "}; \n");
+				fprintf(f, "\n");
+			} break;
+			default : {
+				nob_log(NOB_ERROR, "generate not implemented for %s", IntrospectableTypesNames[intro->type]);
+			} break;
+		}
+	}
+
+	// ---- Header end ----
+	fprintf(f, "\n");
+	fprintf(f, "#endif ");
+}
+
+internal void gen_struct(FILE *f, MetaStruct s) 
+{
+	fprintf(f, "global MetaMember MembersOf_%s[] = { \n", s.name);
+	for (i32 i = 0; i < s.fields.count; i++) {
+		fprintf(f, "\t{MetaType_%s, \"%s\", offset_of(%s, %s)},\n", 
+			s.fields.items[i].type, s.fields.items[i].name, s.name, s.fields.items[i].name);
+	}
+	fprintf(f, "}; \n");
+	fprintf(f, "\n");
+}
+
+void parse_file(cstr *path, IntrospectableDa *introspectables)
 {
 	cstr *buf = read_file(path);
 	if (buf == NULL) {
@@ -170,32 +249,25 @@ void parse_file(cstr *path)
 		return ;
 	}
 
-	IntrospectableDa introspectables = {0};
-
 	Tokenizer tokenizer;
 	tokenizer.at = buf;
 	b32 parsing = true;
 	while (parsing) {
 		Token token = get_token(&tokenizer);
 		switch (token.type) {
-			case TokenEOF: {
-				parsing = false;
-			} break;
+			case TokenEOF: { parsing = false; } break;
+			case TokenUnknown: { } break;
+
 			case TokenIndentifier: {
 				if (token_match(token, "introspect")) {
-					da_append(&introspectables, parse_instrospectable(&tokenizer));
+					da_append(introspectables, parse_instrospectable(&tokenizer));
 				}
 			} break;
-			case TokenUnknown: { } break;
+
 			default: {
 //				printf("%s: %.*s \n", TokenTypeNames[token.type], token.text_size, token.text);
 			} break;
 		}
-	}
-	print_introspectable(&introspectables);
-	printf("Encountered types: \n");
-	for (i32 i = 0; i < EncounteredTypes.count; i++) {
-		printf("\t %s \n", EncounteredTypes.items[i]);
 	}
 	free(buf);
 }
@@ -221,8 +293,13 @@ internal Introspectable parse_instrospectable(Tokenizer *t)
 			introspectable.type = I_Struct;
 			introspectable.meta_struct = parse_struct(t);
 		}
-	} else {
-		nob_log(NOB_ERROR, "parse instrospectable: only struct implemented for now.");
+	}
+	else if (token_match(token, "enum")) {
+		introspectable.type = I_Enum;
+		introspectable.meta_enum = parse_enum(t);
+	} 
+	else {
+		nob_log(NOB_ERROR, "parse instrospectable: %.*s not implemented.", token.text_size, token.text);
 	}
 
 	return (introspectable);
@@ -258,6 +335,25 @@ internal IntrospectableTypes parse_instrospectable_params(Tokenizer *t)
 		}
 	}
 	return (r);
+}
+
+internal MetaEnum parse_enum(Tokenizer *t) 
+{
+	if (!has_token(t, TokenOpenBraces)) {
+		nob_log(NOB_ERROR, "parse_enum: expected '{' after enum keyword, put enum name after '}'");
+		exit(1);
+	}
+	MetaEnum _enum = {0};
+	Token token = get_token(t);
+	while (token.type != TokenCloseBraces) {
+		if (token.type == TokenIndentifier) {
+			da_append(&_enum.fields, copy_token_text(token));
+		}
+		token = get_token(t);
+	}
+	token = get_token(t);
+	_enum.name = copy_token_text(token);
+	return (_enum);
 }
 
 internal MetaStruct parse_struct(Tokenizer *t) 

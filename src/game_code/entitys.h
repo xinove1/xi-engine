@@ -9,7 +9,7 @@
 	if (e->type == EntityEmpty) {continue;} \
 	if (e->type != expected_type) { TraceLog(LOG_WARNING, "iterate_check_entity: expected entity of type %s but got type %s. continuing", EntityTypeNames[expected_type], EntityTypeNames[e->type]); continue;}
 
-typedef enum {
+introspect() typedef enum {
 	EntityEmpty,
 	EntityTurret,
 	EntityMainTower,
@@ -19,17 +19,6 @@ typedef enum {
 	EntityTypeCount
 } EntityType;
 
-global cstr *EntityTypeNames[] = {
-	"EntityEmpty",
-	"EntityTurret",
-	"EntityMainTower",
-	"EntityProjectile",
-	"EntityEnemy",
-	"EntityEnemySpawner",
-	"EntityTypeCount"
-};
-
-introspect(type:"tagged_union")
 typedef struct {
 	EntityType type;
 	RenderData render;

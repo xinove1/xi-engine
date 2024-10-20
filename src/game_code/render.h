@@ -2,8 +2,9 @@
 # define  RENDER_H_
 # include "core.h"
 
-typedef enum {VEffectEmpty, VEffectFlashColor, VEffectShake, VEffectTypeCount} VEffectType;
-global cstr *VEffectTypeNames[] = {"VEffectEmpty", "VEffectFlashColor", "VEffectShake", "VEffectTypeCount"};
+introspect() typedef enum {
+	VEffectEmpty, VEffectFlashColor, VEffectShake, VEffectTypeCount
+} VEffectType;
 
 typedef struct {
 	VEffectType type;

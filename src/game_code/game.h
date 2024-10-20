@@ -2,19 +2,16 @@
 # define GAME_H_
 
 # include "raylib.h"
-# include "raymath.h"
 # include "raymath_short.h"
 # include "../main.h"
 # include "core.h"
 # include "xui.h"
 # include "mui.h"
-# include "microui.h"
 # include <assert.h>
 # include <stdio.h>
-# include <stdlib.h>
-# include <string.h>
 # include "render.h"
 # include "entitys.h"
+# include "meta_generated.h"
 
 // TODO  Better name needed for this macros
 #define da_init_and_alloc(da, limit, items_size)  \

@@ -87,7 +87,8 @@ int main(int argc, char *argv[])
 		nob_log(NOB_INFO, "Just recompiling, doing nothing");
 	}
 	else if (flag_compare(flag, "m")) {
-		parse_file("./src/game_code/entitys.h");
+		introspect_files("./src/game_code/meta_generated.h", (cstr **) Dep_Game, count_of(Dep_Game));
+		//parse_file("./src/game_code/entitys.h");
 	} 
 	else if (flag_compare(flag, "hot")) {
 		build_linux_hot();

@@ -3,9 +3,9 @@
 
 V2 ExpDecayV2(V2 a, V2 b, f32 decay) 
 {
-	V2 c = Vector2Subtract(a, b);
-	c = Vector2Scale(c, expf(-decay * GetFrameTime()));
-	return Vector2Add(b, c);
+	V2 c = V2Subtract(a, b);
+	c = V2Scale(c, expf(-decay * GetFrameTime()));
+	return V2Add(b, c);
 }
 
 Color ExpDecayColor(Color a, Color b, f32 decay) 
