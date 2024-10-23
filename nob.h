@@ -294,12 +294,12 @@ int nob_file_exists(const char *file_path);
         }                                                                                    \
     } while(0)
 
-#define NOB_GO_REBUILD_URSELF_MANY(argc, argv, ...) \
-    NOB_GO_REBUILD_URSELF_REQUIREMENTS(argc, argv, \
+#define NOB_GO_REBUILD_URSELF_MANY(debug, argc, argv, ...) \
+    NOB_GO_REBUILD_URSELF_REQUIREMENTS(debug, argc, argv, \
                        ((const char*[]){__FILE__, __VA_ARGS__}), \
                        (sizeof((const char*[]){__FILE__, __VA_ARGS__})/sizeof(const char*)))
 
-#define NOB_GO_REBUILD_URSELF_REQUIREMENTS(argc, argv, requirements, r_count)                                                    \
+#define NOB_GO_REBUILD_URSELF_REQUIREMENTS(debug, argc, argv, requirements, r_count)                                                    \
     do {                                                                                     \
         const char *source_path = __FILE__;                                                  \
         assert(argc >= 1);                                                                   \
@@ -316,7 +316,11 @@ int nob_file_exists(const char *file_path);
                                                                                              \
             if (!nob_rename(binary_path, sb.items)) exit(1);                                 \
             Nob_Cmd rebuild = {0};                                                           \
-            nob_cmd_append(&rebuild, NOB_REBUILD_URSELF_DEBUG(binary_path, source_path));          \
+            if (debug) { \
+                nob_cmd_append(&rebuild, NOB_REBUILD_URSELF_DEBUG(binary_path, source_path));          \
+            } else { \
+                nob_cmd_append(&rebuild, NOB_REBUILD_URSELF(binary_path, source_path));          \
+            } \
             bool rebuild_succeeded = nob_cmd_run_sync(rebuild);                              \
             nob_cmd_free(rebuild);                                                           \
             if (!rebuild_succeeded) {                                                        \

@@ -15,6 +15,7 @@ internal void build_linux_hot();
 internal void build_and_run_hot();
 internal void build_windows();
 internal void build_web();
+internal void build_and_run_web();
 internal void raylib_go_rebuild_urself();
 
 #define flag_compare(flag, ...) strcmp_many(flag, ((const char*[]){__VA_ARGS__}), (sizeof((const char*[]){__VA_ARGS__})/sizeof(const char*)))
@@ -24,6 +25,9 @@ b32 nob_proc_is_running(Nob_Proc proc);
 
 const global cstr *ProjectOutputName = "game";
 const global cstr *CC = "clang";
+const global cstr *AssetsFolder = "assets";
+const global cstr *WebHTMLTemplate = "./template.html";
+const global cstr *IncludesJS = "lib.js";
 
 const global cstr *DebugFlags[] = {
 	"-g3",
@@ -41,7 +45,7 @@ const global cstr *DebugFlags[] = {
 	//"-Werror",
 	//"-Wdouble-promotion",
 };
-const global cstr *SharedFlags[] = { "-I./src/modules/", "-std=c99" }; //"-I./external/raylib-5.0/src"
+const global cstr *SharedFlags[] = { "-I./src/modules/", "-I./external/raylib-5.0/src"};
 const global cstr *HotFlags[] = {"-DHOT_RELOAD", "-DBUILD_DEBUG", "-Wl,-rpath=./build/", "-L./build/",  "-lraylib" };
 
 const global cstr *Src_EngineLayer[] = {"./src/main.c", };
@@ -71,7 +75,7 @@ global b32 ReLaunch = true;
 
 int main(int argc, char *argv[]) 
 {
-	NOB_GO_REBUILD_URSELF_MANY(argc, argv, "meta.c");
+	NOB_GO_REBUILD_URSELF_MANY(false, argc, argv, "meta.c");
 
 	if (!nob_mkdir_if_not_exists("./build")) return 1;
 
@@ -97,9 +101,10 @@ int main(int argc, char *argv[])
 		build_linux_static();
 	}
 	else if (flag_compare(flag, "web")) {
-		// TODO  Implement web build
-		printf("build web not implemented\n");
-		//build_web();
+		build_web();
+	}
+	else if (flag_compare(flag, "web_run", "wr")) {
+		build_and_run_web();
 	}
 	else if (flag_compare(flag, "windows")) {
 		build_windows();
@@ -117,6 +122,7 @@ int main(int argc, char *argv[])
 		Nob_Cmd cmd = {0};
 		nob_cmd_append(&cmd, "rm");
 		// NOTE  Hardcoded name instead of using ProjectOutPutName
+		// NOTE  Why not just change to rm -rf ./build/ ?
 		nob_cmd_append(&cmd, "./build/game");
 		nob_cmd_append(&cmd, "./build/game.so");
 		nob_cmd_append(&cmd, "./build/libxilib.so");
@@ -344,6 +350,59 @@ internal void build_windows()
 
 	if (!nob_cmd_run_sync(cmd)) exit(1);
 	nob_sb_free(name);
+}
+
+internal void build_and_run_web()
+{
+	build_web();
+
+	Nob_String_Builder name = {0};
+	nob_sb_append_cstr(&name, "./build/");
+	nob_sb_append_cstr(&name, ProjectOutputName);
+	nob_sb_append_cstr(&name, ".html");
+	nob_sb_append_null(&name);
+
+	Nob_Cmd cmd = {0};
+	nob_cmd_append(&cmd, "emrun", name.items);
+	Nob_Proc proc = nob_cmd_run_async(cmd);
+	while (nob_proc_is_running(proc)) {
+	}
+}
+
+internal void build_web()
+{
+	Nob_Cmd cmd = {0};
+
+	nob_cmd_append(&cmd, "emcc");
+
+	// Flags
+	nob_cmd_append(&cmd, "-DPLATFORM_WEB");
+	nob_cmd_append(&cmd, "--preload-file", AssetsFolder);
+	nob_cmd_append(&cmd, "--shell-file", WebHTMLTemplate);
+	nob_cmd_append(&cmd, "--js-library", IncludesJS);
+	nob_cmd_append(&cmd, "-sEXPORTED_FUNCTIONS=_main");
+	nob_cmd_append(&cmd, "-s", "ALLOW_MEMORY_GROWTH=1", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap");
+	nob_cmd_append(&cmd, "-s", "STACK_SIZE=1mb", "-Os", "-s", "USE_GLFW=3", "-sGL_ENABLE_GET_PROC_ADDRESS");
+
+	nob_cmd_append(&cmd, "-lGL", "-lm", "-lpthread", "-ldl", "-lrt", "-lX11",); // raylib
+	nob_da_append_many(&cmd, SharedFlags, count_of(SharedFlags));
+	if (Debug) nob_da_append_many(&cmd, DebugFlags, count_of(DebugFlags));
+	
+	// Sources
+	nob_da_append_many(&cmd, Src_Game, count_of(Src_Game));
+	nob_da_append_many(&cmd, Src_EngineLayer, count_of(Src_EngineLayer));
+	nob_da_append_many(&cmd, Src_Modules, count_of(Src_Modules));
+	
+	nob_cmd_append(&cmd, "./build/libraylib_web.a");
+
+	Nob_String_Builder name = {0};
+	nob_sb_append_cstr(&name, "./build/");
+	nob_sb_append_cstr(&name, ProjectOutputName);
+	nob_sb_append_cstr(&name, ".html");
+	nob_sb_append_null(&name);
+	nob_cmd_append(&cmd, "-o", name.items, );
+
+	if (!nob_cmd_run_sync(cmd)) exit(1);
 }
 
 internal void raylib_go_rebuild_urself()
