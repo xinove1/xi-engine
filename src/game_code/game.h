@@ -44,7 +44,7 @@ typedef struct {
 
 typedef struct {
 	char *name;
-	Entity tower;
+	Entity cake;
 	EntityDa entitys;
 	EntityDa turrets;
 	EntityDa enemys;
@@ -84,7 +84,7 @@ Entity *get_closest_entity(EntityDa entitys, V2 from);
 Entity *get_closest_entity_range(EntityDa entitys, V2 from, f32 range);
 b32 EntityInRange(Entity *from, Entity *to, f32 range);
 Entity *check_collision(Rect rec, EntityDa entitys) ;
-Entity *get_turret(GameData *data, EntityDa towers, i32 floor, i32 side);
+Entity *get_turret(GameData *data, EntityDa turrets, i32 floor, i32 side);
 
 // Render
 void render_entity(Entity *entity);

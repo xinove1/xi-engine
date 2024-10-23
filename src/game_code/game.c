@@ -89,11 +89,11 @@ hot b32 update(void)
 		return (false);
 	}
 
-	if (Level->tower.health <= 0) {
+	if (Level->cake.health <= 0) {
 		Data->lost = true;
 	}
 
-	update_entity_veffects(&Level->tower);
+	update_entity_veffects(&Level->cake);
 	{entitys_iterate(Level->entitys) {
 		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue;
@@ -119,9 +119,6 @@ hot b32 update(void)
 		exit(0);
 	}
 
-	// TODO  Macro for checking if entity is an empty one, continue if that's the case,
-	// and check if its of expected type and give warning if it does not match
-	
 	// ----------- Update Entitys ----------- 
 	
 	// ----------- Enemys ----------- 
@@ -133,7 +130,7 @@ hot b32 update(void)
 
 		V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
 		Entity *target = get_turret(Data, Level->turrets, e->floor, dir.x);
-		if (!target) target = &Level->tower; // Attack Main tower instead
+		if (!target) target = &Level->cake; // Attack Main tower instead
 
 		if (EntityInRange(e, target, e->enemy.range)) {
 			e->enemy.attack_rate_count += GetFrameTime();
@@ -155,14 +152,14 @@ hot b32 update(void)
 			e->spawner.rate_count = 0;
 			V2 pos = V2Add(e->pos, V2Scale(e->size, 0.5f));
 			push_entity(&Level->enemys, create_enemy_(pos, (CreateEnemyParams) {
-				.size = Vec2(5, 5),
+				.size = Vec2(16, 16),
 				.health = 50,
 				.color = BLUE,
 				.speed = 70,
 				.floor = e->floor,
 				.melee = false,
 				.damage = 1,
-				.range = 30,
+				.range = 10,
 				.attack_rate = 0.5f
 			}));
 		}
@@ -241,7 +238,7 @@ hot void draw(void)
 	// DrawRectangle(Level->map_offset.x, Level->map_offset.y, Level->map_sz.x * TILE, Level->map_sz.y * TILE, WHITE);
 	//
 
-	render_entity(&Level->tower);
+	render_entity(&Level->cake);
 	{entitys_iterate(Level->entitys) {
 		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue;
@@ -249,7 +246,7 @@ hot void draw(void)
 	}}
 
 	{
-		cstr *text = TextFormat("Tower health: %.f/%.f", Level->tower.health, Level->tower.health_max);
+		cstr *text = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
 		i32 size = MeasureText(text, 10);
 		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, 12);
 		DrawText(text, pos.x, pos.y, 10, RED);
@@ -289,20 +286,18 @@ GameFunctions game_init_functions()
 GameLevel *create_level(GameData *data, size floors) 
 {
 	GameLevel *level = calloc(1, sizeof(GameLevel));
-	f32 floor_height = 20;
-	f32 floor_padding = 5;
-	f32 turret_width = 25;
-	f32 tower_width = 50;
+	f32 floor_height = 32;
+	f32 floor_padding = 8;
+	f32 turret_width = 32;
+	f32 tower_width = 64;
 	f32 tower_health = 400;
 	f32 ground_height = 50;
-
-	// TODO  
 
 	V2 canvas = data->canvas_size;
 	V2 canvas_middle = Vec2(canvas.x * 0.5f, canvas.y * 0.5f);
 	V2 tower_size = Vec2(tower_width, (floor_height * floors) + (floor_padding * floors));
 	V2 tower_pos = Vec2(canvas_middle.x - (tower_size.x * 0.5f), canvas.y - (tower_size.y + ground_height));
-	level->tower = create_entity((Entity) {
+	level->cake = create_entity((Entity) {
 		.type = EntityMainTower,
 		.pos = tower_pos,
 		.size = tower_size,
@@ -336,14 +331,18 @@ GameLevel *create_level(GameData *data, size floors)
 		i32 floor = 0;
 		// Left side
 		if (i < max_spawners * 0.5f) {
-			floor = i + 1;
+			floor += i;
 			pos.x = 0;
 		}
 		else { // Right side
-			floor = i - max_spawners/2.f +1;
+			floor += i - max_spawners/2.f;
 			pos.x = canvas.x - turret_width;
 		}
-		pos.y -= (floor_padding + floor_height) * floor;
+		if (floor == 0) {
+			pos.y -= floor_height * (floor + 1);
+		} else {
+			pos.y -= (floor_padding + floor_height) * floor + floor_height;
+		}
 		
 		push_entity(&level->spawners, create_entity((Entity) {
 			.type = EntityEnemySpawner,
@@ -363,14 +362,18 @@ GameLevel *create_level(GameData *data, size floors)
 		i32 floor = 0;
 		// Left side
 		if (i < max_turrets * 0.5f) {
-			floor = i + 1;
+			floor += i;
 			pos.x = tower_pos.x -  turret_width;
 		}
 		else { // Right side
-			floor = i - max_turrets/2.f +1;
+			floor += i - max_turrets/2.f;
 			pos.x = tower_pos.x + tower_width;
 		}
-		pos.y -= (floor_padding + floor_height) * floor;
+		if (floor == 0) {
+			pos.y -= floor_height * (floor + 1);
+		} else {
+			pos.y -= (floor_padding + floor_height) * floor + floor_height;
+		}
 
 		push_entity(&level->turrets, create_entity((Entity) {
 			.type = EntityTurret,

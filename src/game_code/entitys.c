@@ -96,7 +96,8 @@ Entity *get_closest_entity_range(EntityDa entitys, V2 from, f32 range)
 
 b32 EntityInRange(Entity *from, Entity *to, f32 range) 
 {
-	Rect from_rec = RecV2(V2Subtract(from->pos, Vec2v(range)), V2Add(from->size, Vec2v(range)));
+	//Rect from_rec = RecV2(V2Subtract(from->pos, Vec2v(range)), V2Add(from->size, Vec2v(range)));
+	Rect from_rec = RecGrow(RecV2(from->pos, from->size), range);
 	Rect to_rec = RecV2(to->pos, to->size);
 	return (CheckCollisionRecs(from_rec, to_rec));
 }
@@ -185,9 +186,9 @@ Entity create_enemy_(V2 pos, CreateEnemyParams params)
 	return (e);
 }
 
-Entity *get_turret(GameData *data, EntityDa towers, i32 floor, i32 side)
+Entity *get_turret(GameData *data, EntityDa turrets, i32 floor, i32 side)
 {
-	{entitys_iterate(towers) {
+	{entitys_iterate(turrets) {
 		Entity *e = iterate_get();
 		iterate_check_entity(e, EntityTurret);
 		if (e->floor != floor) continue;

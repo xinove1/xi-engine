@@ -31,7 +31,7 @@ void update_editor()
 		Ed->debug_window = Ed->debug_window ? false : true;
 	}
 	if (Ed->no_lose) {
-		Data->level->tower.health = 99999999.f;
+		Data->level->cake.health = 99999999.f;
 	}
 
 	// ----- Ui -----
