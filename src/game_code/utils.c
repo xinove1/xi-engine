@@ -8,6 +8,13 @@ V2 ExpDecayV2(V2 a, V2 b, f32 decay)
 	return V2Add(b, c);
 }
 
+f32 ExpDecayf32(f32 a, f32 b, f32 decay) 
+{
+	f32 c = a - b;
+	c = c * expf(-decay * GetFrameTime());
+	return (b + c);
+}
+
 Color ExpDecayColor(Color a, Color b, f32 decay) 
 {
 	Color c = ColorSubtract(a, b);
@@ -23,6 +30,12 @@ Color lerp_color(Color a, Color b, f32 time)
 		a.b + (b.b - a.b) * time,
 		a.a + (b.a - a.a) * time
 	});
+}
+
+f32 GetRandf32Ex(f32 min, f32 max, f32 acc) 
+{
+	f32 r = GetRandomValue(min * acc, max * acc);
+	return (r / acc);
 }
 
 void draw_grid_ex(V2 position, V2 grid_size, i32 tile_size, f32 line_thickness, Color color) 

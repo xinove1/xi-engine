@@ -43,7 +43,9 @@ int main()
 	InitWindow(Config.canvas_size.x, Config.canvas_size.y, Config.window_name);
 	SetWindowState(FLAG_WINDOW_MAXIMIZED); // TODO  Move this to GameConfig or UserConfig or something
 	InitAudioDevice();
-	SetTargetFPS(Config.target_fps);
+	if (Config.target_fps != 0) {
+		SetTargetFPS(Config.target_fps);
+	}
 	SetExitKey(0);
 	
 	register_actions();

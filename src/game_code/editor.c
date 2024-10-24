@@ -1,7 +1,6 @@
 #include "game.h"
 #include "./microui_exemple.c"
 
-global GameData *Data = NULL;
 global GameEditor *Ed = NULL;
 
 internal void edit_entity(Entity *e);
@@ -19,7 +18,6 @@ void init_editor(GameData *data)
 
 void pos_reload_editor(GameData *data) 
 {
-	Data = data;
 	Ed = &data->editor;
 }
 

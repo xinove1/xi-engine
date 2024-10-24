@@ -1,5 +1,13 @@
 #include "game.h"
 
+void render_particle(Particle p)
+{
+	if (p.type == ParticleEmpty) return ;
+	Rect rec = RecV2(p.pos, p.size);
+	Color color = lerp_color(p.color_initial, p.color_end, p.duration_count / p.duration);
+	DrawRectangleRec(rec, color);
+}
+
 void render_entity(Entity *entity)
 {
 	if (entity->type == EntityEmpty) return ;
@@ -101,6 +109,26 @@ void apply_shake_effect(Entity *entity, f32 duration)
 			.type = VEffectShake,
 			.duration = duration,
 		};
+	}
+}
+
+void create_particle_ex(CreateParticleParams param)
+{
+	Particle p = (Particle) {
+		.type = ParticleAlive,
+		.dir = param.dir,
+		.velocity = param.velocity,
+		.pos = param.pos,
+		.size = param.size,
+		.duration = param.duration,
+		.color_initial = param.color_initial,
+		.color_end = param.color_end,
+	};
+	for (i32 i = 0; i < count_of(Data->particles); i++) {
+		if (Data->particles[i].type == ParticleEmpty) {
+			Data->particles[i] = p;
+			break ;
+		}
 	}
 }
 

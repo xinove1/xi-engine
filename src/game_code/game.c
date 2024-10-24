@@ -9,7 +9,7 @@
 
 GameLevel *create_level(GameData *data, size floors);
 
-global GameData  *Data = NULL;
+GameData  *Data = NULL;
 global GameLevel *Level= NULL;
 
 hot GameConfig init_pre_raylib(void **data)
@@ -20,6 +20,7 @@ hot GameConfig init_pre_raylib(void **data)
 	*Data = (GameData) {
 		.canvas_size = (V2) {640, 360},
 		//.canvas_size = (V2) {1280, 720},
+		.particles = {0},
 		.paused = false,
 		.level = NULL,
 		.menu_screen = false,
@@ -118,6 +119,20 @@ hot b32 update(void)
 	if (IsKeyPressed(KEY_U)) {
 		exit(0);
 	}
+	
+	if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+		for (i32 j = 0; j < 100; j++){
+			create_particle( 
+				.dir = Vec2(GetRandf32(-1, 1), -1),
+				.velocity = GetRandf32(50, 300),
+				.pos = V2Add(GetMousePosition(), Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1))),
+				.size = Vec2v(2),
+				.duration = GetRandf32(0.3f, 1),
+				.color_initial = ColA(255, 0, 0, 255),
+				.color_end = ColA(255, 0, 0, 0),
+			);
+		}
+	}
 
 	// ----------- Update Entitys ----------- 
 	
@@ -129,7 +144,7 @@ hot b32 update(void)
 		if (entity_died(Level, e)) continue;
 
 		V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
-		Entity *target = get_turret(Data, Level->turrets, e->floor, dir.x);
+		Entity *target = enemy_get_turret(Level->turrets, e->floor, dir.x);
 		if (!target) target = &Level->cake; // Attack Main tower instead
 
 		if (EntityInRange(e, target, e->enemy.range)) {
@@ -151,7 +166,7 @@ hot b32 update(void)
 		if (e->spawner.rate != 0 && e->spawner.rate_count >= e->spawner.rate) {
 			e->spawner.rate_count = 0;
 			V2 pos = V2Add(e->pos, V2Scale(e->size, 0.5f));
-			push_entity(&Level->enemys, create_enemy_(pos, (CreateEnemyParams) {
+			push_entity(&Level->enemys, create_enemy_ex(pos, (CreateEnemyParams) {
 				.size = Vec2(16, 16),
 				.health = 50,
 				.color = BLUE,
@@ -175,9 +190,10 @@ hot b32 update(void)
 		e->turret.fire_rate_count += GetFrameTime();
 		if (e->turret.fire_rate && e->turret.fire_rate_count >= e->turret.fire_rate) {
 			e->turret.fire_rate_count = 0;
-			Entity *target = get_closest_entity(Level->enemys, e->pos);
+			Entity *target = turret_get_target(Level->enemys, *e, 2);
 			if (target) {
-				push_entity(&Level->projectiles, create_projectile(e->pos, target->pos, .size = Vec2v(3), .targeting = EntityEnemy, .speed = 200, .damage = 10)); // NOLINT
+				V2 p = V2Add(e->pos, V2Scale(e->size, 0.5));
+				push_entity(&Level->projectiles, create_projectile(p, target->pos, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 200, .damage = 10)); // NOLINT
 			}
 		}
 	}}
@@ -236,7 +252,6 @@ hot void draw(void)
 
 	// // Draw Map borders & backgroud/ground of map
 	// DrawRectangle(Level->map_offset.x, Level->map_offset.y, Level->map_sz.x * TILE, Level->map_sz.y * TILE, WHITE);
-	//
 
 	render_entity(&Level->cake);
 	{entitys_iterate(Level->entitys) {
@@ -244,6 +259,18 @@ hot void draw(void)
 		if (e->type == EntityEmpty) continue;
 		render_entity(e);
 	}}
+
+	for (i32 i = 0; i < count_of(Data->particles); i++) {
+		if (Data->particles[i].type == ParticleEmpty) continue;
+		Particle *p = &Data->particles[i];
+		p->pos = V2Add(p->pos, V2Scale(p->dir, p->velocity * GetFrameTime()));
+		p->duration_count += GetFrameTime();
+		if (p->duration_count >= p->duration) {
+			*p = (Particle) { 0 };
+			continue;
+		}
+		render_particle(Data->particles[i]);
+	}
 
 	{
 		cstr *text = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
@@ -258,6 +285,7 @@ hot void draw(void)
 		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, Data->canvas_size.y * 0.5f);
 		DrawText(text, pos.x, pos.y, 20, BLACK);
 	}
+
 	
 	// {
 	// 	size offset = offset_of(GameLevel, tower);
@@ -325,7 +353,7 @@ GameLevel *create_level(GameData *data, size floors)
 	// Spawners
 	for (i32 i = 0; i < max_spawners; i++) {
 		if (i == 0) spawn_rate = 1;
-		else spawn_rate = 0;
+		else spawn_rate = 2.0;
 
 		V2 pos = {0, canvas.y - ground_height};
 		i32 floor = 0;
@@ -356,7 +384,7 @@ GameLevel *create_level(GameData *data, size floors)
 
 	// Turrets
 	for (i32 i = 0; i < max_turrets; i++) {
-		f32 fire_rate = 0;
+		f32 fire_rate = 0.1;
 		if (i == 0) fire_rate = 1;
 		V2 pos = {0, canvas.y - ground_height};
 		i32 floor = 0;

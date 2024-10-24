@@ -32,8 +32,22 @@ void damage_entity(GameLevel *rt, Entity *entity, f32 damage)
 b32  entity_died(GameLevel *rt, Entity *entity)
 {
 	assert(entity && rt);
-	
 	if (entity->health > 0) return (false);
+	
+	if (entity->type ==  EntityProjectile) {
+		for (i32 i = 0; i < 10; i++) {
+			create_particle( 
+			.dir = Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1)),
+			.velocity = GetRandf32(50, 200),
+			.pos = V2Add(entity->pos, Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1))),
+			.size = Vec2v(1),
+			.duration = GetRandf32(0.1f, 0.4f),
+			.color_initial = ColA(255, 0, 0, 255),
+			.color_end = ColA(255, 0, 0, 0),
+		);
+		}
+	}
+
 	switch (entity->type) {
 		case EntityEmpty:
 		case EntityEnemySpawner:
@@ -66,6 +80,53 @@ Entity *get_closest_entity(EntityDa entitys, V2 from)
 		if (e->type == EntityEmpty) continue ;
 
 		f32 dist = fabs(V2Distance(from, e->pos));
+		if (dist < closest_dist || closest_dist == -1) {
+			closest_dist = dist;
+			r = e;
+		}
+	}}
+
+	return (r);
+}
+
+Entity *get_closest_entity_side(EntityDa entitys, V2 from)
+{
+	Entity *r = NULL;
+
+	V2 from_side = V2DirTo(from, Vec2(Data->canvas_size.x * 0.5f, from.y));;
+	f32 closest_dist = -1;
+	{entitys_iterate(entitys) {
+		Entity *e = iterate_get(entitys);
+		if (e->type == EntityEmpty) continue ;
+
+		V2 side = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
+		if (side.x != from_side.x) continue;
+		f32 dist = fabs(V2Distance(from, e->pos));
+		if (dist < closest_dist || closest_dist == -1) {
+			closest_dist = dist;
+			r = e;
+		}
+	}}
+
+	return (r);
+}
+
+Entity *turret_get_target(EntityDa enemys, Entity turret, i32 floor_variance)
+{
+	Entity *r = NULL;
+
+	V2 from_side = V2DirTo(turret.pos, Vec2(Data->canvas_size.x * 0.5f, turret.pos.y));;
+	f32 closest_dist = -1;
+	{entitys_iterate(enemys) {
+		Entity *e = iterate_get(enemys);
+		if (e->type == EntityEmpty) continue ;
+
+		if (e->floor > turret.floor + floor_variance || e->floor < turret.floor - floor_variance) 
+			continue;
+
+		V2 side = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
+		if (side.x != from_side.x) continue;
+		f32 dist = fabs(V2Distance(turret.pos, e->pos));
 		if (dist < closest_dist || closest_dist == -1) {
 			closest_dist = dist;
 			r = e;
@@ -148,7 +209,7 @@ Entity create_entity(Entity entity)
 	return (entity);
 }
 
-Entity create_projectile_(V2 from, V2 to, CreateProjectileParams params) 
+Entity create_projectile_ex(V2 from, V2 to, CreateProjectileParams params) 
 {
 	V2 dir = V2Normalize(V2Subtract(to, from));
 
@@ -167,7 +228,7 @@ Entity create_projectile_(V2 from, V2 to, CreateProjectileParams params)
 	return (e);
 }
 
-Entity create_enemy_(V2 pos, CreateEnemyParams params) 
+Entity create_enemy_ex(V2 pos, CreateEnemyParams params) 
 {
 	Entity e = create_entity((Entity) {
 		.type = EntityEnemy,
@@ -186,13 +247,13 @@ Entity create_enemy_(V2 pos, CreateEnemyParams params)
 	return (e);
 }
 
-Entity *get_turret(GameData *data, EntityDa turrets, i32 floor, i32 side)
+Entity *enemy_get_turret(EntityDa turrets, i32 floor, i32 side)
 {
 	{entitys_iterate(turrets) {
 		Entity *e = iterate_get();
 		iterate_check_entity(e, EntityTurret);
 		if (e->floor != floor) continue;
-		V2 dir = V2DirTo(e->pos, Vec2(data->canvas_size.x * 0.5f, e->pos.y));
+		V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
 		if (dir.x == side) return (e);
 	}}
 

@@ -103,6 +103,10 @@ typedef struct {
 #define RecGrow(rec, amount) (Rect) {rec.x - amount, rec.y - amount, rec.width + amount * 2, rec.height + amount * 2}
 #define RecPos(rec) (V2) {rec.x, rec.y}
 #define RecSize(rec) (V2) {rec.width, rec.height}
+#define Col(r, g, b) (Color) {r, g, b, 255}
+#define ColA(r, g, b, a) (Color) {r, g, b, a}
+#define ColV(v) (Color) {v, v, v, a}
+#define ColVA(v, a) (Color) {v, v, v, a}
 
 # define V2Zero() (V2){0, 0}
 # define RectZero() (Rect) {0, 0, 0, 0}

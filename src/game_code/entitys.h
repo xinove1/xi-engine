@@ -93,9 +93,9 @@ typedef struct {
 } CreateEnemyParams;
 
 #define create_projectile(from, to, ...)  \
-	create_projectile_(from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
+	create_projectile_ex(from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
 
 #define create_enemy(pos, ...) \
-	create_enemy_(pos, (CreateEnemyParams) {__VA_ARGS__})
+	create_enemy_ex(pos, (CreateEnemyParams) {__VA_ARGS__})
 
 #endif
