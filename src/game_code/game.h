@@ -105,7 +105,7 @@ GameFunctions game_init_functions();
 
 // Utils
 f32 GetRandf32Ex(f32 min, f32 max, f32 acc);
-#define GetRandf32(min, max ) GetRandf32Ex(min, max, 1000.0f)
+#define GetRandf32(min, max) GetRandf32Ex(min, max, 1000.0f)
 V2 ExpDecayV2(V2 a, V2 b, f32 decay);
 Color ExpDecayColor(Color a, Color b, f32 decay);
 f32 ExpDecayf32(f32 a, f32 b, f32 decay);

@@ -25,10 +25,6 @@ hot GameConfig init_pre_raylib(void **data)
 		.level = NULL,
 		.menu_screen = false,
 	};
-
-	Data->level = create_level(Data, 5);
-	Level = Data->level;
-
 	return ((GameConfig) {
 		.canvas_size = Data->canvas_size,
 		.window_name = "Cake Defense",
@@ -39,6 +35,9 @@ hot GameConfig init_pre_raylib(void **data)
 
 hot void init_pos_raylib(void) 
 {
+	Data->level = create_level(Data, 5);
+	Level = Data->level;
+
 	init_editor(Data);
 
 	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
@@ -190,10 +189,10 @@ hot b32 update(void)
 		e->turret.fire_rate_count += GetFrameTime();
 		if (e->turret.fire_rate && e->turret.fire_rate_count >= e->turret.fire_rate) {
 			e->turret.fire_rate_count = 0;
-			Entity *target = turret_get_target(Level->enemys, *e, 2);
+			Entity *target = turret_get_target(Level->enemys, *e, 1);
 			if (target) {
 				V2 p = V2Add(e->pos, V2Scale(e->size, 0.5));
-				push_entity(&Level->projectiles, create_projectile(p, target->pos, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 200, .damage = 10)); // NOLINT
+				push_entity(&Level->projectiles, create_projectile(p, target->pos, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 400, .damage = 10)); // NOLINT
 			}
 		}
 	}}
@@ -352,8 +351,7 @@ GameLevel *create_level(GameData *data, size floors)
 
 	// Spawners
 	for (i32 i = 0; i < max_spawners; i++) {
-		if (i == 0) spawn_rate = 1;
-		else spawn_rate = 2.0;
+		spawn_rate = GetRandf32(0.5, 2.5);
 
 		V2 pos = {0, canvas.y - ground_height};
 		i32 floor = 0;
@@ -384,8 +382,7 @@ GameLevel *create_level(GameData *data, size floors)
 
 	// Turrets
 	for (i32 i = 0; i < max_turrets; i++) {
-		f32 fire_rate = 0.1;
-		if (i == 0) fire_rate = 1;
+		f32 fire_rate = GetRandf32(0.2, 1);
 		V2 pos = {0, canvas.y - ground_height};
 		i32 floor = 0;
 		// Left side
