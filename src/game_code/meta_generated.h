@@ -28,5 +28,11 @@ global cstr *VEffectTypeNames[] = {
 	 "VEffectTypeCount",
 }; 
 
+global cstr *ParticleTypeNames[] = { 
+	 "ParticleEmpty",
+	 "ParticleAlive",
+	 "ParticleTypeCount",
+}; 
+
 
 #endif 

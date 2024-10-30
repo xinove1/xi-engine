@@ -4,18 +4,6 @@
 #include "./src/modules/core.h"
 #include "./nob.h"
 
-#define DA_LIMIT 30
-#define da_append(da, item)                                                          \
-    do {                                                                                 \
-	if ((da)->count == 0) { \
-		(da)->capacity = DA_LIMIT; \
-	} \
-        if ((da)->count >= (da)->capacity) {                                             \
-		nob_log(NOB_ERROR, "%s da_append: da capacity reached.", __LINE__); \
-        }                                                                                \
-        (da)->items[(da)->count++] = (item);                                             \
-    } while (0)
-
 // NOTE  no checking of limit when using this, only 2 places tho
 global byte scratch_buf[10000] = {0};
 global size scratch_buf_at = 0;
@@ -69,7 +57,7 @@ typedef struct {
 } Tokenizer;
 
 typedef struct {
-	cstr *items[DA_LIMIT];
+	cstr **items;
 	size count;
 	size capacity;
 } cstrDa;
@@ -91,7 +79,7 @@ typedef struct {
 } MetaEnum;
 
 typedef struct {
-	MetaMember items[DA_LIMIT];
+	MetaMember *items;
 	size count;
 	size capacity;
 } MetaMemberDa;
@@ -102,7 +90,7 @@ typedef struct {
 } MetaStruct;
 
 typedef struct {
-	MetaStruct items[DA_LIMIT];
+	MetaStruct *items;
 	size count;
 	size capacity;
 } MetaStructDa;
@@ -129,7 +117,7 @@ typedef struct {
 } Introspectable;
 
 typedef struct {
-	Introspectable items[DA_LIMIT];
+	Introspectable *items;
 	size count;
 	size capacity;
 } IntrospectableDa;
@@ -167,11 +155,13 @@ void introspect_files(cstr *output_file, cstr **files, size files_count)
 {
 	// TODO  Check files against generated code to see if we actually need to process them
 	
-	IntrospectableDa info;
+	IntrospectableDa info = {0};
+
 	for (i32 i = 0; i < files_count; i++) {
 		nob_log(NOB_INFO, "parsing: %s \n", files[i]);
 		parse_file(files[i], &info);
 	}
+	printf("generating output, info count: %ld \n", info.count);
 	generate_output(output_file, &info);
 }
 
@@ -249,7 +239,7 @@ void parse_file(cstr *path, IntrospectableDa *introspectables)
 		return ;
 	}
 
-	Tokenizer tokenizer;
+	Tokenizer tokenizer = {0};
 	tokenizer.at = buf;
 	b32 parsing = true;
 	while (parsing) {
@@ -260,7 +250,7 @@ void parse_file(cstr *path, IntrospectableDa *introspectables)
 
 			case TokenIndentifier: {
 				if (token_match(token, "introspect")) {
-					da_append(introspectables, parse_instrospectable(&tokenizer));
+					nob_da_append(introspectables, parse_instrospectable(&tokenizer));
 				}
 			} break;
 
@@ -347,7 +337,7 @@ internal MetaEnum parse_enum(Tokenizer *t)
 	Token token = get_token(t);
 	while (token.type != TokenCloseBraces) {
 		if (token.type == TokenIndentifier) {
-			da_append(&_enum.fields, copy_token_text(token));
+			nob_da_append(&_enum.fields, copy_token_text(token));
 		}
 		token = get_token(t);
 	}
@@ -369,7 +359,7 @@ internal MetaStruct parse_struct(Tokenizer *t)
 			nob_log(NOB_ERROR, "parse_struct: union found inside struct, ignoring.");
 			parse_struct_union(t);
 		} else if (token.type == TokenIndentifier) {
-			da_append(&_struct.fields, parse_struct_member(t, token));
+			nob_da_append(&_struct.fields, parse_struct_member(t, token));
 		}
 		token = get_token(t);
 	}
@@ -390,7 +380,7 @@ internal MetaStructTagged parse_struct_tagged(Tokenizer *t)
 		if (token_match(token, "union")) {
 			st.union_structs = parse_struct_union(t);
 		} else if (token.type == TokenIndentifier) {
-			da_append(&st.meta_struct.fields, parse_struct_member(t, token));
+			nob_da_append(&st.meta_struct.fields, parse_struct_member(t, token));
 		}
 		token = get_token(t);
 	}
@@ -433,7 +423,7 @@ internal MetaStructDa parse_struct_union(Tokenizer *t)
 	Token token = get_token(t);
 	while (token.type != TokenCloseBraces && token.type != TokenEOF) {
 		if (token_match(token, "struct")) {
-			da_append(&da, parse_struct_union_struct(t));
+			nob_da_append(&da, parse_struct_union_struct(t));
 		} 
 		else {
 			nob_log(NOB_WARNING, "parse_struct_union: found something else than a struct inside tagged union in struct, ignoring.");
@@ -452,7 +442,7 @@ internal MetaStruct parse_struct_union_struct(Tokenizer *t)
 	}
 	Token token = get_token(t);
 	while (token.type != TokenCloseBraces && token.type != TokenEOF) {
-		da_append(&s.fields, parse_struct_member(t, token));
+		nob_da_append(&s.fields, parse_struct_member(t, token));
 		token = get_token(t);
 	}
 	token = get_token(t);
@@ -559,7 +549,7 @@ internal cstr *get_type(Token token)
 	}
 	if (!r) {
 		r = copy_token_text(token);
-		da_append(&EncounteredTypes, r);
+		nob_da_append(&EncounteredTypes, r);
 	}
 	return (r);
 }
