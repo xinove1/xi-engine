@@ -51,11 +51,6 @@ typedef struct {
 			f32 attack_rate;
 			f32 attack_rate_count;
 		} enemy;
-
-		struct {
-			f32 rate;
-			f32 rate_count;
-		} spawner;
 	};
 } Entity;
 
@@ -66,10 +61,27 @@ typedef struct {
 } EntityDa;
 
 typedef struct {
-	Entity **items;
-	size count;
-	size capacity;
-} EntityHolderDa;
+	V2 point;
+	f32 cooldown;
+	i32 floor;
+} SpawnLocation;
+
+typedef struct {
+	Entity enemy;
+	f32 cooldown; // cooldown to be aplied to the spawn location
+} SpawnPacket;
+
+typedef struct {
+	i32 wave;
+	i32 floor_limit; // Amount of floors that enemys can spawn in
+	f32 time_until_next_wave;
+	f32 time_count;
+	SpawnLocation *locations; // Length determinted by number of floors on level
+	SpawnPacket *packets;
+	size packets_amount;
+	size packets_max;
+	size packet_current;
+} WaveManager;
 
 typedef struct {
 	EntityType targeting;

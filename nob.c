@@ -66,6 +66,7 @@ const global cstr *Src_Game[] = {
 	"./src/game_code/utils.c",
 	"./src/game_code/entitys.c",
 	"./src/game_code/render.c",
+	"./src/game_code/waves.c",
 };
 const global cstr *Dep_Game[] = { "./src/game_code/game.h", "./src/game_code/entitys.h", "./src/game_code/render.h", };
 

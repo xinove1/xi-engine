@@ -76,7 +76,7 @@ Entity *get_closest_entity(EntityDa entitys, V2 from)
 
 	f32 closest_dist = -1;
 	{entitys_iterate(entitys) {
-		Entity *e = iterate_get(entitys);
+		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue ;
 
 		f32 dist = fabs(V2Distance(from, e->pos));
@@ -96,7 +96,7 @@ Entity *get_closest_entity_side(EntityDa entitys, V2 from)
 	V2 from_side = V2DirTo(from, Vec2(Data->canvas_size.x * 0.5f, from.y));;
 	f32 closest_dist = -1;
 	{entitys_iterate(entitys) {
-		Entity *e = iterate_get(entitys);
+		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue ;
 
 		V2 side = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
@@ -118,7 +118,7 @@ Entity *turret_get_target(EntityDa enemys, Entity turret, i32 floor_variance)
 	V2 from_side = V2DirTo(turret.pos, Vec2(Data->canvas_size.x * 0.5f, turret.pos.y));;
 	f32 closest_dist = -1;
 	{entitys_iterate(enemys) {
-		Entity *e = iterate_get(enemys);
+		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue ;
 
 		if (e->floor > turret.floor + floor_variance || e->floor < turret.floor - floor_variance) 
@@ -142,7 +142,7 @@ Entity *get_closest_entity_range(EntityDa entitys, V2 from, f32 range)
 
 	f32 closest_dist = -1;
 	{entitys_iterate(entitys) {
-		Entity *e = iterate_get(entitys);
+		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue ;
 
 		f32 dist = fabs(V2Distance(from, e->pos));
@@ -166,7 +166,7 @@ b32 EntityInRange(Entity *from, Entity *to, f32 range)
 Entity *check_collision(Rect rec, EntityDa entitys) 
 {
 	{entitys_iterate(entitys) {
-		Entity *e = iterate_get(entitys);
+		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue ;
 		if (CheckCollisionRecs(rec, RecV2(e->pos, e->size))) {
 			return (e);

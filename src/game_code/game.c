@@ -135,6 +135,8 @@ hot b32 update(void)
 
 	// ----------- Update Entitys ----------- 
 	
+	update_wave_manager(Level);
+
 	// ----------- Enemys ----------- 
 	{entitys_iterate(Level->enemys) {
 		Entity *e = iterate_get();
@@ -157,27 +159,6 @@ hot b32 update(void)
 		}
 	}}
 
-	{entitys_iterate(Level->spawners) {
-		Entity *e = iterate_get();
-		iterate_check_entity(e, EntityEnemySpawner);
-		
-		e->spawner.rate_count += GetFrameTime();
-		if (e->spawner.rate != 0 && e->spawner.rate_count >= e->spawner.rate) {
-			e->spawner.rate_count = 0;
-			V2 pos = V2Add(e->pos, V2Scale(e->size, 0.5f));
-			push_entity(&Level->enemys, create_enemy_ex(pos, (CreateEnemyParams) {
-				.size = Vec2(16, 16),
-				.health = 50,
-				.color = BLUE,
-				.speed = 70,
-				.floor = e->floor,
-				.melee = false,
-				.damage = 1,
-				.range = 10,
-				.attack_rate = 0.5f
-			}));
-		}
-	}}
 
 	// ----------- Turrets ----------- 
 	{entitys_iterate(Level->turrets) {
@@ -246,11 +227,8 @@ hot void draw(void)
 		return ;
 	}
 
-	// // Draw Background outside of map
-	// DrawRectangle(0, 0, Data->canvas_size.x, Data->canvas_size.y, BLACK);
-
-	// // Draw Map borders & backgroud/ground of map
-	// DrawRectangle(Level->map_offset.x, Level->map_offset.y, Level->map_sz.x * TILE, Level->map_sz.y * TILE, WHITE);
+	// Background color
+	//DrawRectangle(0, 0, Data->canvas_size.x, Data->canvas_size.y, BLACK);
 
 	render_entity(&Level->cake);
 	{entitys_iterate(Level->entitys) {
@@ -271,12 +249,39 @@ hot void draw(void)
 		render_particle(Data->particles[i]);
 	}
 
-	{
-		cstr *text = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
-		i32 size = MeasureText(text, 10);
-		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, 12);
-		DrawText(text, pos.x, pos.y, 10, RED);
+	#ifdef BUILD_DEBUG 
+		for (size i = 0; i < Level->floors_count * 2; i++) {
+			V2 p = Level->wave_manager.locations[i].point;
+			DrawCircleV(p, 2, GRAY);
+		}
+		// for (size i = 0; i < Level->floors_count; i++) {
+		// 	V2 p1 = Level->wave_manager.locations[i].point;
+		// 	V2 p2 = Level->wave_manager.locations[i + Level->floors_count].point;
+		// 	DrawLineV(p1, p2, PURPLE);
+		// }
+	#endif
+
+	// Texts
+	{ 
+		const cstr *cake_health = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
+		i32 cake_size = MeasureText(cake_health, 10);
+		V2 cake_pos = Vec2(Data->canvas_size.x * 0.5f - cake_size * 0.5f, 12);
+		DrawText(cake_health, cake_pos.x, cake_pos.y, 10, RED);
+
+		{
+			const cstr *text = TextFormat("Wave: %d", Level->wave_manager.wave);
+			i32 size = MeasureText(text, 10);
+			V2 pos = Vec2(cake_pos.x + cake_size + 6, cake_pos.y);
+			DrawText(text, pos.x, pos.y, 10, RED);
+		}
+		if (Level->wave_manager.time_count != 0) { 
+			const cstr *text = TextFormat("Next wave in: %.f", Level->wave_manager.time_until_next_wave - Level->wave_manager.time_count);
+			i32 size = MeasureText(text, 10);
+			V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, 24);
+			DrawText(text, pos.x, pos.y, 10, RED);
+		}
 	}
+
 
 	if (Data->lost) {
 		const cstr *text = TextFormat("You Lost!");
@@ -313,6 +318,8 @@ GameFunctions game_init_functions()
 GameLevel *create_level(GameData *data, size floors) 
 {
 	GameLevel *level = calloc(1, sizeof(GameLevel));
+	level->floors_count = floors;
+
 	f32 floor_height = 32;
 	f32 floor_padding = 8;
 	f32 turret_width = 32;
@@ -336,8 +343,7 @@ GameLevel *create_level(GameData *data, size floors)
 	size max_turrets = floors * 2;
 	size max_projectiles = 400;
 	size max_enemys = floors * 10 * 2;
-	size max_spawners = floors * 2;
-	size max_total = max_turrets + max_projectiles + max_enemys + max_spawners;
+	size max_total = max_turrets + max_projectiles + max_enemys;
 	da_init_and_alloc(level->entitys, max_total, sizeof(Entity));
 	level->entitys.count = max_total;
 
@@ -345,39 +351,39 @@ GameLevel *create_level(GameData *data, size floors)
 	da_init(level->turrets, max_turrets, p);
 	da_init(level->projectiles, max_projectiles, p + max_turrets);
 	da_init(level->enemys, max_enemys, p + max_turrets + max_projectiles);
-	da_init(level->spawners, max_spawners, p + max_turrets + max_projectiles + max_enemys);
 
-	f32 spawn_rate = 1;
 
-	// Spawners
-	for (i32 i = 0; i < max_spawners; i++) {
-		spawn_rate = GetRandf32(0.5, 2.5);
-
-		V2 pos = {0, canvas.y - ground_height};
-		i32 floor = 0;
-		// Left side
-		if (i < max_spawners * 0.5f) {
-			floor += i;
-			pos.x = 0;
+	// Init Wave Manager
+	{
+		level->wave_manager = (WaveManager) { 0 };
+		level->wave_manager.floor_limit = 1;
+		level->wave_manager.time_until_next_wave = 5;
+		level->wave_manager.packets_max = floors * 10;
+		level->wave_manager.packets = calloc(level->wave_manager.packets_max, sizeof(SpawnPacket));
+		level->wave_manager.locations = calloc(floors * 2, sizeof(SpawnLocation));
+		// Spawn Locations
+		size max_locations = floors * 2;
+		for (i32 i = 0; i < max_locations; i++) {
+			V2 pos = {0, canvas.y - ground_height};
+			f32 padding = 5; // Padding from screen border
+			i32 floor = 0;
+			if (i < max_locations * 0.5f) {
+				floor += i;
+				pos.x = padding;
+			}
+			else { // Right side
+				floor += i - max_locations/2.f;
+				pos.x = canvas.x - padding;
+			}
+			if (floor == 0) {
+				pos.y -= (floor_height * 0.5f) * (floor + 1);
+			} else {
+				pos.y -= (floor_padding + floor_height) * floor + (floor_height * 0.5f);
+			}
+			
+			level->wave_manager.locations[i].point = pos; // TODO  Get middle of floor instead of ceiling
+			level->wave_manager.locations[i].floor = floor;
 		}
-		else { // Right side
-			floor += i - max_spawners/2.f;
-			pos.x = canvas.x - turret_width;
-		}
-		if (floor == 0) {
-			pos.y -= floor_height * (floor + 1);
-		} else {
-			pos.y -= (floor_padding + floor_height) * floor + floor_height;
-		}
-		
-		push_entity(&level->spawners, create_entity((Entity) {
-			.type = EntityEnemySpawner,
-			.pos = pos,
-			.render.color = GRAY,
-			.size = Vec2(turret_width, floor_height),
-			.spawner.rate = spawn_rate,
-			.floor = floor,
-		}));
 	}
 
 	// Turrets

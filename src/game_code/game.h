@@ -33,7 +33,7 @@
 #define da_iterate(da, da_type) da_type __da = da; for (size __i = 0; __i < __da.count; __i++) 
 #define entitys_iterate(da) da_iterate(da, EntityDa)
 #define effects_iterate(da) da_iterate(da, EffectDa)
-#define iterate_get(da) &__da.items[__i]
+#define iterate_get() &__da.items[__i]
 
 
 typedef struct {
@@ -44,12 +44,13 @@ typedef struct {
 
 typedef struct {
 	char *name;
+	i32 floors_count;
 	Entity cake;
+	WaveManager wave_manager;
 	EntityDa entitys;
 	EntityDa turrets;
 	EntityDa enemys;
 	EntityDa projectiles;
-	EntityDa spawners;
 } GameLevel;
 
 typedef struct
@@ -90,6 +91,11 @@ Entity *turret_get_target(EntityDa enemys, Entity turret, i32 floor_variance);
 b32 EntityInRange(Entity *from, Entity *to, f32 range);
 Entity *check_collision(Rect rec, EntityDa entitys) ;
 Entity *enemy_get_turret(EntityDa turrets, i32 floor, i32 side);
+
+// Wave Manager
+typedef enum {right_side = 1, left_side = -1} FloorSides;
+void update_wave_manager(GameLevel *l);
+SpawnLocation *get_spawn_point(GameLevel *l, i32 floor, i32 side);
 
 // Render
 void render_entity(Entity *entity);
