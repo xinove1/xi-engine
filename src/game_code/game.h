@@ -50,7 +50,7 @@ typedef struct {
 	EntityDa entitys;
 	EntityDa turrets;
 	EntityDa enemys;
-	EntityDa projectiles;
+	ProjectileDa projectiles;
 } GameLevel;
 
 typedef struct
@@ -80,7 +80,7 @@ extern GameData *Data;
 // Entitys
 void push_entity(EntityDa *da, Entity entity);
 Entity create_entity(Entity entity);
-Entity create_projectile_ex(V2 from, V2 to, CreateProjectileParams params);
+Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params);
 Entity create_enemy_ex(V2 pos, CreateEnemyParams params);
 void damage_entity(GameLevel *rt, Entity *entity, f32 damage);
 b32  entity_died(GameLevel *rt, Entity *entity);
@@ -89,7 +89,6 @@ Entity *get_closest_entity_range(EntityDa entitys, V2 from, f32 range);
 Entity *get_closest_entity_side(EntityDa entitys, V2 from);
 Entity *turret_get_target(EntityDa enemys, Entity turret, i32 floor_variance);
 b32 EntityInRange(Entity *from, Entity *to, f32 range);
-Entity *check_collision(Rect rec, EntityDa entitys) ;
 Entity *enemy_get_turret(EntityDa turrets, i32 floor, i32 side);
 
 // Wave Manager
@@ -98,7 +97,7 @@ void update_wave_manager(GameLevel *l);
 SpawnLocation *get_spawn_point(GameLevel *l, i32 floor, i32 side);
 
 // Render
-void render_entity(Entity *entity);
+void render_generic_entity(GenericEntity *entity);
 void update_entity_veffects(Entity *entity);
 void apply_flash_effect(Entity *entity, Color color, f32 duration);
 void apply_shake_effect(Entity *entity, f32 duration);

@@ -19,6 +19,17 @@ introspect() typedef enum {
 	EntityTypeCount
 } EntityType;
 
+// TODO  introspected GenericEntity to have macro to generate header on all other entitys
+typedef struct {
+	EntityType type;
+	RenderData render;
+	VEffect veffects[VEffectTypeCount]; // TODO  Rename to render effects
+	V2 pos;
+	V2 size;
+	f32 health;
+	f32 health_max;
+} GenericEntity;
+
 typedef struct {
 	EntityType type;
 	RenderData render;
@@ -37,13 +48,6 @@ typedef struct {
 		} turret;
 
 		struct {
-			EntityType targeting;
-			V2 dir;
-			f32 speed;
-			f32 damage;
-		} bullet;
-
-		struct {
 			b32 melee;
 			f32 speed;
 			f32 damage;
@@ -54,11 +58,35 @@ typedef struct {
 	};
 } Entity;
 
+
 typedef struct {
 	Entity *items;
 	size count;
 	size capacity;
 } EntityDa;
+
+
+typedef struct {
+	EntityType type;
+	RenderData render;
+	VEffect veffects[VEffectTypeCount]; // TODO  Rename to render effects
+	V2 pos;
+	V2 size;
+	f32 health;
+	f32 health_max;
+
+	// --
+	EntityType targeting;
+	V2 dir;
+	f32 speed;
+	f32 damage;
+} Projectile;
+
+typedef struct {
+	Projectile *items;
+	size count;
+	size capacity;
+} ProjectileDa;
 
 typedef struct {
 	V2 point;
@@ -104,8 +132,8 @@ typedef struct {
 	f32 attack_rate;
 } CreateEnemyParams;
 
-#define create_projectile(from, to, ...)  \
-	create_projectile_ex(from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
+#define spawn_projectile(from, to, ...)  \
+	spawn_projectile_ex(from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
 
 #define create_enemy(pos, ...) \
 	create_enemy_ex(pos, (CreateEnemyParams) {__VA_ARGS__})

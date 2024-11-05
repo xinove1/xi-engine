@@ -34,20 +34,6 @@ b32  entity_died(GameLevel *rt, Entity *entity)
 	assert(entity && rt);
 	if (entity->health > 0) return (false);
 	
-	if (entity->type ==  EntityProjectile) {
-		for (i32 i = 0; i < 10; i++) {
-			create_particle( 
-			.dir = Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1)),
-			.velocity = GetRandf32(50, 200),
-			.pos = V2Add(entity->pos, Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1))),
-			.size = Vec2v(1),
-			.duration = GetRandf32(0.1f, 0.4f),
-			.color_initial = ColA(255, 0, 0, 255),
-			.color_end = ColA(255, 0, 0, 0),
-		);
-		}
-	}
-
 	switch (entity->type) {
 		case EntityEmpty:
 		case EntityEnemySpawner:
@@ -163,19 +149,6 @@ b32 EntityInRange(Entity *from, Entity *to, f32 range)
 	return (CheckCollisionRecs(from_rec, to_rec));
 }
 
-Entity *check_collision(Rect rec, EntityDa entitys) 
-{
-	{entitys_iterate(entitys) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue ;
-		if (CheckCollisionRecs(rec, RecV2(e->pos, e->size))) {
-			return (e);
-		}
-	}}
-
-	return (NULL);
-}
-
 void push_entity(EntityDa *da, Entity entity) 
 {
 	assert(da);
@@ -209,23 +182,42 @@ Entity create_entity(Entity entity)
 	return (entity);
 }
 
-Entity create_projectile_ex(V2 from, V2 to, CreateProjectileParams params) 
+Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params) 
 {
 	V2 dir = V2Normalize(V2Subtract(to, from));
 
-	Entity e = create_entity((Entity) {
+	Projectile e =  {
 		.type = EntityProjectile,
 		.pos = from,
 		.size = params.size,
 		.health = params.health,
+		.health_max = params.health,
 		.render.color = params.color,
-		.bullet.targeting = params.targeting,
-		.bullet.dir = dir,
-		.bullet.speed = params.speed,
-		.bullet.damage = params.damage,
-	});
+		.render.size = params.size,
+		.targeting = params.targeting,
+		.dir = dir,
+		.speed = params.speed,
+		.damage = params.damage,
+	};
 
-	return (e);
+	ProjectileDa *da = &Data->level->projectiles;
+	Projectile *p = NULL;
+	{da_iterate(*da, ProjectileDa) {
+		p = iterate_get();
+		if (p->type == EntityEmpty) {
+			*p = e;
+			return (p);
+		}
+	}}
+
+	if (da->count < da->capacity) {
+		p = &da->items[da->count];
+		*p = e;
+		da->count++;
+	} else {
+		TraceLog(LOG_WARNING, "spawn_projectile_ex: ProjectileDa is full.");
+	}
+	return (p);
 }
 
 Entity create_enemy_ex(V2 pos, CreateEnemyParams params) 

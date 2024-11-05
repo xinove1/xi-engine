@@ -8,7 +8,7 @@ void render_particle(Particle p)
 	DrawRectangleRec(rec, color);
 }
 
-void render_entity(Entity *entity)
+void render_generic_entity(GenericEntity *entity)
 {
 	if (entity->type == EntityEmpty) return ;
 

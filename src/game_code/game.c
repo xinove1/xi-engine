@@ -173,35 +173,59 @@ hot b32 update(void)
 			Entity *target = turret_get_target(Level->enemys, *e, 1);
 			if (target) {
 				V2 p = V2Add(e->pos, V2Scale(e->size, 0.5));
-				push_entity(&Level->projectiles, create_projectile(p, target->pos, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 400, .damage = 10)); // NOLINT
+				spawn_projectile(p, target->pos, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 400, .damage = 10); 
 			}
 		}
 	}}
 
 	// ----------- Projectiles ----------- 
-	{entitys_iterate(Level->projectiles) {
-		Entity *e = iterate_get();
+	{da_iterate(Level->projectiles, ProjectileDa) {
+		Projectile *e = iterate_get();
 		iterate_check_entity(e, EntityProjectile);
 
-		if (entity_died(Level, e)) continue;
+		if (e->health <= 0) {
+			for (i32 i = 0; i < 10; i++) {
+				create_particle( 
+					.dir = Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1)),
+					.velocity = GetRandf32(50, 200),
+					.pos = V2Add(e->pos, Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1))),
+					.size = Vec2v(1),
+					.duration = GetRandf32(0.1f, 0.4f),
+					.color_initial = ColA(255, 0, 0, 255),
+					.color_end = ColA(255, 0, 0, 0),
+				);
+			}
+			e->type = EntityEmpty;
+		}
 
-		e->pos = V2Add(e->pos, V2Scale(e->bullet.dir, e->bullet.speed * GetFrameTime()));
+		e->pos = V2Add(e->pos, V2Scale(e->dir, e->speed * GetFrameTime()));
 		if (!CheckCollisionRecs(RecV2(V2Zero(), Data->canvas_size), RecV2(e->pos, e->size))) {
 			e->type = EntityEmpty;
 			continue ;
 		}
 
-		EntityDa check_against = {0};
-
-		if (e->bullet.targeting == EntityTurret) check_against = Level->turrets;
-		if (e->bullet.targeting == EntityEnemy) check_against = Level->enemys;
-
-		if (check_against.capacity <= 0) continue;
-		Entity *coll = check_collision(RecV2(e->pos, e->size), check_against);
-		if (coll && coll->type == EntityEnemy) {
-			damage_entity(Level, coll, e->bullet.damage);
-			e->health -= coll->health;
-			continue;
+		Rect rec = RecV2(e->pos, e->size);
+		if (e->targeting == EntityTurret) {
+			{entitys_iterate(Level->turrets){
+				Entity *turret = iterate_get();
+				iterate_check_entity(turret, EntityTurret);
+				if (CheckCollisionRecs(rec, RecV2(turret->pos, turret->size))) {
+					damage_entity(Level, turret, e->damage);
+					e->health -= turret->health;
+					continue;
+				}
+			}}
+		}
+		if (e->targeting == EntityEnemy) {
+			{entitys_iterate(Level->enemys){
+				Entity *enemy = iterate_get();
+				iterate_check_entity(enemy, EntityEnemy);
+				if (CheckCollisionRecs(rec, RecV2(enemy->pos, enemy->size))) {
+					damage_entity(Level, enemy, e->damage);
+					e->health -= enemy->health;
+					continue;
+				}
+			}}
 		}
 	}}
 	return (false);
@@ -230,11 +254,17 @@ hot void draw(void)
 	// Background color
 	//DrawRectangle(0, 0, Data->canvas_size.x, Data->canvas_size.y, BLACK);
 
-	render_entity(&Level->cake);
+	render_generic_entity((GenericEntity *) &Level->cake);
 	{entitys_iterate(Level->entitys) {
 		Entity *e = iterate_get();
 		if (e->type == EntityEmpty) continue;
-		render_entity(e);
+		render_generic_entity((GenericEntity *) e);
+	}}
+
+	{da_iterate(Level->projectiles, ProjectileDa) {
+		Projectile *e = iterate_get();
+		iterate_check_entity(e, EntityProjectile);
+		render_generic_entity((GenericEntity *) e);
 	}}
 
 	for (i32 i = 0; i < count_of(Data->particles); i++) {
@@ -254,11 +284,6 @@ hot void draw(void)
 			V2 p = Level->wave_manager.locations[i].point;
 			DrawCircleV(p, 2, GRAY);
 		}
-		// for (size i = 0; i < Level->floors_count; i++) {
-		// 	V2 p1 = Level->wave_manager.locations[i].point;
-		// 	V2 p2 = Level->wave_manager.locations[i + Level->floors_count].point;
-		// 	DrawLineV(p1, p2, PURPLE);
-		// }
 	#endif
 
 	// Texts
@@ -343,14 +368,12 @@ GameLevel *create_level(GameData *data, size floors)
 	size max_turrets = floors * 2;
 	size max_projectiles = 400;
 	size max_enemys = floors * 10 * 2;
-	size max_total = max_turrets + max_projectiles + max_enemys;
-	da_init_and_alloc(level->entitys, max_total, sizeof(Entity));
-	level->entitys.count = max_total;
+	da_init_and_alloc(level->entitys, max_turrets + max_enemys, sizeof(Entity));
+	da_init_and_alloc(level->projectiles, max_projectiles, sizeof(Projectile));
+	level->entitys.count = max_turrets + max_enemys;
 
-	Entity *p = level->entitys.items;
-	da_init(level->turrets, max_turrets, p);
-	da_init(level->projectiles, max_projectiles, p + max_turrets);
-	da_init(level->enemys, max_enemys, p + max_turrets + max_projectiles);
+	da_init(level->turrets, max_turrets, level->entitys.items);
+	da_init(level->enemys, max_enemys, level->entitys.items + max_turrets);
 
 
 	// Init Wave Manager
