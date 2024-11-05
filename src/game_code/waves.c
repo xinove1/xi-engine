@@ -63,7 +63,7 @@ void update_wave_manager(GameLevel *l)
 			w->time_count = 0;
 			w->packet_current = 0;
 			w->wave++;
-			if (w->wave % 2 == 0) { // Spawn on one more floor every 2 waves
+			if (w->wave % 2 == 0 && w->floor_limit < l->floors_count) { // Spawn on one more floor every 2 waves
 				w->floor_limit++;
 			}
 			generate_packets(l);
