@@ -3,9 +3,15 @@
 local void generate_packets(GameLevel *l)
 {
 	WaveManager *w = &l->wave_manager;
-	w->packets_amount = 5;
+	size amount = 0;
+	if (w->floor_limit <= l->floors_count) {
+		amount = w->floor_limit * 4;
+	} else {
+		amount = w->wave * 4;
+	}
+	w->packets_amount = amount;
 	for (size i = 0; i < w->packets_amount; i++) {
-		Entity enemy =  create_enemy_ex(Vec2v(0), (CreateEnemyParams) {
+		Enemy enemy =  create_enemy_ex(Vec2v(0), (CreateEnemyParams) {
 			.size = Vec2(16, 16),
 			.health = 50,
 			.color = BLUE,
@@ -52,8 +58,8 @@ void update_wave_manager(GameLevel *l)
 		
 		// Returning early if there's still enemys alive
 		if (w->time_count == 0) {
-			{entitys_iterate(l->enemys) {
-				Entity *e = iterate_get();
+			{da_iterate(l->enemys, EnemyDa) {
+				Enemy *e = iterate_get();
 				if (e->type != EntityEmpty) return ;
 			}}
 		}
@@ -80,7 +86,7 @@ void update_wave_manager(GameLevel *l)
 				SpawnPacket p = get_next_packet(w);
 				p.enemy.pos = V2Subtract(location->point, V2Scale(p.enemy.size, 0.5f));
 				p.enemy.floor = location->floor;
-				push_entity(&l->enemys, p.enemy);
+				da_append_copy(l->enemys, p.enemy);
 				location->cooldown = p.cooldown;
 			}
 		}

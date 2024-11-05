@@ -8,7 +8,7 @@ void render_particle(Particle p)
 	DrawRectangleRec(rec, color);
 }
 
-void render_generic_entity(GenericEntity *entity)
+void render_entity(GenericEntity *entity)
 {
 	if (entity->type == EntityEmpty) return ;
 
@@ -22,7 +22,7 @@ void render_generic_entity(GenericEntity *entity)
 	return ;
 }
 
-void draw_health_bar(Entity *entity) 
+void draw_health_bar(GenericEntity *entity) 
 {
 	if (entity->health_max == 0 || entity->type == EntityProjectile) {
 		//printf("%s has health_max as zero. \n", EntityTypeNames[entity->type]);
@@ -39,7 +39,7 @@ void draw_health_bar(Entity *entity)
 	DrawRectangleRec(health_current, RED);
 }
 
-void update_entity_veffects(Entity *entity) 
+void update_entity_veffects(GenericEntity *entity) 
 {
 	for (i32 i = 0; i < VEffectTypeCount; i++) {
 		VEffect *effect = &entity->veffects[i];
@@ -88,7 +88,7 @@ void update_entity_veffects(Entity *entity)
 	}
 }
 
-void apply_flash_effect(Entity *entity, Color color, f32 duration) 
+void apply_flash_effect(GenericEntity *entity, Color color, f32 duration) 
 {
 	VEffect *effect = &entity->veffects[VEffectFlashColor];
 	if (effect->finished || effect->type == VEffectEmpty) {
@@ -101,7 +101,7 @@ void apply_flash_effect(Entity *entity, Color color, f32 duration)
 	}
 }
 
-void apply_shake_effect(Entity *entity, f32 duration) 
+void apply_shake_effect(GenericEntity *entity, f32 duration) 
 {
 	VEffect *effect = &entity->veffects[VEffectShake];
 	if (effect->finished || effect->type == VEffectEmpty) {

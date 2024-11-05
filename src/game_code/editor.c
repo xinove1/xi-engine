@@ -3,8 +3,8 @@
 
 global GameEditor *Ed = NULL;
 
-internal void edit_entity(Entity *e);
-internal void get_entity_under_mouse();
+internal void edit_entity(GenericEntity *e);
+internal void is_entity_under_mouse(GenericEntity *e);
 
 void init_editor(GameData *data)
 {
@@ -61,7 +61,8 @@ void update_editor()
 
 	// ----- Editor ----- 
 	
-	get_entity_under_mouse();
+	Ed->hovered = NULL;
+	apply_func_entitys(Data->level, is_entity_under_mouse);
 
 	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		if (Ed->hovered) {
@@ -89,7 +90,7 @@ void draw_editor()
 	MUiRender(Ed->mu);
 }
 
-internal void edit_entity(Entity *e) 
+internal void edit_entity(GenericEntity *e) 
 {
 	mu_Context *ctx = Ed->mu;
 
@@ -118,9 +119,11 @@ internal void edit_entity(Entity *e)
 	}
 
 
-	mu_layout_row(ctx, 2, (int[]) {label_w, -1}, 0);
-	mu_label(ctx, "Floor");
-	mu_label(ctx, TextFormat("%d", e->floor));
+	if (e->type == EntityEnemy || e->type == EntityTurret) {
+		mu_layout_row(ctx, 2, (int[]) {label_w, -1}, 0);
+		mu_label(ctx, "Floor");
+		mu_label(ctx, TextFormat("%d", ((Enemy*) e)->floor));
+	}
 
 	mu_layout_row(ctx, 3, (int[]) {label_w, width, -1}, 0);
 	mu_label(ctx, "Position");
@@ -140,20 +143,12 @@ internal void edit_entity(Entity *e)
 	mu_draw_rect(ctx, mu_layout_next(ctx), ColorToMu(e->render.color));
 }
 
-internal void get_entity_under_mouse() 
+internal void is_entity_under_mouse(GenericEntity *e) 
 {
 	V2 mouse_pos = GetMousePosition();
-
-	{entitys_iterate(Data->level->entitys) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue;
-
-		Rect e_rec = RecV2(e->pos, e->size);
-		if (CheckCollisionPointRec(mouse_pos, e_rec)) {
-			Ed->hovered = e;
-			return ;
-		}
-	}}
-	
-	Ed->hovered = NULL;
+	Rect e_rec = RecV2(e->pos, e->size);
+	if (CheckCollisionPointRec(mouse_pos, e_rec)) {
+		Ed->hovered = e;
+		return ;
+	}
 }

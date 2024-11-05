@@ -1,19 +1,18 @@
 #include "game.h"
 
-void damage_entity(GameLevel *rt, Entity *entity, f32 damage)
+void damage_entity(GameLevel *rt, GenericEntity *entity, f32 damage)
 {
 	assert(entity && rt);
 	
 	switch (entity->type) {
 		case EntityEmpty:
-		case EntityEnemySpawner:
 		{
 			TraceLog(LOG_WARNING, "damage_entity: can't damage %s", EntityTypeNames[entity->type]);
 		} break;
 
 		case EntityTurret:
 		case EntityProjectile:
-		case EntityMainTower:
+		case EntityCake:
 		case EntityEnemy:
 		{
 			// TODO  Apply effect
@@ -29,82 +28,14 @@ void damage_entity(GameLevel *rt, Entity *entity, f32 damage)
 	}
 }
 
-b32  entity_died(GameLevel *rt, Entity *entity)
+Enemy *turret_get_target(EnemyDa enemys, Turret turret, i32 floor_variance)
 {
-	assert(entity && rt);
-	if (entity->health > 0) return (false);
-	
-	switch (entity->type) {
-		case EntityEmpty:
-		case EntityEnemySpawner:
-		{
-			TraceLog(LOG_WARNING, "entity_died: %s type can't die.", EntityTypeNames[entity->type]);
-		} break;
-
-		case EntityTurret:
-		case EntityProjectile:
-		case EntityEnemy:
-		{
-			entity->type = EntityEmpty;
-			// TODO  Apply death animation
-		} break ;
-
-		default: {
-			TraceLog(LOG_WARNING, "entity_died: can't damage default");
-		} break;
-	}
-	return (true);
-}
-
-Entity *get_closest_entity(EntityDa entitys, V2 from)
-{
-	Entity *r = NULL;
-
-	f32 closest_dist = -1;
-	{entitys_iterate(entitys) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue ;
-
-		f32 dist = fabs(V2Distance(from, e->pos));
-		if (dist < closest_dist || closest_dist == -1) {
-			closest_dist = dist;
-			r = e;
-		}
-	}}
-
-	return (r);
-}
-
-Entity *get_closest_entity_side(EntityDa entitys, V2 from)
-{
-	Entity *r = NULL;
-
-	V2 from_side = V2DirTo(from, Vec2(Data->canvas_size.x * 0.5f, from.y));;
-	f32 closest_dist = -1;
-	{entitys_iterate(entitys) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue ;
-
-		V2 side = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
-		if (side.x != from_side.x) continue;
-		f32 dist = fabs(V2Distance(from, e->pos));
-		if (dist < closest_dist || closest_dist == -1) {
-			closest_dist = dist;
-			r = e;
-		}
-	}}
-
-	return (r);
-}
-
-Entity *turret_get_target(EntityDa enemys, Entity turret, i32 floor_variance)
-{
-	Entity *r = NULL;
+	Enemy *r = NULL;
 
 	V2 from_side = V2DirTo(turret.pos, Vec2(Data->canvas_size.x * 0.5f, turret.pos.y));;
 	f32 closest_dist = -1;
-	{entitys_iterate(enemys) {
-		Entity *e = iterate_get();
+	{da_iterate(enemys, EnemyDa) {
+		Enemy *e = iterate_get();
 		if (e->type == EntityEmpty) continue ;
 
 		if (e->floor > turret.floor + floor_variance || e->floor < turret.floor - floor_variance) 
@@ -122,26 +53,7 @@ Entity *turret_get_target(EntityDa enemys, Entity turret, i32 floor_variance)
 	return (r);
 }
 
-Entity *get_closest_entity_range(EntityDa entitys, V2 from, f32 range)
-{
-	Entity *r = NULL;
-
-	f32 closest_dist = -1;
-	{entitys_iterate(entitys) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue ;
-
-		f32 dist = fabs(V2Distance(from, e->pos));
-		if (dist <= range && (dist < closest_dist || closest_dist == -1)) {
-			closest_dist = dist;
-			r = e;
-		}
-	}}
-
-	return (r);
-}
-
-b32 EntityInRange(Entity *from, Entity *to, f32 range) 
+b32 entity_in_range(GenericEntity *from, GenericEntity *to, f32 range) 
 {
 	//Rect from_rec = RecV2(V2Subtract(from->pos, Vec2v(range)), V2Add(from->size, Vec2v(range)));
 	Rect from_rec = RecGrow(RecV2(from->pos, from->size), range);
@@ -149,37 +61,15 @@ b32 EntityInRange(Entity *from, Entity *to, f32 range)
 	return (CheckCollisionRecs(from_rec, to_rec));
 }
 
-void push_entity(EntityDa *da, Entity entity) 
+Turret create_turret(Turret turret)
 {
-	assert(da);
-
-	EntityDa _da = *da;
-	{entitys_iterate(_da) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) {
-			*e = entity;
-			return ;
-		}
-	}}
-
-	if (da->count < da->capacity) {
-		da->items[da->count] = entity;
-		da->count++;
-	} else {
-		TraceLog(LOG_WARNING, "push_entity: EntityDa is full.");
+	if (V2Compare(turret.render.size, V2Zero())) {
+		turret.render.size = turret.size;
 	}
-}
-
-Entity create_entity(Entity entity)
-{
-	if (V2Compare(entity.render.size, V2Zero())) {
-		//TraceLog(LOG_INFO, "create_entity: entity render_size is zeroed, creating one size.");
-		entity.render.size = entity.size;
+	if (turret.health_max == 0) {
+		turret.health_max = turret.health;
 	}
-	if (entity.health_max == 0) {
-		entity.health_max = entity.health;
-	}
-	return (entity);
+	return (turret);
 }
 
 Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params) 
@@ -220,34 +110,60 @@ Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params)
 	return (p);
 }
 
-Entity create_enemy_ex(V2 pos, CreateEnemyParams params) 
+Enemy create_enemy_ex(V2 pos, CreateEnemyParams params) 
 {
-	Entity e = create_entity((Entity) {
+	Enemy enemy = (Enemy) {
 		.type = EntityEnemy,
 		.pos = pos,
 		.size = params.size,
 		.render.color = params.color,
 		.health = params.health,
 		.floor = params.floor,
-		.enemy.speed = params.speed,
-		.enemy.melee = params.melee,
-		.enemy.damage = params.damage,
-		.enemy.range = params.range,
-		.enemy.attack_rate = params.attack_rate,
-	});
+		.speed = params.speed,
+		.melee = params.melee,
+		.damage = params.damage,
+		.range = params.range,
+		.attack_rate = params.attack_rate,
+	};
 
-	return (e);
+	if (V2Compare(enemy.render.size, V2Zero())) {
+		enemy.render.size = enemy.size;
+	}
+	if (enemy.health_max == 0) {
+		enemy.health_max = enemy.health;
+	}
+
+	return (enemy);
 }
 
-Entity *enemy_get_turret(EntityDa turrets, i32 floor, i32 side)
+Turret *enemy_get_turret(TurretDa turrets, i32 floor, i32 side)
 {
-	{entitys_iterate(turrets) {
-		Entity *e = iterate_get();
+	{da_iterate(turrets, TurretDa) {
+		Turret *e = iterate_get();
 		iterate_check_entity(e, EntityTurret);
 		if (e->floor != floor) continue;
 		V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
 		if (dir.x == side) return (e);
 	}}
-
 	return NULL;
+}
+
+void apply_func_entitys(GameLevel *l, void (*func)(GenericEntity *entity)) 
+{
+	func(&l->cake);
+	{da_iterate(l->turrets, TurretDa) {
+		GenericEntity *e = (GenericEntity *) iterate_get();
+		if (e->type == EntityEmpty) continue;
+		func(e);
+	}}
+	{da_iterate(l->enemys, EnemyDa) {
+		GenericEntity *e = (GenericEntity *) iterate_get();
+		if (e->type == EntityEmpty) continue;
+		func(e);
+	}}
+	{da_iterate(l->projectiles, ProjectileDa) {
+		GenericEntity *e = (GenericEntity *) iterate_get();
+		if (e->type == EntityEmpty) continue;
+		func(e);
+	}}
 }

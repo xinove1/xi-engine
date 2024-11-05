@@ -93,12 +93,8 @@ hot b32 update(void)
 		Data->lost = true;
 	}
 
-	update_entity_veffects(&Level->cake);
-	{entitys_iterate(Level->entitys) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue;
-		update_entity_veffects(e);
-	}}
+	apply_func_entitys(Level, update_entity_veffects);
+	//update_entity_veffects(&Level->cake);
 
 	// ----------- Input -----------
 	V2 input_dir = {0, 0};
@@ -138,39 +134,45 @@ hot b32 update(void)
 	update_wave_manager(Level);
 
 	// ----------- Enemys ----------- 
-	{entitys_iterate(Level->enemys) {
-		Entity *e = iterate_get();
+	{da_iterate(Level->enemys, EnemyDa) {
+		Enemy *e = iterate_get();
 		iterate_check_entity(e, EntityEnemy);
 
-		if (entity_died(Level, e)) continue;
+		if (e->health <= 0 ) {
+			e->type = EntityEmpty;
+			continue;
+		}
 
 		V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
-		Entity *target = enemy_get_turret(Level->turrets, e->floor, dir.x);
+		Turret *target = enemy_get_turret(Level->turrets, e->floor, dir.x);
 		if (!target) target = &Level->cake; // Attack Main tower instead
 
-		if (EntityInRange(e, target, e->enemy.range)) {
-			e->enemy.attack_rate_count += GetFrameTime();
-			if (e->enemy.attack_rate_count >= e->enemy.attack_rate) {
-				e->enemy.attack_rate_count = 0;
-				damage_entity(Level, target, e->enemy.damage);
+		if (entity_in_range((GenericEntity *)e, (GenericEntity *)target, e->range)) {
+			e->attack_rate_count += GetFrameTime();
+			if (e->attack_rate_count >= e->attack_rate) {
+				e->attack_rate_count = 0;
+				damage_entity(Level, target, e->damage);
 			}
 		} else { // Move Towards Turret
-			e->pos = V2Add(e->pos, V2Scale(dir, e->enemy.speed * GetFrameTime()));
+			e->pos = V2Add(e->pos, V2Scale(dir, e->speed * GetFrameTime()));
 		}
 	}}
 
 
 	// ----------- Turrets ----------- 
-	{entitys_iterate(Level->turrets) {
-		Entity *e = iterate_get();
+	{da_iterate(Level->turrets, TurretDa) {
+		Turret *e = iterate_get();
 		iterate_check_entity(e, EntityTurret);
 
-		if (entity_died(Level, e)) continue;
+		if (e->health <= 0) {
+			e->type = EntityEmpty;
+			continue;
+		}
 
-		e->turret.fire_rate_count += GetFrameTime();
-		if (e->turret.fire_rate && e->turret.fire_rate_count >= e->turret.fire_rate) {
-			e->turret.fire_rate_count = 0;
-			Entity *target = turret_get_target(Level->enemys, *e, 1);
+		e->fire_rate_count += GetFrameTime();
+		if (e->fire_rate && e->fire_rate_count >= e->fire_rate) {
+			e->fire_rate_count = 0;
+			Enemy *target = turret_get_target(Level->enemys, *e, 1); // TODO  Add floor range to turret
 			if (target) {
 				V2 p = V2Add(e->pos, V2Scale(e->size, 0.5));
 				spawn_projectile(p, target->pos, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 400, .damage = 10); 
@@ -184,6 +186,7 @@ hot b32 update(void)
 		iterate_check_entity(e, EntityProjectile);
 
 		if (e->health <= 0) {
+			// TODO  Move this to after hit a enemy an splatter the particles in ther direction of the collision
 			for (i32 i = 0; i < 10; i++) {
 				create_particle( 
 					.dir = Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1)),
@@ -206,22 +209,22 @@ hot b32 update(void)
 
 		Rect rec = RecV2(e->pos, e->size);
 		if (e->targeting == EntityTurret) {
-			{entitys_iterate(Level->turrets){
-				Entity *turret = iterate_get();
+			{da_iterate(Level->turrets, TurretDa){
+				Turret *turret = iterate_get();
 				iterate_check_entity(turret, EntityTurret);
 				if (CheckCollisionRecs(rec, RecV2(turret->pos, turret->size))) {
-					damage_entity(Level, turret, e->damage);
+					damage_entity(Level, (GenericEntity* )turret, e->damage);
 					e->health -= turret->health;
 					continue;
 				}
 			}}
 		}
 		if (e->targeting == EntityEnemy) {
-			{entitys_iterate(Level->enemys){
-				Entity *enemy = iterate_get();
+			{da_iterate(Level->enemys, EnemyDa){
+				Enemy *enemy = iterate_get();
 				iterate_check_entity(enemy, EntityEnemy);
 				if (CheckCollisionRecs(rec, RecV2(enemy->pos, enemy->size))) {
-					damage_entity(Level, enemy, e->damage);
+					damage_entity(Level, (GenericEntity* )enemy, e->damage);
 					e->health -= enemy->health;
 					continue;
 				}
@@ -254,18 +257,8 @@ hot void draw(void)
 	// Background color
 	//DrawRectangle(0, 0, Data->canvas_size.x, Data->canvas_size.y, BLACK);
 
-	render_generic_entity((GenericEntity *) &Level->cake);
-	{entitys_iterate(Level->entitys) {
-		Entity *e = iterate_get();
-		if (e->type == EntityEmpty) continue;
-		render_generic_entity((GenericEntity *) e);
-	}}
-
-	{da_iterate(Level->projectiles, ProjectileDa) {
-		Projectile *e = iterate_get();
-		iterate_check_entity(e, EntityProjectile);
-		render_generic_entity((GenericEntity *) e);
-	}}
+	apply_func_entitys(Level, render_entity);
+//	render_generic_entity((GenericEntity *) &Level->cake);
 
 	for (i32 i = 0; i < count_of(Data->particles); i++) {
 		if (Data->particles[i].type == ParticleEmpty) continue;
@@ -356,24 +349,23 @@ GameLevel *create_level(GameData *data, size floors)
 	V2 canvas_middle = Vec2(canvas.x * 0.5f, canvas.y * 0.5f);
 	V2 tower_size = Vec2(tower_width, (floor_height * floors) + (floor_padding * floors));
 	V2 tower_pos = Vec2(canvas_middle.x - (tower_size.x * 0.5f), canvas.y - (tower_size.y + ground_height));
-	level->cake = create_entity((Entity) {
-		.type = EntityMainTower,
+	level->cake = (GenericEntity) {
+		.type = EntityCake,
+		.render.size = tower_size,
+		.render.color = PURPLE,
 		.pos = tower_pos,
 		.size = tower_size,
-		.render.color = PURPLE,
 		.health = tower_health,
-	});
+		.health_max = tower_health,
+	};
 
 	// Init Entitys
 	size max_turrets = floors * 2;
 	size max_projectiles = 400;
 	size max_enemys = floors * 10 * 2;
-	da_init_and_alloc(level->entitys, max_turrets + max_enemys, sizeof(Entity));
+	da_init_and_alloc(level->turrets, max_turrets, sizeof(Turret));
 	da_init_and_alloc(level->projectiles, max_projectiles, sizeof(Projectile));
-	level->entitys.count = max_turrets + max_enemys;
-
-	da_init(level->turrets, max_turrets, level->entitys.items);
-	da_init(level->enemys, max_enemys, level->entitys.items + max_turrets);
+	da_init_and_alloc(level->enemys, max_enemys, sizeof(Enemy));
 
 
 	// Init Wave Manager
@@ -429,14 +421,14 @@ GameLevel *create_level(GameData *data, size floors)
 			pos.y -= (floor_padding + floor_height) * floor + floor_height;
 		}
 
-		push_entity(&level->turrets, create_entity((Entity) {
+		da_append_copy(level->turrets, create_turret((Turret) {
 			.type = EntityTurret,
 			.pos = pos,
 			.size = Vec2(turret_width, floor_height),
 			.render.color = RED,
-			.turret.fire_rate = fire_rate,
-			.turret.damage = 4,
-			.turret.range = 30,
+			.fire_rate = fire_rate,
+			.damage = 4,
+			.range = 30,
 			.health = 100,
 			.floor = floor,
 		}));

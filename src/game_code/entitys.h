@@ -12,15 +12,14 @@
 introspect() typedef enum {
 	EntityEmpty,
 	EntityTurret,
-	EntityMainTower,
+	EntityCake,
 	EntityProjectile,
 	EntityEnemy,
-	EntityEnemySpawner,
 	EntityTypeCount
 } EntityType;
 
 // TODO  introspected GenericEntity to have macro to generate header on all other entitys
-typedef struct {
+introspect() typedef struct {
 	EntityType type;
 	RenderData render;
 	VEffect veffects[VEffectTypeCount]; // TODO  Rename to render effects
@@ -33,37 +32,48 @@ typedef struct {
 typedef struct {
 	EntityType type;
 	RenderData render;
-	VEffect veffects[VEffectTypeCount];
+	VEffect veffects[VEffectTypeCount]; // TODO  Rename to render effects
 	V2 pos;
 	V2 size;
 	f32 health;
 	f32 health_max;
+	// --
 	i32 floor;
-	union {
-		struct {
-			f32 fire_rate;
-			f32 fire_rate_count;
-			f32 damage;
-			f32 range;
-		} turret;
-
-		struct {
-			b32 melee;
-			f32 speed;
-			f32 damage;
-			f32 range;
-			f32 attack_rate;
-			f32 attack_rate_count;
-		} enemy;
-	};
-} Entity;
-
+	f32 fire_rate;
+	f32 fire_rate_count;
+	f32 damage;
+	f32 range;
+} Turret;
 
 typedef struct {
-	Entity *items;
+	Turret *items;
 	size count;
 	size capacity;
-} EntityDa;
+} TurretDa;
+
+typedef struct {
+	EntityType type;
+	RenderData render;
+	VEffect veffects[VEffectTypeCount]; // TODO  Rename to render effects
+	V2 pos;
+	V2 size;
+	f32 health;
+	f32 health_max;
+	// --
+	i32 floor;
+	b32 melee;
+	f32 speed;
+	f32 damage;
+	f32 range;
+	f32 attack_rate;
+	f32 attack_rate_count;
+} Enemy;
+
+typedef struct {
+	Enemy *items;
+	size count;
+	size capacity;
+} EnemyDa;
 
 
 typedef struct {
@@ -74,7 +84,6 @@ typedef struct {
 	V2 size;
 	f32 health;
 	f32 health_max;
-
 	// --
 	EntityType targeting;
 	V2 dir;
@@ -95,7 +104,7 @@ typedef struct {
 } SpawnLocation;
 
 typedef struct {
-	Entity enemy;
+	Enemy enemy;
 	f32 cooldown; // cooldown to be aplied to the spawn location
 } SpawnPacket;
 
