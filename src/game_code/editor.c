@@ -133,7 +133,13 @@ internal void edit_entity(GenericEntity *e)
 	mu_number_ex(ctx, &e->size.x, 3, "%.1f", MU_OPT_ALIGNCENTER);
 	mu_number_ex(ctx, &e->size.y, 3, "%.1f", MU_OPT_ALIGNCENTER);
 
-	width = body_width * 0.15;
+	mu_layout_row(ctx, 2, (int[]) {label_w, -1}, 0);
+	mu_label(ctx, "Health");
+	mu_number_ex(ctx, &e->health, 3, "%.1f", MU_OPT_ALIGNCENTER);
+	mu_label(ctx, "Health Max");
+	mu_number_ex(ctx, &e->health_max, 3, "%.1f", MU_OPT_ALIGNCENTER);
+
+	width = body_width * 0.14;
 	mu_layout_row(ctx, 6, (int[]) {label_w, width, width, width, width, -1}, 0);
 	mu_label(ctx, "Color");
 	u8_slider(ctx, &e->render.color.r, 0, 255);
