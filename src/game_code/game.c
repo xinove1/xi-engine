@@ -144,7 +144,7 @@ hot b32 update(void)
 		}
 
 		V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
-		Turret *target = enemy_get_turret(Level->turrets, e->floor, dir.x);
+		GenericEntity *target = (GenericEntity *)enemy_get_turret(Level->turrets, e->floor, dir.x);
 		if (!target) target = &Level->cake; // Attack Main tower instead
 
 		if (entity_in_range((GenericEntity *)e, (GenericEntity *)target, e->range)) {
@@ -288,7 +288,7 @@ hot void draw(void)
 
 		{
 			const cstr *text = TextFormat("Wave: %d", Level->wave_manager.wave);
-			i32 size = MeasureText(text, 10);
+			//i32 size = MeasureText(text, 10);
 			V2 pos = Vec2(cake_pos.x + cake_size + 6, cake_pos.y);
 			DrawText(text, pos.x, pos.y, 10, RED);
 		}
