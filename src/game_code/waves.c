@@ -4,10 +4,14 @@ local void generate_packets(GameLevel *l)
 {
 	WaveManager *w = &l->wave_manager;
 	size amount = 0;
-	if (w->floor_limit <= l->floors_count) {
+	if (w->floor_limit < l->floors_count) {
 		amount = w->floor_limit * 4;
 	} else {
 		amount = w->wave * 4;
+	}
+	if (amount >= w->packets_max) {
+		TraceLog(LOG_INFO, "generate_packets: amount of packets reached packets_max");
+		amount = w->packets_max;
 	}
 	w->packets_amount = amount;
 	for (size i = 0; i < w->packets_amount; i++) {

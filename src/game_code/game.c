@@ -362,7 +362,7 @@ GameLevel *create_level(GameData *data, size floors)
 	// Init Entitys
 	size max_turrets = floors * 2;
 	size max_projectiles = 400;
-	size max_enemys = floors * 10 * 2;
+	size max_enemys = floors * 100 * 2;
 	da_init_and_alloc(level->turrets, max_turrets, sizeof(Turret));
 	da_init_and_alloc(level->projectiles, max_projectiles, sizeof(Projectile));
 	da_init_and_alloc(level->enemys, max_enemys, sizeof(Enemy));
@@ -373,7 +373,7 @@ GameLevel *create_level(GameData *data, size floors)
 		level->wave_manager = (WaveManager) { 0 };
 		level->wave_manager.floor_limit = 1;
 		level->wave_manager.time_until_next_wave = 5;
-		level->wave_manager.packets_max = floors * 10;
+		level->wave_manager.packets_max = max_enemys;
 		level->wave_manager.packets = calloc(level->wave_manager.packets_max, sizeof(SpawnPacket));
 		level->wave_manager.locations = calloc(floors * 2, sizeof(SpawnLocation));
 		// Spawn Locations
