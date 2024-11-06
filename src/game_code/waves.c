@@ -78,6 +78,13 @@ void update_wave_manager(GameLevel *l)
 	}
 
 	// Consume packets
+	#ifdef BUILD_DEBUG
+	local i32 flag = 0;
+	if (flag != w->wave) {
+		TraceLog(LOG_INFO, "Wave %d, spawning %d enemys.", w->wave, w->packets_amount);
+		flag = w->wave;
+	}
+	#endif
 	for (size i = 0; i < w->floor_limit; i++) {
 		for (size side = 0; side < 2; side++) {
 			SpawnLocation *location = get_spawn_point(l, i, side ? right_side : left_side);
@@ -86,7 +93,8 @@ void update_wave_manager(GameLevel *l)
 				SpawnPacket p = get_next_packet(w);
 				p.enemy.pos = V2Subtract(location->point, V2Scale(p.enemy.size, 0.5f));
 				p.enemy.floor = location->floor;
-				da_append_copy(l->enemys, p.enemy);
+				spawn_enemy(l, p.enemy);
+				
 				location->cooldown = p.cooldown;
 			}
 		}

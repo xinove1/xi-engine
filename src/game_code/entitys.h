@@ -141,10 +141,5 @@ typedef struct {
 	f32 attack_rate;
 } CreateEnemyParams;
 
-#define spawn_projectile(from, to, ...)  \
-	spawn_projectile_ex(from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
-
-#define create_enemy(pos, ...) \
-	create_enemy_ex(pos, (CreateEnemyParams) {__VA_ARGS__})
 
 #endif

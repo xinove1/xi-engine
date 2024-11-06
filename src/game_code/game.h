@@ -14,29 +14,19 @@
 # include "meta_generated.h"
 
 // TODO  Better name needed for this macros
-#define da_init_and_alloc(da, limit, items_size)  \
-	do {                            \
+#define da_init_and_alloc(da, limit, items_size)   \
+	do {                                        \
+		(da).count = 0;                      \
+		(da).capacity = limit;                \
+		(da).items = calloc(limit, items_size);\
+	} while (0);                                    \
+
+#define da_init(da, limit, start)    \
+	do {                          \
 		(da).count = 0;        \
 		(da).capacity = limit; \
-		(da).items = calloc(limit, items_size); \
-	} while (0); \
-
-#define da_init(da, limit, start)  \
-	do {                            \
-		(da).count = 0;        \
-		(da).capacity = limit; \
-		(da).items = start; \
-	} while (0); \
-
-#define da_append_copy(da, item)                                                          \
-    do {                                                                                 \
-        if (da.count >= da.capacity) {                                             \
-		TraceLog(LOG_WARNING, "da_append: Da is full. line: %d", __LINE__); \
-        } else {                                                                                \
-		da.items[da.count] = (item);                                             \
-		da.count++; \
-	} \
-    } while (0)
+		(da).items = start;    \
+	} while (0);                   \
 
 //#define da_simple_append(da, item) (da)->items[(da)->count++] = (item)
 
@@ -87,14 +77,18 @@ typedef struct {
 extern GameData *Data;
 
 // Entitys
-Turret create_turret(Turret entity);
-Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params);
-Enemy create_enemy_ex(V2 pos, CreateEnemyParams params);
 void damage_entity(GameLevel *rt, GenericEntity *entity, f32 damage);
-Enemy *turret_get_target(EnemyDa enemys, Turret turret, i32 floor_variance);
+void apply_func_entitys(GameLevel *l, void (*func)(GenericEntity *entity));
+Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params);
+#define spawn_projectile(from, to, ...) spawn_projectile_ex(from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
+Enemy create_enemy_ex(V2 pos, CreateEnemyParams params);
+#define create_enemy(pos, ...) create_enemy_ex(pos, (CreateEnemyParams) {__VA_ARGS__})
+bool spawn_enemy(GameLevel *level, Enemy enemy);
 b32 entity_in_range(GenericEntity *from, GenericEntity *to, f32 range);
 Turret *enemy_get_turret(TurretDa turrets, i32 floor, i32 side);
-void apply_func_entitys(GameLevel *l, void (*func)(GenericEntity *entity));
+Turret create_turret(Turret entity);
+bool spawn_turret(GameLevel *level, Turret turret) ;
+Enemy *turret_get_target(EnemyDa enemys, Turret turret, i32 floor_variance);
 
 // Wave Manager
 typedef enum {right_side = 1, left_side = -1} FloorSides;

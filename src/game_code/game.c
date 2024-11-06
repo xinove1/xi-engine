@@ -421,7 +421,7 @@ GameLevel *create_level(GameData *data, size floors)
 			pos.y -= (floor_padding + floor_height) * floor + floor_height;
 		}
 
-		da_append_copy(level->turrets, create_turret((Turret) {
+		spawn_turret(level, create_turret((Turret) {
 			.type = EntityTurret,
 			.pos = pos,
 			.size = Vec2(turret_width, floor_height),

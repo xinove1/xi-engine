@@ -28,6 +28,26 @@ void damage_entity(GameLevel *rt, GenericEntity *entity, f32 damage)
 	}
 }
 
+void apply_func_entitys(GameLevel *l, void (*func)(GenericEntity *entity)) 
+{
+	func(&l->cake);
+	{da_iterate(l->turrets, TurretDa) {
+		GenericEntity *e = (GenericEntity *) iterate_get();
+		if (e->type == EntityEmpty) continue;
+		func(e);
+	}}
+	{da_iterate(l->enemys, EnemyDa) {
+		GenericEntity *e = (GenericEntity *) iterate_get();
+		if (e->type == EntityEmpty) continue;
+		func(e);
+	}}
+	{da_iterate(l->projectiles, ProjectileDa) {
+		GenericEntity *e = (GenericEntity *) iterate_get();
+		if (e->type == EntityEmpty) continue;
+		func(e);
+	}}
+}
+
 Enemy *turret_get_target(EnemyDa enemys, Turret turret, i32 floor_variance)
 {
 	Enemy *r = NULL;
@@ -70,6 +90,25 @@ Turret create_turret(Turret turret)
 		turret.health_max = turret.health;
 	}
 	return (turret);
+}
+
+bool spawn_turret(GameLevel *level, Turret turret) 
+{
+	{da_iterate(level->turrets, TurretDa) {
+		Turret *e = iterate_get();
+		if (e->type == EntityEmpty) {
+			*e = turret;
+			return (true);
+		}
+	}}
+	if (level->turrets.count >= level->turrets.capacity) {
+		TraceLog(LOG_WARNING, "spawn_turret: level->turrets is full.");
+	} else {
+		level->turrets.items[level->turrets.count] = turret;
+		level->turrets.count++;
+		return (true);
+	}
+	return (false);
 }
 
 Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params) 
@@ -136,6 +175,25 @@ Enemy create_enemy_ex(V2 pos, CreateEnemyParams params)
 	return (enemy);
 }
 
+bool spawn_enemy(GameLevel *level, Enemy enemy)
+{
+	{da_iterate(level->enemys, EnemyDa) {
+		Enemy *e = iterate_get();
+		if (e->type == EntityEmpty) {
+			*e = enemy;
+			return (true);
+		}
+	}}
+	if (level->enemys.count >= level->enemys.capacity) {
+		TraceLog(LOG_WARNING, "add_enemy: level->enemys is full.");
+	} else {
+		level->enemys.items[level->enemys.count] = enemy;
+		level->enemys.count++;
+		return (true);
+	}
+	return (false);
+}
+
 Turret *enemy_get_turret(TurretDa turrets, i32 floor, i32 side)
 {
 	{da_iterate(turrets, TurretDa) {
@@ -146,24 +204,4 @@ Turret *enemy_get_turret(TurretDa turrets, i32 floor, i32 side)
 		if (dir.x == side) return (e);
 	}}
 	return NULL;
-}
-
-void apply_func_entitys(GameLevel *l, void (*func)(GenericEntity *entity)) 
-{
-	func(&l->cake);
-	{da_iterate(l->turrets, TurretDa) {
-		GenericEntity *e = (GenericEntity *) iterate_get();
-		if (e->type == EntityEmpty) continue;
-		func(e);
-	}}
-	{da_iterate(l->enemys, EnemyDa) {
-		GenericEntity *e = (GenericEntity *) iterate_get();
-		if (e->type == EntityEmpty) continue;
-		func(e);
-	}}
-	{da_iterate(l->projectiles, ProjectileDa) {
-		GenericEntity *e = (GenericEntity *) iterate_get();
-		if (e->type == EntityEmpty) continue;
-		func(e);
-	}}
 }
