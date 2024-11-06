@@ -44,8 +44,12 @@ void update_editor()
 			if (mu_begin_window(ctx, "Debug window", mu_rect(Data->canvas_size.x * 0.1f, Data->canvas_size.y * 0.1f, 150, 200))) {
 				mu_layout_row(ctx, 2, (int[]){0, -1}, 0);
 				mu_label(ctx, "Tower infinity health");
-				//mu_checkbox(ctx, "", &Ed->no_lose);
 				MUiToggleButtonEx(ctx, &Ed->no_lose, 0);
+				mu_label(ctx, "Debug select");
+				if (MUiToggleButtonEx(ctx, &Ed->debug_select, 0) && Ed->debug_select == false) {
+					Ed->hovered = NULL;
+					Ed->selected = NULL;
+				}
 				mu_end_window(ctx);
 			}
 			style_window(Ed->mu);
@@ -59,20 +63,24 @@ void update_editor()
 		if (CheckCollisionPointRec(mouse_pos, rec)) return ;
 	}
 
+	// NOTE  Nothing bellow this runs if mouse is inside a ui window
+
 	// ----- Editor ----- 
-	
-	Ed->hovered = NULL;
-	apply_func_entitys(Data->level, is_entity_under_mouse);
+	printf("debug_selected %d \n", Ed->debug_select);
+	if (Ed->debug_select) {
+		Ed->hovered = NULL;
+		apply_func_entitys(Data->level, is_entity_under_mouse);
 
-	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-		if (Ed->hovered) {
-			Ed->selected = Ed->hovered;
-			Ed->hovered = NULL;
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+			if (Ed->hovered) {
+				Ed->selected = Ed->hovered;
+				Ed->hovered = NULL;
 
-			// If clicking on same entity that window was closed, open it back up
-			mu_Container *cnt = mu_get_container(Ed->mu, EntityTypeNames[Ed->selected->type]); cnt->open = true;
-		} else Ed->selected = NULL;
-	}
+				// If clicking on same entity that window was closed, open it back up
+				mu_Container *cnt = mu_get_container(Ed->mu, EntityTypeNames[Ed->selected->type]); cnt->open = true;
+			} else Ed->selected = NULL;
+		}
+	} 
 
 }
 

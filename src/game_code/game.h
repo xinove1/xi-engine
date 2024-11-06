@@ -59,6 +59,7 @@ typedef struct
 	GenericEntity *hovered;
 	b32 debug_window;
 	b32 no_lose;
+	b32 debug_select; // TODO BETTER NAME
 	f32 effect_duration;
 	Color effect_color;
 } GameEditor;
