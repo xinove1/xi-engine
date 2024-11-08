@@ -114,7 +114,33 @@ hot b32 update(void)
 	if (IsKeyPressed(KEY_U)) {
 		exit(0);
 	}
+
+	{ // Turret Selection stuff
+		local i32 frame_count = 0;
+		frame_count++;
+		if (frame_count >= 5) {
+			V2 mouse_pos = GetMousePosition();
+			Level->turret_hovered = NULL;
+			{da_iterate(Level->turrets, TurretDa) {
+				Turret *e = iterate_get();
+				if (e->type == EntityEmpty) continue;
+				if (CheckCollisionPointRec(mouse_pos, RecV2(e->pos, e->size))) {
+					Level->turret_hovered = e;
+					break ;
+				}
+			}}
+			frame_count = 0;
+		}
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+			if (!Level->turret_hovered || Level->turret_hovered == Level->turret_selected) {
+				Level->turret_selected = NULL;
+			} else if (Level->turret_hovered) {
+				Level->turret_selected = Level->turret_hovered;
+			}
+		}
+	}
 	
+	#ifdef BUILD_DEBUG
 	if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 		for (i32 j = 0; j < 100; j++){
 			create_particle( 
@@ -128,6 +154,7 @@ hot b32 update(void)
 			);
 		}
 	}
+	#endif
 
 	// ----------- Update Entitys ----------- 
 	
@@ -236,29 +263,9 @@ hot b32 update(void)
 
 hot void draw(void)
 {
-	if (Data->menu_screen) {
-		UiContainer *c = &Data->menu;
-		XUiBegin(c);
-
-		XUiText(c, "Tower Defense da silva", true);
-		
-		if (XUiTextButton(c, "Play")) {
-			Data->menu_screen = false;
-		}
-
-		if (XUiTextButton(c, "Options")) {
-			printf("Optiooooons\n");
-		}
-
-		XUiEnd(c);
-		return ;
-	}
-
-	// Background color
 	//DrawRectangle(0, 0, Data->canvas_size.x, Data->canvas_size.y, BLACK);
 
 	apply_func_entitys(Level, render_entity);
-//	render_generic_entity((GenericEntity *) &Level->cake);
 
 	for (i32 i = 0; i < count_of(Data->particles); i++) {
 		if (Data->particles[i].type == ParticleEmpty) continue;
@@ -272,14 +279,20 @@ hot void draw(void)
 		render_particle(Data->particles[i]);
 	}
 
-	#ifdef BUILD_DEBUG 
-		for (size i = 0; i < Level->floors_count * 2; i++) {
-			V2 p = Level->wave_manager.locations[i].point;
-			DrawCircleV(p, 2, GRAY);
-		}
-	#endif
+	if (Level->turret_selected) {
+		Turret *t = Level->turret_selected;
+		Rect rec = RecV2(V2Add(t->pos, t->render.pos), t->render.size);
+		DrawRectangleLinesEx(rec, 1, BLACK); // TODO Fix Color
+	}
 
-	// Texts
+	if (Level->turret_hovered && Level->turret_hovered != Level->turret_selected) {
+		Turret *t = Level->turret_hovered;
+		Rect rec = RecV2(V2Add(t->pos, t->render.pos), t->render.size);
+		DrawRectangleLinesEx(rec, 1, PURPLE); // TODO Fix Color
+	}
+
+
+	// ---- Text ---
 	{ 
 		const cstr *cake_health = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
 		i32 cake_size = MeasureText(cake_health, 10);
@@ -300,7 +313,6 @@ hot void draw(void)
 		}
 	}
 
-
 	if (Data->lost) {
 		const cstr *text = TextFormat("You Lost!");
 		i32 size = MeasureText(text, 20);
@@ -308,16 +320,34 @@ hot void draw(void)
 		DrawText(text, pos.x, pos.y, 20, BLACK);
 	}
 
+	#ifdef BUILD_DEBUG 
+		for (size i = 0; i < Level->floors_count * 2; i++) {
+			V2 p = Level->wave_manager.locations[i].point;
+			DrawCircleV(p, 2, GRAY);
+		}
+	#endif
+
+	// ---- Ui Screens -----
+
+	if (Data->menu_screen) {
+		UiContainer *c = &Data->menu;
+		XUiBegin(c);
+
+		XUiText(c, "Tower Defense da silva", true);
+		
+		if (XUiTextButton(c, "Play")) {
+			Data->menu_screen = false;
+		}
+
+		if (XUiTextButton(c, "Options")) {
+			printf("Optiooooons\n");
+		}
+
+		XUiEnd(c);
+		return ;
+	}
+
 	
-	// {
-	// 	size offset = offset_of(GameLevel, tower);
-	// 	Entity *tower = (Entity *) (((u8 *) Level) + offset);
-	// 	const cstr *text = TextFormat("tower health: %.f", tower->health);
-	// 	i32 size = MeasureText(text, 10);
-	// 	V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, 22);
-	// 	DrawText(text, pos.x, pos.y, 10, RED);
-	// }
-	// Draw editor
 	draw_editor();
 }
 

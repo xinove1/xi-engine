@@ -66,7 +66,6 @@ void update_editor()
 	// NOTE  Nothing bellow this runs if mouse is inside a ui window
 
 	// ----- Editor ----- 
-	printf("debug_selected %d \n", Ed->debug_select);
 	if (Ed->debug_select) {
 		Ed->hovered = NULL;
 		apply_func_entitys(Data->level, is_entity_under_mouse);

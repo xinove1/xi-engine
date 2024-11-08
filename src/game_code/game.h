@@ -45,6 +45,8 @@ typedef struct {
 typedef struct {
 	char *name;
 	i32 floors_count;
+	Turret *turret_hovered;
+	Turret *turret_selected;
 	GenericEntity cake;
 	WaveManager wave_manager;
 	TurretDa turrets;
