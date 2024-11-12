@@ -8,6 +8,9 @@
 #endif
 
 GameLevel *create_level(GameData *data, size floors);
+internal b32 update_game(void);
+internal b32 update_input(void);
+internal b32 update_ui(void);
 
 GameData  *Data = NULL;
 global GameLevel *Level= NULL;
@@ -23,6 +26,7 @@ hot GameConfig init_pre_raylib(void **data)
 		.particles = {0},
 		.paused = false,
 		.level = NULL,
+		.game_speed = 1,
 		.menu_screen = false,
 	};
 	Data->mu = calloc(1, sizeof(mu_Context));
@@ -97,10 +101,34 @@ hot b32 update(void)
 		Data->lost = true;
 	}
 
-	// ----------- Ui ---------
-	MUiPoolInput(Data->mu);
+	update_input();
+	update_ui();
+
+	if (Data->paused) return (false);
+
+	for (i32 i = 0; i < Data->game_speed; i++) {
+		if (update_game()) return (true);
+	}
+
+	return (false);
+}
+
+internal b32 update_ui(void) 
+{
 	mu_begin(Data->mu); {
 		mu_Context *ctx = Data->mu;
+		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE)) {
+			mu_layout_row(ctx, 2, (const int[]) {20, -1}, -1);
+			if (MUiToggleButtonEx(ctx, &Data->paused, 0)) {
+			}
+			if (mu_button_ex(ctx, TextFormat("speed: %d", Data->game_speed), 0, 0)) {
+				Data->game_speed += 1;
+				if (Data->game_speed > MAX_GAME_SPEED) {
+					Data->game_speed = 1;
+				}
+			}
+			mu_end_window(ctx);
+		}
 		if (Level->turret_selected) { 
 			Turret *t = Level->turret_selected;
 			V2 size = {100, 50};
@@ -121,6 +149,7 @@ hot b32 update(void)
 				if (mu_begin_window_ex(ctx, "Buy turret", MuRecV2(pos, size), options)) {
 					mu_layout_row(ctx, 1, (const int[]) {-1}, -1);
 					if (mu_button_ex(ctx, "Buy Basic Turret", 0, 0)) {
+						// TODO  Kill any Enemy that's on turret spot
 						*t = create_turret((Turret) {
 							.type = EntityTurret,
 							.pos = t->pos,
@@ -142,7 +171,13 @@ hot b32 update(void)
 		}
 	} mu_end(Data->mu);
 
-	// ----------- Input -----------
+	return (false);
+}
+
+internal b32 update_input(void) 
+{
+	MUiPoolInput(Data->mu);
+
 	V2 input_dir = {0, 0};
 	if (IsActionPressed(RIGHT)) {
 		input_dir.x += 1;
@@ -180,7 +215,7 @@ hot b32 update(void)
 			} else if (Level->turret_hovered) {
 				Level->turret_selected = Level->turret_hovered;
 			}
-		}
+		} // TODO  Also Deselect on right click
 	}
 	
 	#ifdef BUILD_DEBUG
@@ -201,6 +236,12 @@ hot b32 update(void)
 		exit(0);
 	}
 	#endif
+
+	return (false);
+}
+
+internal b32 update_game(void) 
+{
 
 	// ----------- Particles -----------
 	

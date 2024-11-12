@@ -35,6 +35,7 @@
 #define effects_iterate(da) da_iterate(da, EffectDa)
 #define iterate_get() &__da.items[__i]
 
+#define MAX_GAME_SPEED 4
 
 typedef struct {
 	byte *items;
@@ -72,6 +73,7 @@ typedef struct {
 	b32 paused;
 	b32 lost;
 	b32 menu_screen;
+	i32 game_speed;
 	UiContainer menu;
 	mu_Context *mu;
 	Font font; // Tmp
