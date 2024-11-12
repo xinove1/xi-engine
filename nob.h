@@ -26,9 +26,15 @@
 #ifndef NOB_H_
 #define NOB_H_
 
-#define NOB_ASSERT assert
-#define NOB_REALLOC realloc
-#define NOB_FREE free
+#ifndef NOB_ASSERT
+# define NOB_ASSERT assert
+#endif
+#ifndef NOB_REALLOC
+# define NOB_REALLOC realloc
+#endif
+#ifndef NOB_FREE
+# define NOB_FREE free
+#endif
 
 #include <assert.h>
 #include <stdbool.h>

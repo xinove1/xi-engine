@@ -5,10 +5,15 @@
 #define NO_RAYLIB
 #include "./src/modules/core.h"
 
-#include "./meta.c"
+internal void free_counted(void *ptr);
+internal void *realloc_counted(void *ptr, size new_size);
+internal void free_all_counted();
+#define NOB_REALLOC  realloc_counted
+#define NOB_FREE  free_counted
 
+#include "./meta.c"
 #define NOB_IMPLEMENTATION
-#include "./nob.h"
+#include "./nob.h" 
 
 internal void build_linux_static();
 internal void build_linux_hot();
@@ -76,7 +81,7 @@ global b32 ReLaunch = true;
 
 int main(int argc, char *argv[]) 
 {
-	NOB_GO_REBUILD_URSELF_MANY(false, argc, argv, "meta.c");
+	NOB_GO_REBUILD_URSELF_MANY(true, argc, argv, "meta.c");
 
 	if (!nob_mkdir_if_not_exists("./build")) return 1;
 
@@ -93,6 +98,7 @@ int main(int argc, char *argv[])
 	}
 	else if (flag_compare(flag, "m")) {
 		introspect_files("./src/game_code/meta_generated.h", (cstr **) Dep_Game, count_of(Dep_Game));
+		free_all_counted();
 		//parse_file("./src/game_code/entitys.h");
 	} 
 	else if (flag_compare(flag, "hot")) {
@@ -153,6 +159,9 @@ int main(int argc, char *argv[])
 	if (argc != 0) {
 		nob_log(NOB_INFO, "Only 1 flag alowed for now\n");
 	}
+
+	free_all_counted();
+	return (0);
 }
 
 internal void build_engine_layer(Nob_Cmd *cmd);
@@ -202,7 +211,7 @@ internal void build_and_run_hot()
 			printf("------------------------------------------------ \n");
 		}
 		if (re_launch) {
-			if (kill(proc, SIGKILL) < 0) {
+			if (kill(proc, SIGKILL) < 0) { 
 				nob_log(NOB_ERROR, "Killing current instance of game before re-launch failed: \n %s \n", strerror(errno));
 				exit(1);
 			}
@@ -500,6 +509,53 @@ internal void raylib_go_rebuild_urself()
 
 
 // -----------
+
+#define MAX_ALLOCS 100
+
+global void *_allocs[MAX_ALLOCS] = {0};
+
+internal void *realloc_counted(void *ptr, size new_size)
+{
+	void **tmp = NULL;
+
+	for (size i = 0; i < MAX_ALLOCS; i++) {
+		if (_allocs[i] == ptr) {
+			tmp = &_allocs[i];
+			break ;
+		}
+	}
+	Assert(tmp && "Reached the max amount of allocatios.");
+	
+	*tmp = realloc(ptr, new_size);
+	return (*tmp);
+}
+
+internal void free_counted(void *ptr)
+{
+	Assert(ptr && "Tryng to free NULL ptr.");
+	void **tmp = NULL;
+
+	for (size i = 0; i < MAX_ALLOCS; i++) {
+		if (_allocs[i] == ptr) {
+			tmp = &_allocs[i];
+			break ;
+		}
+	}
+	Assert(tmp && "Tryng to free a ptr that was not counted.");
+
+	free(*tmp);
+	*tmp = NULL;
+}
+
+internal void free_all_counted() 
+{
+	for (size i = 0; i < MAX_ALLOCS; i++) {
+		if (_allocs[i]) {
+			free(_allocs[i]);
+		}
+	}
+}
+
 b32 nob_proc_is_running(Nob_Proc proc) 
 {
 	int wstatus = 0;
