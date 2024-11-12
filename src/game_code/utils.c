@@ -32,6 +32,11 @@ Color lerp_color(Color a, Color b, f32 time)
 	});
 }
 
+Rect GetWindowRect()
+{
+	return (Rec(0, 0, Data->canvas_size.x, Data->canvas_size.y));
+}
+
 f32 GetRandf32Ex(f32 min, f32 max, f32 acc) 
 {
 	f32 r = GetRandomValue(min * acc, max * acc);

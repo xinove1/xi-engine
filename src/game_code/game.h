@@ -73,6 +73,8 @@ typedef struct {
 	b32 lost;
 	b32 menu_screen;
 	UiContainer menu;
+	mu_Context *mu;
+	Font font; // Tmp
 	GameEditor editor;
 	GameLevel *level;
 } GameData;
@@ -111,6 +113,7 @@ void create_particle_ex(CreateParticleParams param);
 GameFunctions game_init_functions();
 
 // Utils
+Rect GetWindowRect();
 f32 GetRandf32Ex(f32 min, f32 max, f32 acc);
 #define GetRandf32(min, max) GetRandf32Ex(min, max, 1000.0f)
 V2 ExpDecayV2(V2 a, V2 b, f32 decay);

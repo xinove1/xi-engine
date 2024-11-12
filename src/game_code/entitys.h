@@ -7,7 +7,7 @@
 # define iterate_check_entity(e, expected_type)        \
 	assert(e);                             \
 	if (e->type == EntityEmpty) {continue;} \
-	if (e->type != expected_type) { TraceLog(LOG_WARNING, "iterate_check_entity: expected entity of type %s but got type %s. continuing", EntityTypeNames[expected_type], EntityTypeNames[e->type]); continue;}
+	if (e->type != expected_type) { continue; TraceLog(LOG_WARNING, "iterate_check_entity: expected entity of type %s but got type %s. continuing", EntityTypeNames[expected_type], EntityTypeNames[e->type]); continue;}
 
 introspect() typedef enum {
 	EntityEmpty,
@@ -15,6 +15,7 @@ introspect() typedef enum {
 	EntityCake,
 	EntityProjectile,
 	EntityEnemy,
+	EntityTurretSpot,
 	EntityTypeCount
 } EntityType;
 

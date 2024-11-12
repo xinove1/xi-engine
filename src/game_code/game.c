@@ -25,6 +25,7 @@ hot GameConfig init_pre_raylib(void **data)
 		.level = NULL,
 		.menu_screen = false,
 	};
+	Data->mu = calloc(1, sizeof(mu_Context));
 	return ((GameConfig) {
 		.canvas_size = Data->canvas_size,
 		.window_name = "Cake Defense",
@@ -39,6 +40,9 @@ hot void init_pos_raylib(void)
 	Level = Data->level;
 
 	init_editor(Data);
+
+	Data->font = LoadFontEx("assets/pansyhand.ttf", 14, NULL, 0);
+	MUiInit(Data->mu, &Data->font);
 
 	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
 			.alignment = UiAlignCentralized,
@@ -93,8 +97,50 @@ hot b32 update(void)
 		Data->lost = true;
 	}
 
-	apply_func_entitys(Level, update_entity_veffects);
-	//update_entity_veffects(&Level->cake);
+	// ----------- Ui ---------
+	MUiPoolInput(Data->mu);
+	mu_begin(Data->mu); {
+		mu_Context *ctx = Data->mu;
+		if (Level->turret_selected) { 
+			Turret *t = Level->turret_selected;
+			V2 size = {100, 50};
+			V2 pos = t->pos;
+			f32 padding = 5;
+			i32 options = MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_NOHOLD_POS | MU_OPT_NOHOLD_SIZE;
+			if (CheckCollisionRecs(GetWindowRect(), RecV2(Vec2(pos.x, pos.y - size.y - padding), size))) {
+				pos.y -= size.y - padding;
+			} else {
+				pos.y += size.y + padding;
+			}
+			if (t->type == EntityTurret) {
+				if (mu_begin_window_ex(ctx, "Upgrade Tower", MuRecV2(pos, size), options)) {
+					mu_end_window(ctx);
+				}
+			} 
+			else if (t->type == EntityTurretSpot) {
+				if (mu_begin_window_ex(ctx, "Buy turret", MuRecV2(pos, size), options)) {
+					mu_layout_row(ctx, 1, (const int[]) {-1}, -1);
+					if (mu_button_ex(ctx, "Buy Basic Turret", 0, 0)) {
+						*t = create_turret((Turret) {
+							.type = EntityTurret,
+							.pos = t->pos,
+							.size = t->size,
+							.render.color = BLACK,
+							.fire_rate = 0.1,
+							.damage = 4,
+							.range = 30,
+							.health = 100,
+							.floor = t->floor,
+						});
+					}
+					mu_end_window(ctx);
+				}
+			}
+			else {
+				TraceLog(LOG_WARNING, "Turret selected does not have a valid type.");
+			}
+		}
+	} mu_end(Data->mu);
 
 	// ----------- Input -----------
 	V2 input_dir = {0, 0};
@@ -111,11 +157,8 @@ hot b32 update(void)
 		input_dir.y -= 1;
 	}
 
-	if (IsKeyPressed(KEY_U)) {
-		exit(0);
-	}
-
-	{ // Turret Selection stuff
+	// Mouse turret Selection
+	if (!Level->turret_selected || (Level->turret_selected && !MUiIsMouseInsideContainer(Data->mu))) { 
 		local i32 frame_count = 0;
 		frame_count++;
 		if (frame_count >= 5) {
@@ -154,7 +197,14 @@ hot b32 update(void)
 			);
 		}
 	}
+	if (IsKeyPressed(KEY_U)) {
+		exit(0);
+	}
 	#endif
+
+	// ----------- Particles -----------
+	
+	apply_func_entitys(Level, update_entity_veffects);
 
 	// ----------- Update Entitys ----------- 
 	
@@ -327,7 +377,7 @@ hot void draw(void)
 		}
 	#endif
 
-	// ---- Ui Screens -----
+	// ---- Ui -----
 
 	if (Data->menu_screen) {
 		UiContainer *c = &Data->menu;
@@ -347,6 +397,7 @@ hot void draw(void)
 		return ;
 	}
 
+	MUiRender(Data->mu);
 	
 	draw_editor();
 }
@@ -451,17 +502,32 @@ GameLevel *create_level(GameData *data, size floors)
 			pos.y -= (floor_padding + floor_height) * floor + floor_height;
 		}
 
-		spawn_turret(level, create_turret((Turret) {
-			.type = EntityTurret,
-			.pos = pos,
-			.size = Vec2(turret_width, floor_height),
-			.render.color = RED,
-			.fire_rate = fire_rate,
-			.damage = 4,
-			.range = 30,
-			.health = 100,
-			.floor = floor,
-		}));
+		if (floor > floors -2 ) {
+			spawn_turret(level, create_turret((Turret) {
+				.type = EntityTurretSpot,
+				.pos = pos,
+				.size = Vec2(turret_width, floor_height),
+				.render.color = ColorAlpha(GRAY, 0.05),
+				.fire_rate = fire_rate,
+				.damage = 4,
+				.range = 30,
+				.health = 100,
+				.floor = floor,
+			}));
+		} 
+		else {
+			spawn_turret(level, create_turret((Turret) {
+				.type = EntityTurret,
+				.pos = pos,
+				.size = Vec2(turret_width, floor_height),
+				.render.color = RED,
+				.fire_rate = fire_rate,
+				.damage = 4,
+				.range = 30,
+				.health = 100,
+				.floor = floor,
+			}));
+		}
 	}
 
 	return (level);

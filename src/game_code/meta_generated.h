@@ -20,10 +20,10 @@ typedef struct {
 global cstr *EntityTypeNames[] = { 
 	 "EntityEmpty",
 	 "EntityTurret",
-	 "EntityMainTower",
+	 "EntityCake",
 	 "EntityProjectile",
 	 "EntityEnemy",
-	 "EntityEnemySpawner",
+	 "EntityTurretSpot",
 	 "EntityTypeCount",
 }; 
 
