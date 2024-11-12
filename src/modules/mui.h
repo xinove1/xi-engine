@@ -8,6 +8,8 @@
 #define RectFromMu(r) ((Rect){r.x, r.y, r.w, r.h})
 #define RectFromMuFixed(r) ((Rect){r.x +1, r.y +1, r.w -1, r.h -1})
 #define RectFromMuFixed2(r) ((Rect){r.x +1, r.y +1, r.w, r.h})
+#define MuRec(x, y, width, height) (mu_Rect) {x, y, width, height}
+#define MuRecV2(pos, size) (mu_Rect) {.x = pos.x, .y = pos.y, .w = size.x, .h = size.y}
 #define MuRectExpand(r, amount) ((mu_Rect) {r.x - amount, r.y - amount, r.w + amount * 2, r.h + amount * 2});
 #define V2FromMu(v) ((V2){v.x, v.y})
 
@@ -16,6 +18,7 @@ void MUiSetSpacing(int spacing);
 void MUiPoolInput(mu_Context *ctx);
 void MUiRender(mu_Context *ctx);
 
+b32 MUiIsMouseInsideContainer(mu_Context *ctx);
 i32 u8_slider(mu_Context *ctx, u8 *value, i32 low, i32 high);
 int MUiToggleButtonEx(mu_Context *ctx, int *state, int opt);
 
@@ -59,9 +62,17 @@ void MUiSetSpacing(int spacing)
 
 int _get_text_width(mu_Font font, const char *str, int len)
 {
-	(void) len;
 	Font rfont = GetMuFont(font);
-	Vector2 size = MeasureTextEx(rfont, str, rfont.baseSize, TextSpacing);
+	Vector2 size = {0};
+	if (len == -1) {
+		size = MeasureTextEx(rfont, str, rfont.baseSize, TextSpacing);
+	} else {
+		TraceLog(LOG_INFO, "_get_text_width: len != -1");
+		char buf[200] = {0};
+		memcpy(buf, str, len);
+		buf[len] = 0;
+		size = MeasureTextEx(rfont, buf, rfont.baseSize, TextSpacing);
+	}
 	return (size.x);
 }
 
@@ -86,7 +97,7 @@ void MUiPoolInput(mu_Context *ctx)
 	mu_input_mousemove(ctx, mouse.x, mouse.y);
 
 	V2 scroll = GetMouseWheelMoveV();
-	mu_input_scroll(ctx, scroll.x * -30, scroll.y * -30); // TODO  test without this multiplication
+	mu_input_scroll(ctx, scroll.x * -30, scroll.y * -30); // Negative because by default its inverted, and 30 to increase the speed
 	
 	// Keys
 	i32 _size = count_of(_KeyMatches);
@@ -152,9 +163,21 @@ void MUiRender(mu_Context *ctx)
 	EndScissorMode();
 }
 
+b32 MUiIsMouseInsideContainer(mu_Context *ctx) 
+{
+	V2 mouse_pos = GetMousePosition();
+	for (int i = 0; i < MU_CONTAINERPOOL_SIZE; i++) {
+		mu_Container container = ctx->containers[i];
+		if (!container.open) continue;
+		Rect rec = RectFromMu(container.rect);
+		if (CheckCollisionPointRec(mouse_pos, rec)) return (true);
+	}
+	return (false);
+}
+
 i32 u8_slider(mu_Context *ctx, u8 *value, i32 low, i32 high) 
 {
-	f32 tmp;// WHY STATIC?
+	f32 tmp;
 	mu_push_id(ctx, &value, sizeof(value));
 	tmp = *value;
 	i32 res = mu_slider_ex(ctx, &tmp, low, high, 0, "%.0f", MU_OPT_ALIGNCENTER);

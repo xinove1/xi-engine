@@ -57,11 +57,7 @@ void update_editor()
 		//process_frame(Ed->mu);
 	} mu_end(Ed->mu);
 
-	for (int i = 0; i < MU_CONTAINERPOOL_SIZE; i++) {
-		mu_Container container = Ed->mu->containers[i];
-		Rect rec = RectFromMu(container.rect);
-		if (CheckCollisionPointRec(mouse_pos, rec)) return ;
-	}
+	if (MUiIsMouseInsideContainer(Ed->mu)) return ;
 
 	// NOTE  Nothing bellow this runs if mouse is inside a ui window
 

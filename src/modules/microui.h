@@ -5,6 +5,10 @@
 ** under the terms of the MIT license. See `microui.c` for details.
 */
 
+// TODO  Add font spacing to style
+// TODO  Add text hint on hover
+// TODO  Add Texture Buttons
+
 #ifndef MICROUI_H
 # define MICROUI_H
 
@@ -89,7 +93,9 @@ enum {
   MU_OPT_AUTOSIZE     = (1 << 9),
   MU_OPT_POPUP        = (1 << 10),
   MU_OPT_CLOSED       = (1 << 11),
-  MU_OPT_EXPANDED     = (1 << 12)
+  MU_OPT_EXPANDED     = (1 << 12),
+  MU_OPT_NOHOLD_POS    = (1 << 13),
+  MU_OPT_NOHOLD_SIZE   = (1 << 14)
 };
 
 enum {
@@ -1409,7 +1415,15 @@ int mu_begin_window_ex(mu_Context *ctx, const char *title, mu_Rect rect, int opt
   if (!cnt || !cnt->open) { return 0; }
   push(ctx->id_stack, id);
 
-  if (cnt->rect.w == 0) { cnt->rect = rect; }
+  if (cnt->rect.w == 0 ) { cnt->rect = rect; }
+  if (opt & MU_OPT_NOHOLD_POS ) {
+    cnt->rect.x = rect.x;
+    cnt->rect.y = rect.y;
+  }
+  if (opt & MU_OPT_NOHOLD_SIZE) {
+    cnt->rect.w = rect.w;
+    cnt->rect.h = rect.h;
+  }
   begin_root_container(ctx, cnt);
   rect = body = cnt->rect;
 
