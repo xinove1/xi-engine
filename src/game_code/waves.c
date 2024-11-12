@@ -16,9 +16,9 @@ local void generate_packets(GameLevel *l)
 	w->packets_amount = amount;
 	for (size i = 0; i < w->packets_amount; i++) {
 		Enemy enemy =  create_enemy_ex(Vec2v(0), (CreateEnemyParams) {
-			.size = Vec2(16, 16),
+			.size = Vec2(32, 32),
 			.health = 50,
-			.color = BLUE,
+			.color = WHITE,
 			.speed = 70,
 			.floor = 0,
 			.melee = false,
@@ -26,6 +26,9 @@ local void generate_packets(GameLevel *l)
 			.range = 10,
 			.attack_rate = 0.5f
 		});
+		enemy.render.texture = Data->sheet_ant;
+		enemy.render.frame = 0;
+
 		SpawnPacket packet = { .enemy = enemy, .cooldown = 1.3f };
 		w->packets[i] = packet;
 	}
@@ -97,8 +100,11 @@ void update_wave_manager(GameLevel *l)
 				SpawnPacket p = get_next_packet(w);
 				p.enemy.pos = V2Subtract(location->point, V2Scale(p.enemy.size, 0.5f));
 				p.enemy.floor = location->floor;
+				if (location->point.x > GetWindowRect().width * 0.5f) {
+					p.enemy.render.flipped = true;
+				} 
+
 				spawn_enemy(l, p.enemy);
-				
 				location->cooldown = p.cooldown;
 			}
 		}

@@ -24,3 +24,6 @@
 #define MICROUI_IMPLEMENTATION
 #include "microui.h"
 
+#define SPRITE_IMPLEMENTATION
+#include "sprite.h"
+

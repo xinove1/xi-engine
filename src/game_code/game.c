@@ -40,13 +40,16 @@ hot GameConfig init_pre_raylib(void **data)
 
 hot void init_pos_raylib(void) 
 {
-	Data->level = create_level(Data, 5);
-	Level = Data->level;
 
 	init_editor(Data);
 
 	Data->font = LoadFontEx("assets/pansyhand.ttf", 14, NULL, 0);
 	MUiInit(Data->mu, &Data->font);
+
+	Data->sheet_ui.texture = LoadTexture("assets/ui_sheet.png");
+	Data->sheet_ui.rect = Rec(0, 0, 16, 16);
+	Data->sheet_ant.texture = LoadTexture("assets/ant_sheet.png");
+	Data->sheet_ant.rect = Rec(0, 0, 32, 32);
 
 	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
 			.alignment = UiAlignCentralized,
@@ -68,7 +71,8 @@ hot void init_pos_raylib(void)
 			.color_font_highlight = BLACK,
 			.color_borders = BLACK,
 	});
-
+	Data->level = create_level(Data, 5);
+	Level = Data->level;
 }
 
 hot void pre_reload(void)
@@ -118,8 +122,16 @@ internal b32 update_ui(void)
 	mu_begin(Data->mu); {
 		mu_Context *ctx = Data->mu;
 		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE)) {
+			// TODO  Add button to begin wave early
 			mu_layout_row(ctx, 2, (const int[]) {20, -1}, -1);
-			if (MUiToggleButtonEx(ctx, &Data->paused, 0)) {
+			local Sprite sprite_paused = { .tint = BLUE, .frame = 0};
+			if (sprite_paused.texture.texture.id == 0) {
+				sprite_paused.texture = Data->sheet_ui;
+			}
+			if (MUiTextureButton(ctx, &sprite_paused, 0)) {
+				Data->paused = Data->paused ? false : true;
+				sprite_paused.frame = Data->paused ? 1 : 0;
+				printf("sprite frame: %d \n", sprite_paused.frame);
 			}
 			if (mu_button_ex(ctx, TextFormat("speed: %d", Data->game_speed), 0, 0)) {
 				Data->game_speed += 1;
@@ -154,7 +166,7 @@ internal b32 update_ui(void)
 							.type = EntityTurret,
 							.pos = t->pos,
 							.size = t->size,
-							.render.color = BLACK,
+							.render.tint = BLACK,
 							.fire_rate = 0.1,
 							.damage = 4,
 							.range = 30,
@@ -478,7 +490,7 @@ GameLevel *create_level(GameData *data, size floors)
 	level->cake = (GenericEntity) {
 		.type = EntityCake,
 		.render.size = tower_size,
-		.render.color = PURPLE,
+		.render.tint = PURPLE,
 		.pos = tower_pos,
 		.size = tower_size,
 		.health = tower_health,
@@ -552,7 +564,7 @@ GameLevel *create_level(GameData *data, size floors)
 				.type = EntityTurretSpot,
 				.pos = pos,
 				.size = Vec2(turret_width, floor_height),
-				.render.color = ColorAlpha(GRAY, 0.05),
+				.render.tint = ColorAlpha(GRAY, 0.05),
 				.fire_rate = fire_rate,
 				.damage = 4,
 				.range = 30,
@@ -565,7 +577,7 @@ GameLevel *create_level(GameData *data, size floors)
 				.type = EntityTurret,
 				.pos = pos,
 				.size = Vec2(turret_width, floor_height),
-				.render.color = RED,
+				.render.tint = RED,
 				.fire_rate = fire_rate,
 				.damage = 4,
 				.range = 30,

@@ -2,6 +2,7 @@
 # include "microui.h"
 # include "core.h"
 # include "raylib.h"
+# include "sprite.h"
 
 #define ColorFromMu(c) ((Color){c.r, c.g, c.b, c.a})
 #define ColorToMu(c) ((mu_Color){c.r, c.g, c.b, c.a})
@@ -21,6 +22,7 @@ void MUiRender(mu_Context *ctx);
 b32 MUiIsMouseInsideContainer(mu_Context *ctx);
 i32 u8_slider(mu_Context *ctx, u8 *value, i32 low, i32 high);
 int MUiToggleButtonEx(mu_Context *ctx, int *state, int opt);
+int MUiTextureButton(mu_Context *ctx, Sprite *texture, int opt) ;
 
 #endif
 
@@ -142,6 +144,13 @@ void MUiRender(mu_Context *ctx)
 			case MU_COMMAND_RECT_BORDER: {
 				DrawRectangleLinesEx(RectFromMuFixed(cmd->rect.rect), 1, ColorFromMu(cmd->rect.color));
 			} break;
+			case MU_COMMAND_TEXTURE: {
+				Sprite sprite = *(Sprite *)cmd->texture.texture;
+				sprite.pos = Vec2(cmd->texture.rect.x, cmd->texture.rect.y);
+				sprite.size = Vec2(cmd->texture.rect.w, cmd->texture.rect.h);
+				sprite.tint = ColorFromMu(cmd->texture.color);
+				DrawSprite(sprite);
+			} break;
 			case MU_COMMAND_ICON: { 
 				Color color = ColorFromMu(cmd->icon.color);
 				cstr icon[2] = "!";
@@ -204,6 +213,34 @@ int MUiToggleButtonEx(mu_Context *ctx, int *state, int opt)
 	//	mu_draw_icon(ctx, MU_ICON_CHECK, r, ctx->style->colors[MU_COLOR_TEXT]);
 		mu_draw_control_frame(ctx, id, box, MU_COLOR_BASE, opt);
 	}
+	return res;
+}
+
+int MUiTextureButton(mu_Context *ctx, Sprite *texture, int opt) 
+{
+	int res = 0;
+	mu_Id id = mu_get_id(ctx, texture, sizeof(*texture));
+	mu_Rect r = mu_layout_next(ctx);
+	mu_update_control(ctx, id, r, opt);
+	/* handle click */
+	if (ctx->mouse_pressed == MU_MOUSE_LEFT && ctx->focus == id) {
+		res |= MU_RES_SUBMIT;
+	}
+	/* draw */
+	mu_draw_control_frame(ctx, id, r, MU_COLOR_BUTTON, opt);
+	if (texture) {
+		mu_Color color = ColorToMu(texture->tint);
+		if (ctx->focus == id) {
+			color = ctx->style->colors[MU_COLOR_BUTTONHOVER];
+		} else if (ctx->hover == id) {
+			color = ctx->style->colors[MU_COLOR_BUTTONFOCUS];
+		}
+		mu_draw_texture(ctx, texture, r, color);
+		//mu_draw_control_frame(ctx, id, box, MU_COLOR_BASE, opt);
+	} else {
+		TraceLog(LOG_WARNING, "MUiTextureButton: null pointer passed as texture");
+	}
+
 	return res;
 }
 

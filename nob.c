@@ -62,7 +62,8 @@ const global cstr *Dep_Modules[] = {
 	"./src/modules/list.h", "./src/modules/arenas.h", 
 	"./src/modules/collision.h", "./src/modules/raymath_short.h",
 	"./src/modules/input.h", 
-	"./src/modules/xui.h",  "./src/modules/microui.h",  "./src/modules/mui.h"
+	"./src/modules/xui.h",  "./src/modules/microui.h",  "./src/modules/mui.h",
+	"./src/modules/sprite.h",
 };
 
 const global cstr *Src_Game[] = { 

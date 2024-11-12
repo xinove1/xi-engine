@@ -1,6 +1,7 @@
 #ifndef RENDER_H_
 # define  RENDER_H_
 # include "core.h"
+# include "raylib.h"
 
 introspect() typedef enum {
 	VEffectEmpty, VEffectFlashColor, VEffectShake, VEffectTypeCount
@@ -45,12 +46,6 @@ typedef  struct {
 	f32 velocity;
 	f32 duration;
 } CreateParticleParams;
-
-typedef struct {
-	V2 pos;
-	V2 size;
-	Color color;
-} RenderData;
 
 #define create_particle(...) \
 	create_particle_ex((CreateParticleParams) {__VA_ARGS__})

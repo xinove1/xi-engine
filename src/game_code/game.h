@@ -6,6 +6,7 @@
 # include "../main.h"
 # include "core.h"
 # include "xui.h"
+# include "sprite.h"
 # include "mui.h"
 # include <assert.h>
 # include <stdio.h>
@@ -68,17 +69,19 @@ typedef struct
 } GameEditor;
 
 typedef struct {
-	V2 canvas_size;
-	Particle particles[5000];
 	b32 paused;
 	b32 lost;
 	b32 menu_screen;
 	i32 game_speed;
+	V2 canvas_size;
 	UiContainer menu;
-	mu_Context *mu;
-	Font font; // Tmp
 	GameEditor editor;
+	Particle particles[5000];
+	mu_Context *mu;
 	GameLevel *level;
+	Font font; // Tmp
+	SpriteTexture sheet_ui;
+	SpriteTexture sheet_ant;
 } GameData;
 
 extern GameData *Data;

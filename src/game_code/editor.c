@@ -53,6 +53,7 @@ void update_editor()
 				mu_end_window(ctx);
 			}
 			style_window(Ed->mu);
+			Data->mu->style = Ed->mu->style;
 		}
 		//process_frame(Ed->mu);
 	} mu_end(Ed->mu);
@@ -145,11 +146,11 @@ internal void edit_entity(GenericEntity *e)
 	width = body_width * 0.14;
 	mu_layout_row(ctx, 6, (int[]) {label_w, width, width, width, width, -1}, 0);
 	mu_label(ctx, "Color");
-	u8_slider(ctx, &e->render.color.r, 0, 255);
-	u8_slider(ctx, &e->render.color.g, 0, 255);
-	u8_slider(ctx, &e->render.color.b, 0, 255);
-	u8_slider(ctx, &e->render.color.a, 0, 255);
-	mu_draw_rect(ctx, mu_layout_next(ctx), ColorToMu(e->render.color));
+	u8_slider(ctx, &e->render.tint.r, 0, 255);
+	u8_slider(ctx, &e->render.tint.g, 0, 255);
+	u8_slider(ctx, &e->render.tint.b, 0, 255);
+	u8_slider(ctx, &e->render.tint.a, 0, 255);
+	mu_draw_rect(ctx, mu_layout_next(ctx), ColorToMu(e->render.tint));
 }
 
 internal void is_entity_under_mouse(GenericEntity *e) 

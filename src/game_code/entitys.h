@@ -22,7 +22,7 @@ introspect() typedef enum {
 // TODO  introspected GenericEntity to have macro to generate header on all other entitys
 introspect() typedef struct {
 	EntityType type;
-	RenderData render;
+	Sprite render;
 	VEffect veffects[VEffectTypeCount]; // TODO  Rename to render effects
 	V2 pos;
 	V2 size;
@@ -32,7 +32,7 @@ introspect() typedef struct {
 
 typedef struct {
 	EntityType type;
-	RenderData render;
+	Sprite render;
 	VEffect veffects[VEffectTypeCount]; // TODO  Rename to render effects
 	V2 pos;
 	V2 size;
@@ -54,7 +54,7 @@ typedef struct {
 
 typedef struct {
 	EntityType type;
-	RenderData render;
+	Sprite render;
 	VEffect veffects[VEffectTypeCount]; // TODO  Rename to render effects
 	V2 pos;
 	V2 size;
@@ -79,7 +79,7 @@ typedef struct {
 
 typedef struct {
 	EntityType type;
-	RenderData render;
+	Sprite render;
 	VEffect veffects[VEffectTypeCount]; // TODO  Rename to render effects
 	V2 pos;
 	V2 size;

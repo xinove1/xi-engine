@@ -43,6 +43,7 @@ enum {
   MU_COMMAND_CLIP,
   MU_COMMAND_RECT,
   MU_COMMAND_RECT_BORDER,
+  MU_COMMAND_TEXTURE,
   MU_COMMAND_TEXT,
   MU_COMMAND_ICON,
   MU_COMMAND_MAX
@@ -127,6 +128,7 @@ typedef struct { int type, size; } mu_BaseCommand;
 typedef struct { mu_BaseCommand base; void *dst; } mu_JumpCommand;
 typedef struct { mu_BaseCommand base; mu_Rect rect; } mu_ClipCommand;
 typedef struct { mu_BaseCommand base; mu_Rect rect; mu_Color color; } mu_RectCommand;
+typedef struct { mu_BaseCommand base; mu_Rect rect; mu_Color color; void *texture;} mu_TextureCommand;
 typedef struct { mu_BaseCommand base; mu_Font font; mu_Vec2 pos; mu_Color color; char str[1]; } mu_TextCommand;
 typedef struct { mu_BaseCommand base; mu_Rect rect; int id; mu_Color color; } mu_IconCommand;
 
@@ -136,6 +138,7 @@ typedef union {
   mu_JumpCommand jump;
   mu_ClipCommand clip;
   mu_RectCommand rect;
+  mu_TextureCommand texture;
   mu_TextCommand text;
   mu_IconCommand icon;
 } mu_Command;
@@ -255,6 +258,7 @@ mu_Command* mu_push_command(mu_Context *ctx, int type, int size);
 int mu_next_command(mu_Context *ctx, mu_Command **cmd);
 void mu_set_clip(mu_Context *ctx, mu_Rect rect);
 void mu_draw_rect(mu_Context *ctx, mu_Rect rect, mu_Color color);
+void mu_draw_texture(mu_Context *ctx, void *texture, mu_Rect rect, mu_Color color);
 void mu_draw_rect_border(mu_Context *ctx, mu_Rect rect, mu_Color color);
 void mu_draw_box(mu_Context *ctx, mu_Rect rect, mu_Color color);
 void mu_draw_text(mu_Context *ctx, mu_Font font, const char *str, int len, mu_Vec2 pos, mu_Color color);
@@ -788,6 +792,17 @@ void mu_draw_rect(mu_Context *ctx, mu_Rect rect, mu_Color color) {
     cmd = mu_push_command(ctx, MU_COMMAND_RECT, sizeof(mu_RectCommand));
     cmd->rect.rect = rect;
     cmd->rect.color = color;
+  }
+}
+
+void mu_draw_texture(mu_Context *ctx, void *texture, mu_Rect rect, mu_Color color) {
+  mu_Command *cmd;
+  rect = intersect_rects(rect, mu_get_clip_rect(ctx));
+  if (rect.w > 0 && rect.h > 0) {
+    cmd = mu_push_command(ctx, MU_COMMAND_TEXTURE, sizeof(mu_TextureCommand));
+    cmd->texture.rect = rect;
+    cmd->texture.color = color;
+    cmd->texture.texture = texture;
   }
 }
 
