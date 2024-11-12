@@ -215,7 +215,11 @@ internal b32 update_input(void)
 			} else if (Level->turret_hovered) {
 				Level->turret_selected = Level->turret_hovered;
 			}
-		} // TODO  Also Deselect on right click
+		}
+		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+				Level->turret_selected = NULL;
+				Level->turret_hovered = NULL;
+		}
 	}
 	
 	#ifdef BUILD_DEBUG
