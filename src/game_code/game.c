@@ -121,9 +121,8 @@ internal b32 update_ui(void)
 {
 	mu_begin(Data->mu); {
 		mu_Context *ctx = Data->mu;
-		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE)) {
-			// TODO  Add button to begin wave early
-			mu_layout_row(ctx, 2, (const int[]) {20, -1}, -1);
+		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_AUTOSIZE)) {
+			mu_layout_row(ctx, 3, (const int[]) {20, 80, 60}, 16);
 			local Sprite sprite_paused = { .tint = BLUE, .frame = 0};
 			if (sprite_paused.texture.texture.id == 0) {
 				sprite_paused.texture = Data->sheet_ui;
@@ -138,6 +137,9 @@ internal b32 update_ui(void)
 				if (Data->game_speed > MAX_GAME_SPEED) {
 					Data->game_speed = 1;
 				}
+			}
+			if (mu_button_ex(ctx, "BeginWaveEarly", 0, 0)) {
+				start_wave(Data->level);
 			}
 			mu_end_window(ctx);
 		}

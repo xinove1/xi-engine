@@ -104,6 +104,7 @@ Enemy *turret_get_target(EnemyDa enemys, Turret turret, i32 floor_variance);
 typedef enum {right_side = 1, left_side = -1} FloorSides;
 void update_wave_manager(GameLevel *l);
 SpawnLocation *get_spawn_point(GameLevel *l, i32 floor, i32 side);
+void start_wave(GameLevel *l);
 
 // Render
 void render_entity(GenericEntity *entity);

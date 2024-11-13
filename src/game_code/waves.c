@@ -73,13 +73,7 @@ void update_wave_manager(GameLevel *l)
 
 		w->time_count += GetFrameTime();
 		if (w->time_count >= w->time_until_next_wave) {
-			w->time_count = 0;
-			w->packet_current = 0;
-			w->wave++;
-			if (w->wave % 2 == 0 && w->floor_limit < l->floors_count) { // Spawn on one more floor every 2 waves
-				w->floor_limit++;
-			}
-			generate_packets(l);
+			start_wave(l);
 		}
 		return ;
 	}
@@ -120,4 +114,20 @@ SpawnLocation *get_spawn_point(GameLevel *l, i32 floor, i32 side)
 		floor += l->floors_count;
 	}
 	return (&l->wave_manager.locations[floor]);
+}
+
+
+void start_wave(GameLevel *l) 
+{
+	WaveManager *w = &l->wave_manager;
+	if (w->time_count == 0) {
+		return ;
+	}
+		w->time_count = 0;
+		w->packet_current = 0;
+		w->wave++;
+		if (w->wave % 2 == 0 && w->floor_limit < l->floors_count) { // Spawn on one more floor every 2 waves
+			w->floor_limit++;
+		}
+		generate_packets(l);
 }
