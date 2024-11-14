@@ -29,7 +29,7 @@ hot GameConfig init_pre_raylib(void **data)
 		.game_speed = 1,
 		.menu_screen = false,
 	};
-	Data->mu = calloc(1, sizeof(mu_Context));
+	Data->ui.mu = calloc(1, sizeof(mu_Context));
 	return ((GameConfig) {
 		.canvas_size = Data->canvas_size,
 		.window_name = "Cake Defense",
@@ -44,14 +44,15 @@ hot void init_pos_raylib(void)
 	init_editor(Data);
 
 	Image image = LoadImage("assets/monogram-bitmap.png");
-	Data->font = LoadFontFromImageSheet(image, Vec2(6, 12), 32);
+	Data->assets.font = LoadFontFromImageSheet(image, Vec2(6, 12), 32);
 	UnloadImage(image);
-	MUiInit(Data->mu, &Data->font);
-
-	Data->sheet_ui.texture = LoadTexture("assets/ui_sheet.png");
-	Data->sheet_ui.rect = Rec(0, 0, 16, 16);
-	Data->sheet_ant.texture = LoadTexture("assets/ant_sheet.png");
-	Data->sheet_ant.rect = Rec(0, 0, 32, 32);
+	Data->assets.sheet_ui.texture = LoadTexture("assets/ui_sheet.png");
+	Data->assets.sheet_ui.rect = Rec(0, 0, 16, 16);
+	Data->assets.sheet_ant.texture = LoadTexture("assets/ant_sheet.png");
+	Data->assets.sheet_ant.rect = Rec(0, 0, 32, 32);
+	Data->ui.paused = (Sprite) { .tint = WHITE, .frame = 0, .texture = Data->assets.sheet_ui};
+	Data->ui.speed = (Sprite) { .tint = WHITE, .frame = 2, .texture = Data->assets.sheet_ui};
+	MUiInit(Data->ui.mu, &Data->assets.font);
 
 	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
 			.alignment = UiAlignCentralized,
@@ -121,25 +122,28 @@ hot b32 update(void)
 
 internal b32 update_ui(void) 
 {
-	mu_begin(Data->mu); {
-		mu_Context *ctx = Data->mu;
+	mu_begin(Data->ui.mu); {
+		mu_Context *ctx = Data->ui.mu;
 		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_AUTOSIZE)) {
 			mu_layout_row(ctx, 3, (const int[]) {20, 80, 60}, 16);
-			local Sprite sprite_paused = { .tint = BLUE, .frame = 0};
-			if (sprite_paused.texture.texture.id == 0) {
-				sprite_paused.texture = Data->sheet_ui;
-			}
-			if (MUiTextureButton(ctx, &sprite_paused, 0)) {
+			if (MUiTextureButton(ctx, &Data->ui.paused, 0)) {
 				Data->paused = Data->paused ? false : true;
-				sprite_paused.frame = Data->paused ? 1 : 0;
-				printf("sprite frame: %d \n", sprite_paused.frame);
+				Data->ui.paused.frame = Data->paused ? 1 : 0;
+				printf("sprite frame: %d \n", Data->ui.paused.frame);
 			}
-			if (mu_button_ex(ctx, TextFormat("speed: %d", Data->game_speed), 0, 0)) {
-				Data->game_speed += 1;
-				if (Data->game_speed > MAX_GAME_SPEED) {
-					Data->game_speed = 1;
-				}
+			if (MUiTextureButton(ctx, &Data->ui.speed, 0)) {
+					Data->game_speed += 1;
+					if (Data->game_speed > MAX_GAME_SPEED) {
+						Data->game_speed = 1;
+					}
+				Data->ui.speed.frame = Data->game_speed + 1;
 			}
+			// if (mu_button_ex(ctx, TextFormat("speed: %d", Data->game_speed), 0, 0)) {
+			// 	Data->game_speed += 1;
+			// 	if (Data->game_speed > MAX_GAME_SPEED) {
+			// 		Data->game_speed = 1;
+			// 	}
+			// }
 			if (mu_button_ex(ctx, "BeginWaveEarly", 0, 0)) {
 				start_wave(Data->level);
 			}
@@ -185,14 +189,14 @@ internal b32 update_ui(void)
 				TraceLog(LOG_WARNING, "Turret selected does not have a valid type.");
 			}
 		}
-	} mu_end(Data->mu);
+	} mu_end(Data->ui.mu);
 
 	return (false);
 }
 
 internal b32 update_input(void) 
 {
-	MUiPoolInput(Data->mu);
+	MUiPoolInput(Data->ui.mu);
 
 	V2 input_dir = {0, 0};
 	if (IsActionPressed(RIGHT)) {
@@ -209,7 +213,7 @@ internal b32 update_input(void)
 	}
 
 	// Mouse turret Selection
-	if (!Level->turret_selected || (Level->turret_selected && !MUiIsMouseInsideContainer(Data->mu))) { 
+	if (!Level->turret_selected || (Level->turret_selected && !MUiIsMouseInsideContainer(Data->ui.mu))) { 
 		local i32 frame_count = 0;
 		frame_count++;
 		if (frame_count >= 5) {
@@ -403,9 +407,9 @@ hot void draw(void)
 	}
 
 	// ---- Text ---
-	Font font = Data->font;
-	i32 font_size = Data->font.baseSize;
-	f32 font_spacing = 1;
+	Font font = Data->assets.font;
+	i32 font_size = Data->assets.font.baseSize;
+	f32 font_spacing = 2;
 	{ 
 		const cstr *health_text = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
 		V2 cake_size = MeasureTextEx(font, health_text, font_size, font_spacing);
@@ -430,7 +434,7 @@ hot void draw(void)
 		const cstr *text = TextFormat("You Lost!");
 		V2 size = MeasureTextEx(font, text, font_size, font_spacing);
 		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size.x * 0.5f, Data->canvas_size.y * 0.5f);
-		DrawTextEx(Data->font, text, pos, font_size, font_spacing, BLACK);
+		DrawTextEx(Data->assets.font, text, pos, font_size, font_spacing, BLACK);
 	}
 
 	#ifdef BUILD_DEBUG 
@@ -460,7 +464,7 @@ hot void draw(void)
 		return ;
 	}
 
-	MUiRender(Data->mu);
+	MUiRender(Data->ui.mu);
 	
 	draw_editor();
 }

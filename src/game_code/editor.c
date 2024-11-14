@@ -53,7 +53,7 @@ void update_editor()
 				mu_end_window(ctx);
 			}
 			style_window(Ed->mu);
-			Data->mu->style = Ed->mu->style;
+			Data->ui.mu->style = Ed->mu->style;
 		}
 		//process_frame(Ed->mu);
 	} mu_end(Ed->mu);

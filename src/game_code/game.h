@@ -69,6 +69,19 @@ typedef struct
 } GameEditor;
 
 typedef struct {
+	mu_Context *mu;
+	Sprite paused;
+	Sprite speed;
+	Sprite netx_wave; // TODO
+} GameUi;
+
+typedef struct {
+	Font font;
+	SpriteTexture sheet_ui;
+	SpriteTexture sheet_ant;
+} GameAssets;
+
+typedef struct {
 	b32 paused;
 	b32 lost;
 	b32 menu_screen;
@@ -77,11 +90,9 @@ typedef struct {
 	UiContainer menu;
 	GameEditor editor;
 	Particle particles[5000];
-	mu_Context *mu;
 	GameLevel *level;
-	Font font; // Tmp
-	SpriteTexture sheet_ui;
-	SpriteTexture sheet_ant;
+	GameAssets assets;
+	GameUi ui;
 } GameData;
 
 extern GameData *Data;

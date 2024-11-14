@@ -26,7 +26,7 @@ local void generate_packets(GameLevel *l)
 			.range = 10,
 			.attack_rate = 0.5f
 		});
-		enemy.render.texture = Data->sheet_ant;
+		enemy.render.texture = Data->assets.sheet_ant;
 		enemy.render.frame = 0;
 
 		SpawnPacket packet = { .enemy = enemy, .cooldown = 1.3f };
