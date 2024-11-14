@@ -128,6 +128,7 @@ f32 ExpDecayf32(f32 a, f32 b, f32 decay);
 Color lerp_color(Color a, Color b, f32 time);
 void draw_grid_ex(V2 position, V2 grid_size, i32 tile_size, f32 line_thickness, Color color);
 void draw_grid(V2 position, V2 grid_size, i32 tile_size);
+Font LoadFontFromImageSheet(Image image, Vector2 grid_size, int first_char);
 
 // Editor stuff
 void init_editor(GameData *data);

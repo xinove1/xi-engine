@@ -43,7 +43,9 @@ hot void init_pos_raylib(void)
 
 	init_editor(Data);
 
-	Data->font = LoadFontEx("assets/pansyhand.ttf", 14, NULL, 0);
+	Image image = LoadImage("assets/monogram-bitmap.png");
+	Data->font = LoadFontFromImageSheet(image, Vec2(6, 12), 32);
+	UnloadImage(image);
 	MUiInit(Data->mu, &Data->font);
 
 	Data->sheet_ui.texture = LoadTexture("assets/ui_sheet.png");
@@ -400,33 +402,35 @@ hot void draw(void)
 		DrawRectangleLinesEx(rec, 1, PURPLE); // TODO Fix Color
 	}
 
-
 	// ---- Text ---
+	Font font = Data->font;
+	i32 font_size = Data->font.baseSize;
+	f32 font_spacing = 1;
 	{ 
-		const cstr *cake_health = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
-		i32 cake_size = MeasureText(cake_health, 10);
-		V2 cake_pos = Vec2(Data->canvas_size.x * 0.5f - cake_size * 0.5f, 12);
-		DrawText(cake_health, cake_pos.x, cake_pos.y, 10, RED);
+		const cstr *health_text = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
+		V2 cake_size = MeasureTextEx(font, health_text, font_size, font_spacing);
+		V2 cake_pos = Vec2(Data->canvas_size.x * 0.5f - cake_size.x * 0.5f, 12);
+		DrawTextEx(font, health_text, V2i32(cake_pos), font_size, font_spacing, RED);
 
 		{
 			const cstr *text = TextFormat("Wave: %d", Level->wave_manager.wave);
 			//i32 size = MeasureText(text, 10);
-			V2 pos = Vec2(cake_pos.x + cake_size + 6, cake_pos.y);
-			DrawText(text, pos.x, pos.y, 10, RED);
+			V2 pos = Vec2(cake_pos.x + cake_size.x + (font_spacing * 3), cake_pos.y);
+			DrawTextEx(font, text, V2i32(pos), font_size, font_spacing, RED);
 		}
 		if (Level->wave_manager.time_count != 0) { 
 			const cstr *text = TextFormat("Next wave in: %.f", Level->wave_manager.time_until_next_wave - Level->wave_manager.time_count);
-			i32 size = MeasureText(text, 10);
-			V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, 24);
-			DrawText(text, pos.x, pos.y, 10, RED);
+			V2 size = MeasureTextEx(font, text, font_size, font_spacing);
+			V2 pos = Vec2(Data->canvas_size.x * 0.5f - size.x * 0.5f, cake_pos.y + cake_size.y + 5);
+			DrawTextEx(font, text, V2i32(pos), font_size, font_spacing, RED);
 		}
 	}
 
 	if (Data->lost) {
 		const cstr *text = TextFormat("You Lost!");
-		i32 size = MeasureText(text, 20);
-		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size * 0.5f, Data->canvas_size.y * 0.5f);
-		DrawText(text, pos.x, pos.y, 20, BLACK);
+		V2 size = MeasureTextEx(font, text, font_size, font_spacing);
+		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size.x * 0.5f, Data->canvas_size.y * 0.5f);
+		DrawTextEx(Data->font, text, pos, font_size, font_spacing, BLACK);
 	}
 
 	#ifdef BUILD_DEBUG 

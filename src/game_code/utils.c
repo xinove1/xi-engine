@@ -65,3 +65,44 @@ void draw_grid(V2 position, V2 grid_size, int tile_size)
 {
 	draw_grid_ex(position, grid_size, tile_size, 1, ColorAlpha(BLACK, 0.1));
 }
+
+Font LoadFontFromImageSheet(Image image, Vector2 grid_size, int first_char)
+{
+    Font font = GetFontDefault();
+	
+	if (image.width % (int) grid_size.x != 0 || image.height % (int) grid_size.y != 0) {
+		TraceLog(LOG_ERROR, "LoadFontFromImageSheet: image can't be perfectly divided by provided grid_size. Note that grid_size floating value is ignored.");
+		return (font);
+	}
+
+    // We allocate a temporal arrays for chars data measures,
+    // once we get the actual number of chars, we copy data to a sized arrays
+	V2 image_grided = {image.width / (int) grid_size.x, image.height / (int) grid_size.y}; // TODO Better name I don't remember the term for this :(
+	int glyph_count = image_grided.x * image_grided.y;
+	printf("image_grided: %f, %f\n", image_grided.x, image_grided.y);
+	printf("glypth_count: %d\n", glyph_count);
+
+    // Set font with all data parsed from image
+    font.texture = LoadTextureFromImage(image); // Convert processed image to OpenGL texture
+    font.glyphCount = glyph_count;
+    font.glyphPadding = 0;
+    font.glyphs = (GlyphInfo *)RL_MALLOC(font.glyphCount*sizeof(GlyphInfo));
+    font.recs = (Rectangle *)RL_MALLOC(font.glyphCount*sizeof(Rectangle));
+
+	for (int y = 0; y < image_grided.y; y++) {
+		for (int x = 0; x < image_grided.x; x++) {
+			int i = x + (y * image_grided.x);
+
+			font.glyphs[i].value = first_char + i;
+			font.glyphs[i].offsetX = 0;
+			font.glyphs[i].offsetY = 0;
+			font.glyphs[i].advanceX = 0;
+			font.recs[i] = (Rectangle) {x * (int)grid_size.x, y * (int)grid_size.y, (int) grid_size.x, (int) grid_size.y};
+			printf("iteration: %d, font_rec: %f, %f, %f, %f \n", i, font.recs[i].x, font.recs[i].y, font.recs[i].width, font.recs[i].height);
+			font.glyphs[i].image = ImageFromImage(image, font.recs[i]);
+		}
+	}
+
+    font.baseSize = (int)font.recs[0].height;
+    return font;
+}

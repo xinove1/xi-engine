@@ -98,6 +98,7 @@ typedef struct {
 
 #define Vec2(x, y) (V2) {x, y}
 #define Vec2v(v) (V2) {v, v}
+#define V2i32(vec) (V2) {(i32) vec.x, (i32) vec.y}
 #define Rec(x, y, width, height) (Rect) {x, y, width, height}
 #define RecV2(pos, size) (Rect) {.x = pos.x, .y = pos.y, .width = size.x, .height = size.y}
 #define RecGrow(rec, amount) (Rect) {rec.x - amount, rec.y - amount, rec.width + amount * 2, rec.height + amount * 2}
