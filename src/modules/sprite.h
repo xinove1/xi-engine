@@ -33,7 +33,7 @@ void DrawSprite(Sprite sprite)
 		Rect src_rec = sprite.texture.rect;
 		if (sprite.frame > 0) {
 			V2 size = {texture.width / src_rec.width, texture.height / src_rec.height};
-			V2 frame = {sprite.frame - (sprite.frame - (sprite.frame % (i32)size.x)), (u32) (sprite.frame / size.y - 1)}; 
+			V2 frame = {sprite.frame - (sprite.frame - (sprite.frame % (i32)size.x)), (u32) (sprite.frame / size.y)}; 
 			TraceLog(LOG_INFO, "frame: %f, %f \n", frame.x, frame.y);
 			src_rec.x = frame.x * src_rec.width;
 			src_rec.y = frame.y * src_rec.height;
