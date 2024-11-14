@@ -22,6 +22,7 @@ internal void build_windows();
 internal void build_web();
 internal void build_and_run_web();
 internal void raylib_go_rebuild_urself();
+internal void build_test_file(cstr *file);
 
 #define flag_compare(flag, ...) strcmp_many(flag, ((const char*[]){__VA_ARGS__}), (sizeof((const char*[]){__VA_ARGS__})/sizeof(const char*)))
 #define da_append_cstrs(da, cstrs) nob_da_append_many(&(da), cstrs, count_of(cstrs)) 
@@ -146,8 +147,13 @@ int main(int argc, char *argv[])
 		nob_cmd_append(&cmd, "./build/libraylib_windows.a");
 		if (!nob_cmd_run_sync(cmd)) return (1);
 		nob_cmd_free(cmd);
-	} 
-
+	} else if (flag_compare(flag, "t")) {
+		if (argc > 0) {
+			build_test_file(nob_shift_args(&argc, &argv));
+		} else {
+			nob_log(NOB_ERROR, "Please provide file to be compiled.");
+		}
+	}
 	else if (flag_compare(flag, "help", "-help", "--help", "-h")) {
 		printf("--------------Help--------------\n");
 		printf("Please fill this eventually lol\n");
@@ -506,6 +512,23 @@ internal void raylib_go_rebuild_urself()
 
 		nob_log(NOB_INFO, "---------------------------------\n");
 	}
+}
+
+
+internal void build_test_file(cstr *file) 
+{
+	Nob_Cmd cmd = {0};
+	nob_cmd_append(&cmd, CC, "-std=c99");
+	nob_da_append_many(&cmd, HotFlags, count_of(HotFlags));
+	nob_cmd_append(&cmd, "-lGL", "-lm", "-lpthread", "-ldl", "-lrt", "-lX11",); // raylib
+	nob_da_append_many(&cmd, SharedFlags, count_of(SharedFlags));
+	if (Debug) nob_da_append_many(&cmd, DebugFlags, count_of(DebugFlags));
+
+	nob_cmd_append(&cmd, file);
+
+	nob_cmd_append(&cmd, "-o", "test");
+
+	if (!nob_cmd_run_sync(cmd)) exit(1);
 }
 
 
