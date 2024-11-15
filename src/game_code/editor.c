@@ -13,7 +13,7 @@ void init_editor(GameData *data)
 	Ed = &data->editor;
 
 	Ed->mu = calloc(1, sizeof(mu_Context));
-	MUiInit(Ed->mu, NULL);
+	MUiInit(Ed->mu, &Data->assets.font);
 }
 
 void pos_reload_editor(GameData *data) 

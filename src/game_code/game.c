@@ -40,9 +40,6 @@ hot GameConfig init_pre_raylib(void **data)
 
 hot void init_pos_raylib(void) 
 {
-
-	init_editor(Data);
-
 	Image image = LoadImage("assets/monogram-bitmap.png");
 	Data->assets.font = LoadFontFromImageSheet(image, Vec2(6, 12), 32);
 	UnloadImage(image);
@@ -50,8 +47,8 @@ hot void init_pos_raylib(void)
 	Data->assets.sheet_ui.rect = Rec(0, 0, 16, 16);
 	Data->assets.sheet_ant.texture = LoadTexture("assets/ant_sheet.png");
 	Data->assets.sheet_ant.rect = Rec(0, 0, 32, 32);
-	Data->ui.paused = (Sprite) { .tint = WHITE, .frame = 0, .texture = Data->assets.sheet_ui};
-	Data->ui.speed = (Sprite) { .tint = WHITE, .frame = 2, .texture = Data->assets.sheet_ui};
+	Data->ui.paused = CreateSprite(Data->assets.sheet_ui, .frame = 0);
+	Data->ui.speed = CreateSprite(Data->assets.sheet_ui, .frame = 2);
 	MUiInit(Data->ui.mu, &Data->assets.font);
 
 	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
@@ -76,6 +73,7 @@ hot void init_pos_raylib(void)
 	});
 	Data->level = create_level(Data, 5);
 	Level = Data->level;
+	init_editor(Data);
 }
 
 hot void pre_reload(void)
@@ -125,13 +123,12 @@ internal b32 update_ui(void)
 	mu_begin(Data->ui.mu); {
 		mu_Context *ctx = Data->ui.mu;
 		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_AUTOSIZE)) {
-			mu_layout_row(ctx, 3, (const int[]) {20, 80, 60}, 16);
-			if (MUiTextureButton(ctx, &Data->ui.paused, 0)) {
+			mu_layout_row(ctx, 3, (const int[]) {24, 24, 100}, 24);
+			if (MUiTextureButton(ctx, &Data->ui.paused, MU_OPT_ALIGNCENTER)) {
 				Data->paused = Data->paused ? false : true;
 				Data->ui.paused.frame = Data->paused ? 1 : 0;
-				printf("sprite frame: %d \n", Data->ui.paused.frame);
 			}
-			if (MUiTextureButton(ctx, &Data->ui.speed, 0)) {
+			if (MUiTextureButton(ctx, &Data->ui.speed, MU_OPT_ALIGNCENTER)) {
 					Data->game_speed += 1;
 					if (Data->game_speed > MAX_GAME_SPEED) {
 						Data->game_speed = 1;
