@@ -235,8 +235,28 @@ int MUiTextureButton(mu_Context *ctx, Sprite *texture, int opt)
 		} else if (ctx->hover == id) {
 			color = ctx->style->colors[MU_COLOR_BUTTONFOCUS];
 		}
-		mu_draw_texture(ctx, texture, r, color);
-		//mu_draw_control_frame(ctx, id, box, MU_COLOR_BASE, opt);
+		mu_Rect texture_rect = r;
+		if (texture->size.x <= 0 || texture->size.y <= 0) {
+			TraceLog(LOG_WARNING, "MUiTextureButton: texture size is %d, %d", texture->size.x, texture->size.y);
+		}
+		if (~opt & MU_OPT_STRETCH_TEXTURE) {
+			texture_rect.w = texture->size.x;
+			texture_rect.h = texture->size.y;
+		}
+		if (opt & MU_OPT_ALIGNRIGHT && r.w > texture->size.x) {
+			texture_rect.x = r.w - texture->size.x;
+		}
+		else if (opt & MU_OPT_ALIGNCENTER) {
+			if (r.w > texture->size.x) {
+				i32 diff = r.w - texture->size.x;
+				texture_rect.x += diff * 0.5f;
+			}
+			if (r.h > texture->size.y) {
+				i32 diff = r.h - texture->size.y;
+				texture_rect.y += diff * 0.5f;
+			}
+		}
+		mu_draw_texture(ctx, texture, texture_rect, color);
 	} else {
 		TraceLog(LOG_WARNING, "MUiTextureButton: null pointer passed as texture");
 	}

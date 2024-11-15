@@ -81,7 +81,7 @@ enum {
   MU_RES_CHANGE       = (1 << 2)
 };
 
-enum {
+typedef enum {
   MU_OPT_ALIGNCENTER  = (1 << 0),
   MU_OPT_ALIGNRIGHT   = (1 << 1),
   MU_OPT_NOINTERACT   = (1 << 2),
@@ -95,9 +95,10 @@ enum {
   MU_OPT_POPUP        = (1 << 10),
   MU_OPT_CLOSED       = (1 << 11),
   MU_OPT_EXPANDED     = (1 << 12),
-  MU_OPT_NOHOLD_POS    = (1 << 13),
-  MU_OPT_NOHOLD_SIZE   = (1 << 14)
-};
+  MU_OPT_NOHOLD_POS   = (1 << 13),
+  MU_OPT_NOHOLD_SIZE  = (1 << 14),
+  MU_OPT_STRETCH_TEXTURE = (1 << 15)
+} mu_Options;
 
 enum {
   MU_MOUSE_LEFT       = (1 << 0),
