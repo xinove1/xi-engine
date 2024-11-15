@@ -79,11 +79,21 @@ Font LoadFontFromImageSheet(Image image, Vector2 grid_size, int first_char)
     // once we get the actual number of chars, we copy data to a sized arrays
 	V2 image_grided = {image.width / (int) grid_size.x, image.height / (int) grid_size.y}; // TODO Better name I don't remember the term for this :(
 	int glyph_count = image_grided.x * image_grided.y;
-	printf("image_grided: %f, %f\n", image_grided.x, image_grided.y);
-	printf("glypth_count: %d\n", glyph_count);
+
+	// TODO  Transform all color in image to white so tint can be applied
+    Color *pixels = LoadImageColors(image);
+    for (int i = 0; i < image.height*image.width; i++) if (!ColorCompare(pixels[i], BLANK)) pixels[i] = WHITE;
+
+    Image image_white = {
+        .data = pixels,
+        .width = image.width,
+        .height = image.height,
+        .mipmaps = 1,
+        .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+    };
 
     // Set font with all data parsed from image
-    font.texture = LoadTextureFromImage(image); // Convert processed image to OpenGL texture
+    font.texture = LoadTextureFromImage(image_white); // Convert processed image to OpenGL texture
     font.glyphCount = glyph_count;
     font.glyphPadding = 0;
     font.glyphs = (GlyphInfo *)RL_MALLOC(font.glyphCount*sizeof(GlyphInfo));
@@ -92,17 +102,15 @@ Font LoadFontFromImageSheet(Image image, Vector2 grid_size, int first_char)
 	for (int y = 0; y < image_grided.y; y++) {
 		for (int x = 0; x < image_grided.x; x++) {
 			int i = x + (y * image_grided.x);
-
 			font.glyphs[i].value = first_char + i;
 			font.glyphs[i].offsetX = 0;
 			font.glyphs[i].offsetY = 0;
 			font.glyphs[i].advanceX = 0;
 			font.recs[i] = (Rectangle) {x * (int)grid_size.x, y * (int)grid_size.y, (int) grid_size.x, (int) grid_size.y};
-			printf("iteration: %d, font_rec: %f, %f, %f, %f \n", i, font.recs[i].x, font.recs[i].y, font.recs[i].width, font.recs[i].height);
-			font.glyphs[i].image = ImageFromImage(image, font.recs[i]);
+			font.glyphs[i].image = ImageFromImage(image_white, font.recs[i]);
 		}
 	}
-
+	UnloadImage(image_white);
     font.baseSize = (int)font.recs[0].height;
     return font;
 }
