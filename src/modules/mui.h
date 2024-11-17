@@ -18,6 +18,10 @@ void MUiInit(mu_Context *ctx, Font *font);
 void MUiSetSpacing(int spacing);
 void MUiPoolInput(mu_Context *ctx);
 void MUiRender(mu_Context *ctx);
+b32 MUiLoadStyle(mu_Context *ctx, cstr *file);
+b32 MUiSaveStyle(mu_Context *ctx, cstr *file);
+b32 MUiLoadStyleColors(mu_Context *ctx, cstr *file); // For adding stuff to mu_Style and preserving previous colors
+b32 MUiSaveStyleColors(mu_Context *ctx, cstr *file); 
 
 b32 MUiIsMouseInsideContainer(mu_Context *ctx);
 i32 u8_slider(mu_Context *ctx, u8 *value, i32 low, i32 high);
@@ -182,6 +186,54 @@ b32 MUiIsMouseInsideContainer(mu_Context *ctx)
 		if (CheckCollisionPointRec(mouse_pos, rec)) return (true);
 	}
 	return (false);
+}
+
+b32 MUiSaveStyle(mu_Context *ctx, cstr *file) 
+{
+	mu_Style style = *ctx->style;
+	style.font = NULL;
+	b32 r = SaveFileData(file, &style, sizeof(mu_Style));
+	return (r);
+}
+
+b32 MUiSaveStyleColors(mu_Context *ctx, cstr *file) 
+{
+	b32 r = SaveFileData(file, &ctx->style->colors, sizeof(ctx->style->colors));
+	return (r);
+}
+
+b32 MUiLoadStyle(mu_Context *ctx, cstr *file)
+{
+	b32 r = false;
+	mu_Font *font = ctx->style->font;
+	i32 data_read = 0;
+	unsigned char *data = LoadFileData(file, &data_read);
+	if (!data) return (false) ;
+	if (data_read != sizeof(mu_Style)) {
+		TraceLog(LOG_WARNING, "MUiLoadStyle: amount of data read from file does not match size of mu_Style, not copying into context.");
+	} else {
+		*ctx->style = * (mu_Style *)data;
+		ctx->style->font = font;
+		r = true;
+	}
+	UnloadFileData(data);
+	return (r);
+}
+
+b32 MUiLoadStyleColors(mu_Context *ctx, cstr *file) 
+{
+	b32 r = false;
+	i32 data_read = 0;
+	unsigned char *data = LoadFileData(file, &data_read);
+	if (!data) return (false) ;
+	if (data_read != sizeof(ctx->style->colors)) {
+		TraceLog(LOG_WARNING, "MUiLoadStyleColors: amount of data read from file does not match size of this context colors array, not copying into context.");
+	} else {
+		memcpy(ctx->style->colors, data, sizeof(ctx->style->colors));
+		r = true;
+	}
+	UnloadFileData(data);
+	return (r);
 }
 
 i32 u8_slider(mu_Context *ctx, u8 *value, i32 low, i32 high) 

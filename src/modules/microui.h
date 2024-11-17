@@ -5,9 +5,8 @@
 ** under the terms of the MIT license. See `microui.c` for details.
 */
 
-// TODO  Add font spacing to style
-// TODO  Add text hint on hover
-// TODO  Add Texture Buttons
+// TODO  Add font size and spacing to style
+// TODO  Add text tooltip on mouse hover
 
 #ifndef MICROUI_H
 # define MICROUI_H

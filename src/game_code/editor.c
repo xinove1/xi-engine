@@ -12,8 +12,11 @@ void init_editor(GameData *data)
 	Data = data;
 	Ed = &data->editor;
 
+	// TODO  Change game and editor to use same mu context
 	Ed->mu = calloc(1, sizeof(mu_Context));
 	MUiInit(Ed->mu, &Data->assets.font);
+	MUiLoadStyle(Ed->mu, "assets/ui_style");
+	Data->ui.mu->style = Ed->mu->style;
 }
 
 void pos_reload_editor(GameData *data) 
@@ -49,6 +52,19 @@ void update_editor()
 				if (MUiToggleButtonEx(ctx, &Ed->debug_select, 0) && Ed->debug_select == false) {
 					Ed->hovered = NULL;
 					Ed->selected = NULL;
+				}
+				mu_layout_row(ctx, 2, (int[]){0, 0}, 0);
+				if (mu_button(ctx, "Save Style")) {
+					MUiSaveStyle(ctx, "assets/ui_style");
+				}
+				if (mu_button(ctx, "Save Color")) {
+					MUiSaveStyleColors(ctx, "assets/ui_style_colors");
+				}
+				if (mu_button(ctx, "Load Style")) {
+					MUiLoadStyle(ctx, "assets/ui_style");
+				}
+				if (mu_button(ctx, "Load Color")) {
+					MUiLoadStyleColors(ctx, "assets/ui_style_colors");
 				}
 				mu_end_window(ctx);
 			}
