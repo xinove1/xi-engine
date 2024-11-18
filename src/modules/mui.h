@@ -73,7 +73,7 @@ int _get_text_width(mu_Font font, const char *str, int len)
 	if (len == -1) {
 		size = MeasureTextEx(rfont, str, rfont.baseSize, TextSpacing);
 	} else {
-		TraceLog(LOG_INFO, "_get_text_width: len != -1");
+		//TraceLog(LOG_INFO, "_get_text_width: len != -1");
 		char buf[200] = {0};
 		memcpy(buf, str, len);
 		buf[len] = 0;
@@ -94,7 +94,9 @@ void MUiInit(mu_Context *ctx, Font *font)
 	ctx->style->font = (mu_Font) font;
 	ctx->text_width = _get_text_width;
 	ctx->text_height = _get_text_height;
-	ctx->style->spacing = TextSpacing;
+	ctx->get_frame_time = GetFrameTime;
+	ctx->tooltip_time = 0.4f;
+	ctx->style->spacing = TextSpacing; // TODO what
 }
 
 void MUiPoolInput(mu_Context *ctx)

@@ -54,18 +54,22 @@ void update_editor()
 					Ed->selected = NULL;
 				}
 				mu_layout_row(ctx, 2, (int[]){0, 0}, 0);
+				mu_tooltip(ctx, "Save Style to assets/ui_style i ea osenutha oesnuthaoesntueh aontsuhe");
 				if (mu_button(ctx, "Save Style")) {
 					MUiSaveStyle(ctx, "assets/ui_style");
 				}
 				if (mu_button(ctx, "Save Color")) {
 					MUiSaveStyleColors(ctx, "assets/ui_style_colors");
 				}
+				mu_tooltip(ctx, "Load Style from file");
 				if (mu_button(ctx, "Load Style")) {
 					MUiLoadStyle(ctx, "assets/ui_style");
 				}
+				mu_tooltip(ctx, "Load Color from file");
 				if (mu_button(ctx, "Load Color")) {
 					MUiLoadStyleColors(ctx, "assets/ui_style_colors");
 				}
+				mu_label(ctx, "teste sizla");
 				mu_end_window(ctx);
 			}
 			style_window(Ed->mu);

@@ -184,6 +184,7 @@ struct mu_Context {
   int (*text_width)(mu_Font font, const char *str, int len);
   int (*text_height)(mu_Font font);
   void (*draw_frame)(mu_Context *ctx, mu_Rect rect, int colorid);
+  float (*get_frame_time)(void);
   /* core state */
   mu_Style _style;
   mu_Style *style;
@@ -210,6 +211,14 @@ struct mu_Context {
   mu_PoolItem container_pool[MU_CONTAINERPOOL_SIZE];
   mu_Container containers[MU_CONTAINERPOOL_SIZE];
   mu_PoolItem treenode_pool[MU_TREENODEPOOL_SIZE];
+  /* Tooltip state */
+  const char *tooltip_next; // TODO  RENAME
+  const char *tooltip_text;
+  mu_Id tooltip_id_previous;
+  mu_Id tooltip_id_current;
+  int tooltip_flag;
+  float tooltip_time; // Amount of time in hovered state before displayng tooltip
+  float tooltip_time_count;
   /* input state */
   mu_Vec2 mouse_pos;
   mu_Vec2 last_mouse_pos;
@@ -286,7 +295,9 @@ void mu_update_control(mu_Context *ctx, mu_Id id, mu_Rect rect, int opt);
 #define mu_begin_window(ctx, title, rect) mu_begin_window_ex(ctx, title, rect, 0)
 #define mu_begin_panel(ctx, name)         mu_begin_panel_ex(ctx, name, 0)
 
+void mu_tooltip(mu_Context *ctx, const char *text);
 void mu_text(mu_Context *ctx, const char *text);
+void mu_text_sized(mu_Context *ctx, const char *text, int line_max_length); // TODO BETTER NAME OMG HOUWU)
 void mu_label(mu_Context *ctx, const char *text);
 int mu_button_ex(mu_Context *ctx, const char *label, int icon, int opt);
 int mu_checkbox(mu_Context *ctx, const char *label, int *state);
@@ -456,6 +467,8 @@ void mu_begin(mu_Context *ctx) {
   ctx->mouse_delta.x = ctx->mouse_pos.x - ctx->last_mouse_pos.x;
   ctx->mouse_delta.y = ctx->mouse_pos.y - ctx->last_mouse_pos.y;
   ctx->frame++;
+  ctx->tooltip_id_current = 0;
+  ctx->tooltip_next = NULL;
 }
 
 
@@ -471,6 +484,35 @@ void mu_end(mu_Context *ctx) {
   expect(ctx->clip_stack.idx      == 0);
   expect(ctx->id_stack.idx        == 0);
   expect(ctx->layout_stack.idx    == 0);
+
+  /* handle tooltip */
+  mu_Container *tooltip_cnt = mu_get_container(ctx, "_tooltip");
+  if ((ctx->tooltip_id_current && ctx->tooltip_id_current == ctx->tooltip_id_previous) 
+    || (ctx->tooltip_flag == 1 && rect_overlaps_vec2(tooltip_cnt->rect, ctx->mouse_pos))) {
+    ctx->tooltip_time_count += ctx->get_frame_time();
+    if (ctx->tooltip_time_count >= ctx->tooltip_time) {
+      if (ctx->tooltip_flag == 0) {
+        ctx->tooltip_flag = 1;
+        tooltip_cnt->rect = mu_rect(ctx->mouse_pos.x, ctx->mouse_pos.y + 3, tooltip_cnt->rect.w, tooltip_cnt->rect.h);
+        mu_bring_to_front(ctx, tooltip_cnt);
+        tooltip_cnt->open = 1;
+        if (tooltip_cnt->rect.x == 0 && tooltip_cnt->rect.y == 0) {
+        }
+      }
+    }
+  } else {
+    ctx->tooltip_id_previous = ctx->tooltip_id_current;
+    ctx->tooltip_time_count = 0;
+    ctx->tooltip_flag = 0;
+    tooltip_cnt->open = 0;
+    tooltip_cnt->rect = mu_rect(0, 0, tooltip_cnt->rect.w, tooltip_cnt->rect.h);
+  }
+  if (mu_begin_window_ex(ctx, "_tooltip", mu_rect(ctx->mouse_pos.x, ctx->mouse_pos.y, 10, 10), MU_OPT_AUTOSIZE | MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_NORESIZE | MU_OPT_CLOSED)) {
+    if (ctx->tooltip_text) {
+      mu_text_sized(ctx, ctx->tooltip_text, 250);
+    }
+    mu_end_window(ctx);
+  }
 
   /* handle scroll input */
   if (ctx->scroll_target) {
@@ -1026,6 +1068,13 @@ void mu_update_control(mu_Context *ctx, mu_Id id, mu_Rect rect, int opt) {
   if (opt & MU_OPT_NOINTERACT) { return; }
   if (mouseover && !ctx->mouse_down) { ctx->hover = id; }
 
+  if (mouseover && ctx->tooltip_next) {
+    ctx->tooltip_id_current = id;
+    ctx->tooltip_text = ctx->tooltip_next;
+  } else if (ctx->tooltip_next) {
+    ctx->tooltip_next = NULL;
+  }
+
   if (ctx->focus == id) {
     if (ctx->mouse_pressed && !mouseover) { mu_set_focus(ctx, 0); }
     if (!ctx->mouse_down && ~opt & MU_OPT_HOLDFOCUS) { mu_set_focus(ctx, 0); }
@@ -1040,6 +1089,10 @@ void mu_update_control(mu_Context *ctx, mu_Id id, mu_Rect rect, int opt) {
   }
 }
 
+void mu_tooltip(mu_Context *ctx, const char *text)
+{
+  ctx->tooltip_next = text;
+}
 
 void mu_text(mu_Context *ctx, const char *text) {
   const char *start, *end, *p = text;
@@ -1066,6 +1119,31 @@ void mu_text(mu_Context *ctx, const char *text) {
   mu_layout_end_column(ctx);
 }
 
+void mu_text_sized(mu_Context *ctx, const char *text, int line_max_length) { // TODO BETTER NAME ALSO AUHEAOE
+  const char *start, *end, *p = text;
+  mu_Font font = ctx->style->font;
+  mu_Color color = ctx->style->colors[MU_COLOR_TEXT];
+  int text_size_total = ctx->text_width(font, text, strlen(text));
+  int width = (text_size_total < line_max_length) ? text_size_total : line_max_length;
+  if (text_size_total >= line_max_length) mu_layout_begin_column(ctx);
+  mu_layout_row(ctx, 1, &width, ctx->text_height(font));
+  do {
+    mu_Rect r = mu_layout_next(ctx);
+    int w = 0;
+    start = end = p;
+    do {
+      const char* word = p;
+      while (*p && *p != ' ' && *p != '\n') { p++; }
+      w += ctx->text_width(font, word, p - word);
+      if (w > r.w && end != start) { break; }
+      w += ctx->text_width(font, p, 1);
+      end = p++;
+    } while (*end && *end != '\n');
+    mu_draw_text(ctx, font, start, end - start, mu_vec2(r.x, r.y), color);
+    p = end + 1;
+  } while (*end);
+  if (text_size_total >= line_max_length) mu_layout_end_column(ctx);
+}
 
 void mu_label(mu_Context *ctx, const char *text) {
   mu_draw_control_text(ctx, text, mu_layout_next(ctx), MU_COLOR_TEXT, 0);

@@ -122,12 +122,14 @@ internal b32 update_ui(void)
 {
 	mu_begin(Data->ui.mu); {
 		mu_Context *ctx = Data->ui.mu;
-		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_AUTOSIZE)) {
+		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_AUTOSIZE | MU_OPT_NORESIZE)) {
 			mu_layout_row(ctx, 3, (const int[]) {24, 24, 100}, 24);
+			mu_tooltip(ctx, (Data->paused) ? "Unpause game" : "Pause Game");
 			if (MUiTextureButton(ctx, &Data->ui.paused, MU_OPT_ALIGNCENTER)) {
 				Data->paused = Data->paused ? false : true;
 				Data->ui.paused.frame = Data->paused ? 1 : 0;
 			}
+			mu_tooltip(ctx, "Change the game speed");
 			if (MUiTextureButton(ctx, &Data->ui.speed, MU_OPT_ALIGNCENTER)) {
 					Data->game_speed += 1;
 					if (Data->game_speed > MAX_GAME_SPEED) {
@@ -135,12 +137,7 @@ internal b32 update_ui(void)
 					}
 				Data->ui.speed.frame = Data->game_speed + 1;
 			}
-			// if (mu_button_ex(ctx, TextFormat("speed: %d", Data->game_speed), 0, 0)) {
-			// 	Data->game_speed += 1;
-			// 	if (Data->game_speed > MAX_GAME_SPEED) {
-			// 		Data->game_speed = 1;
-			// 	}
-			// }
+			mu_tooltip(ctx, "Begin Wave Early");
 			if (mu_button_ex(ctx, "BeginWaveEarly", 0, 0)) {
 				start_wave(Data->level);
 			}
