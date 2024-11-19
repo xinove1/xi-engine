@@ -13,8 +13,9 @@
 #define MuRecV2(pos, size) (mu_Rect) {.x = pos.x, .y = pos.y, .w = size.x, .h = size.y}
 #define MuRectExpand(r, amount) ((mu_Rect) {r.x - amount, r.y - amount, r.w + amount * 2, r.h + amount * 2});
 #define V2FromMu(v) ((V2){v.x, v.y})
+#define V2ToMu(v) ((mu_Vec2){v.x, v.y})
 
-void MUiInit(mu_Context *ctx, Font *font);
+void MUiInit(mu_Context *ctx, Font *font, V2 canvas_size);
 void MUiSetSpacing(int spacing);
 void MUiPoolInput(mu_Context *ctx);
 void MUiRender(mu_Context *ctx);
@@ -88,7 +89,7 @@ int _get_text_height(mu_Font font)
 	return (rfont.baseSize);
 }
 
-void MUiInit(mu_Context *ctx, Font *font)
+void MUiInit(mu_Context *ctx, Font *font, V2 canvas_size)
 {
 	mu_init(ctx);
 	ctx->style->font = (mu_Font) font;
@@ -97,6 +98,10 @@ void MUiInit(mu_Context *ctx, Font *font)
 	ctx->get_frame_time = GetFrameTime;
 	ctx->tooltip_time = 0.4f;
 	ctx->style->spacing = TextSpacing; // TODO what
+	ctx->window_size = V2ToMu(canvas_size);
+	if (canvas_size.x <= 0 && canvas_size.y <= 0) {
+		TraceLog(LOG_WARNING, "MUiInit: canvas size is invalid, tooltip behavior will not work.");
+	}
 }
 
 void MUiPoolInput(mu_Context *ctx)

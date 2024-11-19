@@ -14,7 +14,7 @@ void init_editor(GameData *data)
 
 	// TODO  Change game and editor to use same mu context
 	Ed->mu = calloc(1, sizeof(mu_Context));
-	MUiInit(Ed->mu, &Data->assets.font);
+	MUiInit(Ed->mu, &Data->assets.font, Data->canvas_size);
 	MUiLoadStyle(Ed->mu, "assets/ui_style");
 	Data->ui.mu->style = Ed->mu->style;
 }

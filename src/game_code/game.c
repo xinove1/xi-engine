@@ -55,7 +55,7 @@ hot void init_pos_raylib(void)
 	printf("sheet_ant size: %d, %d \n", Data->assets.sheet_ant.width, Data->assets.sheet_ant.height);
 	Data->ui.paused = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 0);
 	Data->ui.speed = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 2);
-	MUiInit(Data->ui.mu, &Data->assets.font);
+	MUiInit(Data->ui.mu, &Data->assets.font, Data->canvas_size);
 
 	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
 			.alignment = UiAlignCentralized,

@@ -219,6 +219,7 @@ struct mu_Context {
   int tooltip_flag;
   float tooltip_time; // Amount of time in hovered state before displayng tooltip
   float tooltip_time_count;
+  mu_Vec2 window_size;
   /* input state */
   mu_Vec2 mouse_pos;
   mu_Vec2 last_mouse_pos;
@@ -280,6 +281,7 @@ void mu_layout_begin_column(mu_Context *ctx);
 void mu_layout_end_column(mu_Context *ctx);
 void mu_layout_set_next(mu_Context *ctx, mu_Rect r, int relative);
 mu_Rect mu_layout_next(mu_Context *ctx);
+mu_Vec2 mu_position_tooltip(mu_Context *ctx, mu_Container *tooltip);
 
 void mu_draw_control_frame(mu_Context *ctx, mu_Id id, mu_Rect rect, int colorid, int opt);
 void mu_draw_control_text(mu_Context *ctx, const char *str, mu_Rect rect, int colorid, int opt);
@@ -488,16 +490,20 @@ void mu_end(mu_Context *ctx) {
   /* handle tooltip */
   mu_Container *tooltip_cnt = mu_get_container(ctx, "_tooltip");
   if ((ctx->tooltip_id_current && ctx->tooltip_id_current == ctx->tooltip_id_previous) 
-    || (ctx->tooltip_flag == 1 && rect_overlaps_vec2(tooltip_cnt->rect, ctx->mouse_pos))) {
+    || (ctx->tooltip_flag >= 1 && rect_overlaps_vec2(tooltip_cnt->rect, ctx->mouse_pos))) {
     ctx->tooltip_time_count += ctx->get_frame_time();
     if (ctx->tooltip_time_count >= ctx->tooltip_time) {
       if (ctx->tooltip_flag == 0) {
         ctx->tooltip_flag = 1;
-        tooltip_cnt->rect = mu_rect(ctx->mouse_pos.x, ctx->mouse_pos.y + 3, tooltip_cnt->rect.w, tooltip_cnt->rect.h);
+        tooltip_cnt->rect = mu_rect(-100, -100, tooltip_cnt->rect.w, tooltip_cnt->rect.h);
         mu_bring_to_front(ctx, tooltip_cnt);
         tooltip_cnt->open = 1;
-        if (tooltip_cnt->rect.x == 0 && tooltip_cnt->rect.y == 0) {
-        }
+      } else if (ctx->tooltip_flag == 5) {
+        mu_Vec2 pos = mu_position_tooltip(ctx, tooltip_cnt);
+        tooltip_cnt->rect = mu_rect(pos.x, pos.y, tooltip_cnt->rect.w, tooltip_cnt->rect.h);
+        ctx->tooltip_flag++;
+      } else if (ctx->tooltip_flag < 6) {
+        ctx->tooltip_flag++;
       }
     }
   } else {
@@ -507,7 +513,7 @@ void mu_end(mu_Context *ctx) {
     tooltip_cnt->open = 0;
     tooltip_cnt->rect = mu_rect(0, 0, tooltip_cnt->rect.w, tooltip_cnt->rect.h);
   }
-  if (mu_begin_window_ex(ctx, "_tooltip", mu_rect(ctx->mouse_pos.x, ctx->mouse_pos.y, 10, 10), MU_OPT_AUTOSIZE | MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_NORESIZE | MU_OPT_CLOSED)) {
+  if (mu_begin_window_ex(ctx, "_tooltip", mu_rect(-100, -100, 10, 10), MU_OPT_AUTOSIZE | MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_NORESIZE | MU_OPT_CLOSED)) {
     if (ctx->tooltip_text) {
       mu_text_sized(ctx, ctx->tooltip_text, 250);
     }
@@ -1006,6 +1012,20 @@ mu_Rect mu_layout_next(mu_Context *ctx) {
   layout->max.y = mu_max(layout->max.y, res.y + res.h);
 
   return (ctx->last_rect = res);
+}
+
+mu_Vec2 mu_position_tooltip(mu_Context *ctx, mu_Container *tooltip)
+{
+  int offset_from_mouse = 5;
+  mu_Vec2 extension = {ctx->mouse_pos.x + tooltip->rect.w, ctx->mouse_pos.y + tooltip->rect.h};
+  mu_Vec2 res = {ctx->mouse_pos.x, ctx->mouse_pos.y + offset_from_mouse};
+  if (extension.x > ctx->window_size.x) {
+    res.x -= extension.x - ctx->window_size.x;
+  }
+  if (extension.y + offset_from_mouse > ctx->window_size.y) {
+    res.y = ctx->mouse_pos.y - tooltip->rect.h - offset_from_mouse;
+  }
+  return (res);
 }
 
 
