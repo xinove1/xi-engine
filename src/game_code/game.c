@@ -160,6 +160,8 @@ internal b32 update_ui(void)
 			} else {
 				pos.y += size.y + padding;
 			}
+
+			mu_push_id(ctx, t, sizeof(Turret));
 			if (t->type == EntityTurret) {
 				if (mu_begin_window_ex(ctx, "Upgrade Tower", MuRecV2(pos, size), options)) {
 					mu_end_window(ctx);
@@ -188,6 +190,7 @@ internal b32 update_ui(void)
 			else {
 				TraceLog(LOG_WARNING, "Turret selected does not have a valid type.");
 			}
+			mu_pop_id(ctx);
 		}
 	} mu_end(Data->ui.mu);
 
