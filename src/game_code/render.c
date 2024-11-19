@@ -42,6 +42,11 @@ void draw_health_bar(GenericEntity *entity)
 	DrawRectangleRec(health_current, RED);
 }
 
+void update_entity_animations(GenericEntity *entity)
+{
+	UpdateSprite(&entity->render, GetFrameTime());
+}
+
 void update_entity_veffects(GenericEntity *entity) 
 {
 	for (i32 i = 0; i < VEffectTypeCount; i++) {

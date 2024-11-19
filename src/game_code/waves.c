@@ -26,8 +26,7 @@ local void generate_packets(GameLevel *l)
 			.range = 10,
 			.attack_rate = 0.5f
 		});
-		enemy.render.texture = Data->assets.sheet_ant;
-		enemy.render.frame = 0;
+		enemy.render = CreateSpriteAnimation(Data->assets.sheet_ant, Vec2v(32), .frame_duration = 0.13, .frame_start = 0);
 
 		SpawnPacket packet = { .enemy = enemy, .cooldown = 1.3f };
 		w->packets[i] = packet;

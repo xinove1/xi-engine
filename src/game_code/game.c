@@ -43,12 +43,11 @@ hot void init_pos_raylib(void)
 	Image image = LoadImage("assets/monogram-bitmap.png");
 	Data->assets.font = LoadFontFromImageSheet(image, Vec2(6, 12), 32);
 	UnloadImage(image);
-	Data->assets.sheet_ui.texture = LoadTexture("assets/ui_sheet.png");
-	Data->assets.sheet_ui.rect = Rec(0, 0, 16, 16);
-	Data->assets.sheet_ant.texture = LoadTexture("assets/ant_sheet.png");
-	Data->assets.sheet_ant.rect = Rec(0, 0, 32, 32);
-	Data->ui.paused = CreateSprite(Data->assets.sheet_ui, .frame = 0);
-	Data->ui.speed = CreateSprite(Data->assets.sheet_ui, .frame = 2);
+	Data->assets.sheet_ui = LoadTexture("assets/ui_sheet.png");
+	Data->assets.sheet_ant = LoadTexture("assets/ant_sheet.png");
+	printf("sheet_ant size: %d, %d \n", Data->assets.sheet_ant.width, Data->assets.sheet_ant.height);
+	Data->ui.paused = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 0);
+	Data->ui.speed = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 2);
 	MUiInit(Data->ui.mu, &Data->assets.font);
 
 	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
@@ -125,9 +124,9 @@ internal b32 update_ui(void)
 		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_AUTOSIZE | MU_OPT_NORESIZE)) {
 			mu_layout_row(ctx, 3, (const int[]) {24, 24, 100}, 24);
 			mu_tooltip(ctx, (Data->paused) ? "Unpause game" : "Pause Game");
+			Data->ui.paused.frame = Data->paused ? 1 : 0;
 			if (MUiTextureButton(ctx, &Data->ui.paused, MU_OPT_ALIGNCENTER)) {
 				Data->paused = Data->paused ? false : true;
-				Data->ui.paused.frame = Data->paused ? 1 : 0;
 			}
 			mu_tooltip(ctx, "Change the game speed");
 			if (MUiTextureButton(ctx, &Data->ui.speed, MU_OPT_ALIGNCENTER)) {
@@ -265,8 +264,11 @@ internal b32 update_game(void)
 	
 	apply_func_entitys(Level, update_entity_veffects);
 
+
 	// ----------- Update Entitys ----------- 
 	
+	apply_func_entitys(Level, update_entity_animations);
+
 	update_wave_manager(Level);
 
 	// ----------- Enemys ----------- 

@@ -77,8 +77,8 @@ typedef struct {
 
 typedef struct {
 	Font font;
-	SpriteTexture sheet_ui;
-	SpriteTexture sheet_ant;
+	Texture sheet_ui;
+	Texture sheet_ant;
 } GameAssets;
 
 typedef struct {
@@ -120,6 +120,7 @@ void start_wave(GameLevel *l);
 // Render
 void render_entity(GenericEntity *entity);
 void update_entity_veffects(GenericEntity *entity);
+void update_entity_animations(GenericEntity *entity);
 void apply_flash_effect(GenericEntity *entity, Color color, f32 duration);
 void apply_shake_effect(GenericEntity *entity, f32 duration);
 void render_particle(Particle p);
