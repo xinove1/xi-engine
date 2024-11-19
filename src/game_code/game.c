@@ -15,6 +15,13 @@ internal b32 update_ui(void);
 GameData  *Data = NULL;
 global GameLevel *Level= NULL;
 
+// NOTE  for web build
+// TODO  Add option on menu to not pause game on leaving canvas focus
+void pause_game(void) 
+{
+	Data->paused = true;
+}
+
 hot GameConfig init_pre_raylib(void **data)
 {
 	Data = calloc(1, sizeof(GameData));
@@ -148,7 +155,7 @@ internal b32 update_ui(void)
 			V2 pos = t->pos;
 			f32 padding = 5;
 			i32 options = MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_NOHOLD_POS | MU_OPT_NOHOLD_SIZE;
-			if (CheckCollisionRecs(GetWindowRect(), RecV2(Vec2(pos.x, pos.y - size.y - padding), size))) {
+			if (CheckCollisionRecs(GetCanvasRec(), RecV2(Vec2(pos.x, pos.y - size.y - padding), size))) {
 				pos.y -= size.y - padding;
 			} else {
 				pos.y += size.y + padding;

@@ -107,6 +107,7 @@ int main(int argc, char *argv[])
 		build_linux_hot();
 	} 
 	else if (flag_compare(flag, "linux_static")) {
+		Debug = false;
 		build_linux_static();
 	}
 	else if (flag_compare(flag, "web")) {
@@ -116,6 +117,7 @@ int main(int argc, char *argv[])
 		build_and_run_web();
 	}
 	else if (flag_compare(flag, "windows")) {
+		Debug = false;
 		build_windows();
 	} 
 	else if (flag_compare(flag, "hot_run", "rh")) {
@@ -331,6 +333,7 @@ internal void build_linux_static()
 	Nob_String_Builder name = {0};
 	nob_sb_append_cstr(&name, "./build/");
 	nob_sb_append_cstr(&name, ProjectOutputName);
+	nob_sb_append_cstr(&name, "_static");
 	nob_sb_append_null(&name);
 	nob_cmd_append(&cmd, "-o", name.items);
 
@@ -397,7 +400,7 @@ internal void build_web()
 	nob_cmd_append(&cmd, "--preload-file", AssetsFolder);
 	nob_cmd_append(&cmd, "--shell-file", WebHTMLTemplate);
 	nob_cmd_append(&cmd, "--js-library", IncludesJS);
-	nob_cmd_append(&cmd, "-sEXPORTED_FUNCTIONS=_main");
+	nob_cmd_append(&cmd, "-sEXPORTED_FUNCTIONS=_main, _pause_game");
 	nob_cmd_append(&cmd, "-s", "ALLOW_MEMORY_GROWTH=1", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap");
 	nob_cmd_append(&cmd, "-s", "STACK_SIZE=1mb", "-Os", "-s", "USE_GLFW=3", "-sGL_ENABLE_GET_PROC_ADDRESS");
 

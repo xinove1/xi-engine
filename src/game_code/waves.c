@@ -93,7 +93,7 @@ void update_wave_manager(GameLevel *l)
 				SpawnPacket p = get_next_packet(w);
 				p.enemy.pos = V2Subtract(location->point, V2Scale(p.enemy.size, 0.5f));
 				p.enemy.floor = location->floor;
-				if (location->point.x > GetWindowRect().width * 0.5f) {
+				if (location->point.x > GetCanvasRec().width * 0.5f) {
 					p.enemy.render.flipped = true;
 				} 
 

@@ -192,9 +192,8 @@ b32 MUiIsMouseInsideContainer(mu_Context *ctx)
 
 b32 MUiSaveStyle(mu_Context *ctx, cstr *file) 
 {
-	mu_Style style = *ctx->style;
-	style.font = NULL;
-	b32 r = SaveFileData(file, &style, sizeof(mu_Style));
+	// NOTE  Save only data after mu_Font(void *) so we don't need to care about the system pointer size when reading the data later. We can't save the font so we don't lose anything.
+	b32 r = SaveFileData(file, (&ctx->style->size), sizeof(mu_Style) - ((void *)&ctx->style->size - (void *)ctx->style));
 	return (r);
 }
 
@@ -207,15 +206,14 @@ b32 MUiSaveStyleColors(mu_Context *ctx, cstr *file)
 b32 MUiLoadStyle(mu_Context *ctx, cstr *file)
 {
 	b32 r = false;
-	mu_Font *font = ctx->style->font;
 	i32 data_read = 0;
+	i32 data_expected = sizeof(mu_Style) - ((void *)&ctx->style->size - (void *)ctx->style);
 	unsigned char *data = LoadFileData(file, &data_read);
 	if (!data) return (false) ;
-	if (data_read != sizeof(mu_Style)) {
-		TraceLog(LOG_WARNING, "MUiLoadStyle: amount of data read from file does not match size of mu_Style, not copying into context.");
+	if (data_read != data_expected) {
+		TraceLog(LOG_WARNING, "MUiLoadStyle: amount of data read from file does not match size of mu_Style, not copying into context. data read %d, data expected: %d", data_read, data_expected);
 	} else {
-		*ctx->style = * (mu_Style *)data;
-		ctx->style->font = font;
+		memcpy(&ctx->style->size, data,  data_expected);
 		r = true;
 	}
 	UnloadFileData(data);
@@ -229,7 +227,7 @@ b32 MUiLoadStyleColors(mu_Context *ctx, cstr *file)
 	unsigned char *data = LoadFileData(file, &data_read);
 	if (!data) return (false) ;
 	if (data_read != sizeof(ctx->style->colors)) {
-		TraceLog(LOG_WARNING, "MUiLoadStyleColors: amount of data read from file does not match size of this context colors array, not copying into context.");
+		TraceLog(LOG_WARNING, "MUiLoadStyleColors: amount of data read from file does not match size of this context colors array, not copying into context. data read %d, data expected: %d", data_read, sizeof(ctx->style->colors));
 	} else {
 		memcpy(ctx->style->colors, data, sizeof(ctx->style->colors));
 		r = true;

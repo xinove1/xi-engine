@@ -32,7 +32,7 @@ Color lerp_color(Color a, Color b, f32 time)
 	});
 }
 
-Rect GetWindowRect()
+Rect GetCanvasRec()
 {
 	return (Rec(0, 0, Data->canvas_size.x, Data->canvas_size.y));
 }
