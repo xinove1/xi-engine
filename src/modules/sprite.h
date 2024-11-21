@@ -51,7 +51,7 @@ void UpdateSprite(Sprite *sprite, f32 time_passed);
 Sprite CreateSpriteEx(Texture2D texture, CreateSpriteParams params) ;
 Sprite CreateSpriteSheetedEx(Texture2D texture, V2 grid_size, i32 frame, CreateSpriteParams params) ;
 Sprite CreateSpriteAnimationEx(Texture2D texture, V2 grid_size, CreateSpriteAnimationParams params);
-#define CreateSprite(texture, ...) CreateSpriteEx(texture, (CreateSpriteParams)  {.pos = {0}, .size = Vec2(texture.rect.width, texture.rect.height), .rotation = 0, .tint = WHITE, .flipped = 0, __VA_ARGS__})
+#define CreateSprite(texture, ...) CreateSpriteEx(texture, (CreateSpriteParams)  {.pos = {0}, .size = {texture.width, texture.height}, .rotation = 0, .tint = WHITE, .flipped = 0, __VA_ARGS__})
 #define CreateSpriteSheeted(texture, grid_size, frame, ...) CreateSpriteSheetedEx(texture, grid_size, frame, (CreateSpriteParams) {.pos = {0}, .size = {0}, .rotation = 0, .tint = WHITE, .flipped = 0, __VA_ARGS__})
 #define CreateSpriteAnimation(texture, grid_size, ...)  CreateSpriteAnimationEx(texture, grid_size, (CreateSpriteAnimationParams) {.pos = {0}, .size = {0}, .rotation = 0, .tint = WHITE, .flipped = 0, .frame_start = 0, .frame_end = 0, .frame_duration = 0.1f, __VA_ARGS__})
 

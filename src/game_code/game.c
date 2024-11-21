@@ -52,7 +52,6 @@ hot void init_pos_raylib(void)
 	UnloadImage(image);
 	Data->assets.sheet_ui = LoadTexture("assets/ui_sheet.png");
 	Data->assets.sheet_ant = LoadTexture("assets/ant_sheet.png");
-	printf("sheet_ant size: %d, %d \n", Data->assets.sheet_ant.width, Data->assets.sheet_ant.height);
 	Data->ui.paused = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 0);
 	Data->ui.speed = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 2);
 	MUiInit(Data->ui.mu, &Data->assets.font, Data->canvas_size);
@@ -385,8 +384,10 @@ internal b32 update_game(void)
 hot void draw(void)
 {
 	//DrawRectangle(0, 0, Data->canvas_size.x, Data->canvas_size.y, BLACK);
-
+	ClearBackground((Color){130,200,229, 255});
 	apply_func_entitys(Level, render_entity);
+
+	render_env_sprites(Level->enviromnent_sprites, length_of(Level->enviromnent_sprites));
 
 	for (i32 i = 0; i < count_of(Data->particles); i++) {
 		if (Data->particles[i].type == ParticleEmpty) continue;
@@ -512,6 +513,15 @@ GameLevel *create_level(GameData *data, size floors)
 		.health = tower_health,
 		.health_max = tower_health,
 	};
+
+	// Enviroment
+	Texture2D sprite_ground = {0};
+	EnvSprite env_sprite_ground = (EnvSprite) {
+		.type = EnvSpriteStatic,
+		.pos = {0, Data->canvas_size.y - ground_height},
+		.sprite = CreateSprite(sprite_ground, .size = {data->canvas_size.x, ground_height}, .tint = BROWN),
+	};
+	create_env_sprite(level->enviromnent_sprites, length_of(level->enviromnent_sprites), env_sprite_ground);
 
 	// Init Entitys
 	size max_turrets = floors * 2;

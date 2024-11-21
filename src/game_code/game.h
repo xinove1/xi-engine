@@ -54,6 +54,7 @@ typedef struct {
 	TurretDa turrets;
 	EnemyDa enemys;
 	ProjectileDa projectiles;
+	EnvSprite enviromnent_sprites[50];
 } GameLevel;
 
 typedef struct
@@ -127,6 +128,9 @@ void apply_flash_effect(GenericEntity *entity, Color color, f32 duration);
 void apply_shake_effect(GenericEntity *entity, f32 duration);
 void render_particle(Particle p);
 void create_particle_ex(CreateParticleParams param);
+void create_env_sprite(EnvSprite *arr, i32 arr_size, EnvSprite env_sprite);
+void render_env_sprites(EnvSprite *arr, i32 arr_size);
+
 
 
 // Prototype for not hot reloadable version

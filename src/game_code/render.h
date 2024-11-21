@@ -2,6 +2,7 @@
 # define  RENDER_H_
 # include "core.h"
 # include "raylib.h"
+# include "sprite.h"
 
 introspect() typedef enum {
 	VEffectEmpty, VEffectFlashColor, VEffectShake, VEffectTypeCount
@@ -46,6 +47,23 @@ typedef  struct {
 	f32 velocity;
 	f32 duration;
 } CreateParticleParams;
+
+// TODO  Add paralex bacground effect
+// TODO  also better name
+introspect() typedef enum {
+	EnvSpriteEmpty,
+	EnvSpriteStatic,
+	EnvSpriteMoving,
+	EnvSpriteCount,
+} EnvSpriteType; 
+
+typedef struct {
+	EnvSpriteType type;
+	Sprite sprite;
+	V2 pos;
+	V2 dir;
+	f32 speed;
+} EnvSprite;
 
 #define create_particle(...) \
 	create_particle_ex((CreateParticleParams) {__VA_ARGS__})

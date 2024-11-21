@@ -25,6 +25,17 @@ void render_entity(GenericEntity *entity)
 	return ;
 }
 
+void render_env_sprites(EnvSprite *arr, i32 arr_size)
+{
+	for (i32 i = 0; i < arr_size; i++) {
+		EnvSprite *s = &arr[i];
+		if (s->type == EnvSpriteEmpty) break;
+		Sprite sprite = s->sprite;
+		sprite.pos = V2Add(s->pos, sprite.pos);
+		DrawSprite(sprite);
+	}
+}
+
 void draw_health_bar(GenericEntity *entity) 
 {
 	if (entity->health_max == 0 || entity->type == EntityProjectile) {
@@ -140,4 +151,15 @@ void create_particle_ex(CreateParticleParams param)
 	}
 }
 
+void create_env_sprite(EnvSprite *arr, i32 arr_size, EnvSprite env_sprite)
+{
+	for (i32 i = 0; i < arr_size; i++) {
+		EnvSprite *s = &arr[i];
+		if (s->type == EnvSpriteEmpty) {
+			*s = env_sprite;
+			return ;
+		}
+	}
+	TraceLog(LOG_WARNING, "create_env_sprite: can't add env_sprite to array, it's full\n");
+}
 
