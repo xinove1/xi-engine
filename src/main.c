@@ -41,7 +41,11 @@ int main()
 
 	SetConfigFlags(Config.window_flags);
 	InitWindow(Config.canvas_size.x, Config.canvas_size.y, Config.window_name);
-	SetWindowState(FLAG_WINDOW_MAXIMIZED); // TODO  Move this to GameConfig or UserConfig or something
+	#ifdef BUILD_DEBUG
+	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) - Config.canvas_size.x, 0);
+	SetWindowState(FLAG_WINDOW_TOPMOST);
+	#endif
+	//SetWindowState(FLAG_WINDOW_MAXIMIZED); // TODO  Move this to GameConfig or UserConfig or something
 	InitAudioDevice();
 	if (Config.target_fps != 0) {
 		SetTargetFPS(Config.target_fps);

@@ -28,6 +28,7 @@ internal void build_test_file(cstr *file);
 #define da_append_cstrs(da, cstrs) nob_da_append_many(&(da), cstrs, count_of(cstrs)) 
 b32 strcmp_many(const cstr *str, const cstr **str_many, i32 str_many_count);
 b32 nob_proc_is_running(Nob_Proc proc);
+b32 send_command_gf2(cstr *command);
 
 const global cstr *ProjectOutputName = "game";
 const global cstr *CC = "clang";
@@ -190,6 +191,9 @@ internal void build_and_run_hot()
 	cmd.count = 0;
 	nob_cmd_append(&cmd, "./build/game");
 	Nob_Proc proc = nob_cmd_run_async(cmd);
+	// send_command_gf2(nob_temp_sprintf("c attach %d", proc));
+	// usleep(100);
+	// send_command_gf2("c c");
 
 	Nob_Cmd dep_engine = {0}; da_append_cstrs(dep_engine, Src_EngineLayer); da_append_cstrs(dep_engine, Dep_EngineLayer);
 	Nob_Cmd dep_modules = {0}; da_append_cstrs(dep_modules, Src_Modules); da_append_cstrs(dep_modules, Dep_Modules);
@@ -614,6 +618,20 @@ b32 strcmp_many(const cstr *str, const cstr **str_many, i32 str_many_count)
 		if (!strcmp(str, str_many[i])) return (true);
 	}
 	return (false);
+}
+
+b32 send_command_gf2(cstr *command)
+{
+	cstr *path = "/home/xinove/gf2_pipe";
+	i32 fd = open(path, O_WRONLY);
+	if (fd < 0) {
+		nob_log(NOB_ERROR, "send_command_gf2: could not open file %s: %s", path, strerror(errno));
+	}
+	i32 read = write(fd, command, strlen(command));
+	if (read < 0 ) {
+		nob_log(NOB_ERROR, "send_command_gf2: could not write %s", strerror(errno));
+	}
+	close(fd);
 }
 
 // -----------
