@@ -73,7 +73,8 @@ typedef struct {
 	mu_Context *mu;
 	Sprite paused;
 	Sprite speed;
-	Sprite netx_wave; // TODO
+	Sprite next_wave;
+	Sprite buy_turret;
 } GameUi;
 
 typedef struct {

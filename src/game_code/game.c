@@ -54,6 +54,8 @@ hot void init_pos_raylib(void)
 	Data->assets.sheet_ant = LoadTexture("assets/ant_sheet.png");
 	Data->ui.paused = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 0);
 	Data->ui.speed = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 2);
+	Data->ui.next_wave = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 8);
+	Data->ui.buy_turret = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 7);
 	MUiInit(Data->ui.mu, &Data->assets.font, Data->canvas_size);
 
 	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
@@ -102,6 +104,7 @@ hot b32 update(void)
 	assert(Data && Level);
 
 	update_editor();
+	update_ui();
 
 	if (Data->menu_screen || Data->lost) {
 		return (false);
@@ -112,7 +115,6 @@ hot b32 update(void)
 	}
 
 	update_input();
-	update_ui();
 
 	if (Data->paused) return (false);
 
@@ -125,15 +127,26 @@ hot b32 update(void)
 
 internal b32 update_ui(void) 
 {
+	i32 window_flag = MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_AUTOSIZE | MU_OPT_NORESIZE;
+	i32 texture_button = 22;
 	mu_begin(Data->ui.mu); {
 		mu_Context *ctx = Data->ui.mu;
-		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(10, 10, 80, 30), MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_AUTOSIZE | MU_OPT_NORESIZE)) {
-			mu_layout_row(ctx, 3, (const int[]) {24, 24, 100}, 24);
+		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(0, 0, GetCanvasRec().width + 1, 42), window_flag ^ MU_OPT_AUTOSIZE)) {
+			mu_Rect cnt_rect = mu_get_current_container(ctx)->rect;
+			i32 w = mu_get_current_container(ctx)->rect.w;
+			mu_layout_row(ctx, 3, (const int[]) {w * 0.25, w * 0.50, w * 0.25}, 24);
+
+			mu_layout_begin_column(ctx);
+			mu_layout_row(ctx, 3, (const int[]) {texture_button, texture_button, texture_button}, texture_button);
+
+			// Buttons
+			mu_layout_set_next(ctx, mu_rect(0, (cnt_rect.h - texture_button) / 4, texture_button, texture_button), 1);
 			mu_tooltip(ctx, (Data->paused) ? "Unpause game" : "Pause Game");
 			Data->ui.paused.frame = Data->paused ? 1 : 0;
 			if (MUiTextureButton(ctx, &Data->ui.paused, MU_OPT_ALIGNCENTER)) {
 				Data->paused = Data->paused ? false : true;
 			}
+			mu_layout_set_next(ctx, mu_rect(texture_button, (cnt_rect.h - texture_button) / 4, texture_button, texture_button), 1);
 			mu_tooltip(ctx, "Change the game speed");
 			if (MUiTextureButton(ctx, &Data->ui.speed, MU_OPT_ALIGNCENTER)) {
 					Data->game_speed += 1;
@@ -142,15 +155,18 @@ internal b32 update_ui(void)
 					}
 				Data->ui.speed.frame = Data->game_speed + 1;
 			}
+			mu_layout_set_next(ctx, mu_rect(texture_button * 2, (cnt_rect.h - texture_button) / 4, texture_button, texture_button), 1);
 			mu_tooltip(ctx, "Begin Wave Early");
-			if (mu_button_ex(ctx, "BeginWaveEarly", 0, 0)) {
+			if (MUiTextureButton(ctx, &Data->ui.next_wave, MU_OPT_ALIGNCENTER)) {
 				start_wave(Data->level);
 			}
+			mu_layout_end_column(ctx);
+
 			mu_end_window(ctx);
 		}
 		if (Level->turret_selected) { 
 			Turret *t = Level->turret_selected;
-			V2 size = {100, 50};
+			V2 size = {texture_button * 2.5, texture_button * 2.5};
 			V2 pos = t->pos;
 			f32 padding = 5;
 			i32 options = MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_NOHOLD_POS | MU_OPT_NOHOLD_SIZE;
@@ -162,20 +178,22 @@ internal b32 update_ui(void)
 
 			mu_push_id(ctx, t, sizeof(Turret));
 			if (t->type == EntityTurret) {
-				if (mu_begin_window_ex(ctx, "Upgrade Tower", MuRecV2(pos, size), options)) {
-					mu_end_window(ctx);
-				}
+				// mu_layout_width(ctx, 0);
+				// if (mu_begin_window_ex(ctx, "Upgrade Tower", MuRecV2(pos, size), options)) {
+				// 	mu_end_window(ctx);
+				// }
 			} 
 			else if (t->type == EntityTurretSpot) {
-				if (mu_begin_window_ex(ctx, "Buy turret", MuRecV2(pos, size), options)) {
-					mu_layout_row(ctx, 1, (const int[]) {-1}, -1);
-					if (mu_button_ex(ctx, "Buy Basic Turret", 0, 0)) {
+				if (mu_begin_window_ex(ctx, "Buy Turret", MuRecV2(pos, size), options)) {
+				mu_layout_row(ctx, 1, (const int[]) {texture_button * 2}, texture_button * 2);
+				mu_tooltip(ctx, "Buy Turret");
+				if (MUiTextureButton(ctx, &Data->ui.buy_turret, MU_OPT_ALIGNCENTER)) {
 						// TODO  Kill any Enemy that's on turret spot
 						*t = create_turret((Turret) {
 							.type = EntityTurret,
 							.pos = t->pos,
 							.size = t->size,
-							.render.tint = BLACK,
+							.render.tint = RED,
 							.fire_rate = 0.1,
 							.damage = 4,
 							.range = 30,
@@ -191,6 +209,13 @@ internal b32 update_ui(void)
 			}
 			mu_pop_id(ctx);
 		}
+		if (mu_begin_window_ex(ctx, "GameInfo", MuRec(GetCanvasRec().width * 0.35, 10, 300, 50), window_flag )) {
+			
+			mu_layout_row(ctx, 2, (const int[]) {150, 0}, 24);
+
+			mu_end_window(ctx);
+		}
+
 	} mu_end(Data->ui.mu);
 
 	return (false);
@@ -414,26 +439,31 @@ hot void draw(void)
 	}
 
 	// ---- Text ---
+	MUiRender(Data->ui.mu);
 	Font font = Data->assets.font;
 	i32 font_size = Data->assets.font.baseSize;
 	f32 font_spacing = 2;
+	Color font_color = PURPLE;
 	{ 
 		const cstr *health_text = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
 		V2 cake_size = MeasureTextEx(font, health_text, font_size, font_spacing);
 		V2 cake_pos = Vec2(Data->canvas_size.x * 0.5f - cake_size.x * 0.5f, 12);
-		DrawTextEx(font, health_text, V2i32(cake_pos), font_size, font_spacing, RED);
+		DrawTextEx(font, health_text, V2i32(cake_pos), font_size, font_spacing, font_color);
 
 		{
 			const cstr *text = TextFormat("Wave: %d", Level->wave_manager.wave);
-			//i32 size = MeasureText(text, 10);
-			V2 pos = Vec2(cake_pos.x + cake_size.x + (font_spacing * 3), cake_pos.y);
-			DrawTextEx(font, text, V2i32(pos), font_size, font_spacing, RED);
+			V2 size = MeasureTextEx(font, text, font_size, font_spacing);
+			i32 c = cake_pos.x + cake_size.x;
+			c +=  (Data->canvas_size.x - c) * 0.5f;
+			//DrawCircleV(Vec2(c, 10), 5, RED);
+			V2 pos = Vec2(c - size.x * 0.5f, cake_pos.y);
+			DrawTextEx(font, text, V2i32(pos), font_size, font_spacing, font_color);
 		}
 		if (Level->wave_manager.time_count != 0) { 
 			const cstr *text = TextFormat("Next wave in: %.f", Level->wave_manager.time_until_next_wave - Level->wave_manager.time_count);
 			V2 size = MeasureTextEx(font, text, font_size, font_spacing);
 			V2 pos = Vec2(Data->canvas_size.x * 0.5f - size.x * 0.5f, cake_pos.y + cake_size.y + 5);
-			DrawTextEx(font, text, V2i32(pos), font_size, font_spacing, RED);
+			DrawTextEx(font, text, V2i32(pos), font_size, font_spacing, font_color);
 		}
 	}
 
@@ -471,8 +501,7 @@ hot void draw(void)
 		return ;
 	}
 
-	MUiRender(Data->ui.mu);
-	
+
 	draw_editor();
 }
 

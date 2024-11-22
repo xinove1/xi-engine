@@ -146,16 +146,24 @@ void MUiRender(mu_Context *ctx)
 	while (mu_next_command(ctx, &cmd)) {
 		switch (cmd->type) {
 			case MU_COMMAND_TEXT: {
+				cmd->text.pos.x -= 1;
+				cmd->text.pos.y -= 1;
 				Font font = GetMuFont(cmd->text.font);
 				DrawTextEx(font, cmd->text.str, V2FromMu(cmd->text.pos), ctx->text_height(&font), TextSpacing, ColorFromMu(cmd->text.color));
 			} break ;
 			case MU_COMMAND_RECT: {
+				cmd->rect.rect.x -= 1;
+				cmd->rect.rect.y -= 1;
 				DrawRectangleRec(RectFromMuFixed(cmd->rect.rect), ColorFromMu(cmd->rect.color));
 			} break;
 			case MU_COMMAND_RECT_BORDER: {
+				cmd->rect.rect.x -= 1;
+				cmd->rect.rect.y -= 1;
 				DrawRectangleLinesEx(RectFromMuFixed(cmd->rect.rect), 1, ColorFromMu(cmd->rect.color));
 			} break;
 			case MU_COMMAND_TEXTURE: {
+				cmd->texture.rect.x -= 1;
+				cmd->texture.rect.y -= 1;
 				Sprite sprite = *(Sprite *)cmd->texture.texture;
 				sprite.pos = Vec2(cmd->texture.rect.x, cmd->texture.rect.y);
 				sprite.size = Vec2(cmd->texture.rect.w, cmd->texture.rect.h);
@@ -163,6 +171,8 @@ void MUiRender(mu_Context *ctx)
 				DrawSprite(sprite);
 			} break;
 			case MU_COMMAND_ICON: { 
+				cmd->icon.rect.x -= 1;
+				cmd->icon.rect.y -= 1;
 				Color color = ColorFromMu(cmd->icon.color);
 				cstr icon[2] = "!";
 				switch (cmd->icon.id) {
@@ -175,6 +185,8 @@ void MUiRender(mu_Context *ctx)
 				DrawText(icon, cmd->icon.rect.x + 1, cmd->icon.rect.y + 1, cmd->icon.rect.h, color);
 			} break;
 			case MU_COMMAND_CLIP: { 
+				cmd->clip.rect.x -= 1;
+				cmd->clip.rect.y -= 1;
 				EndScissorMode();
 				BeginScissorMode(cmd->clip.rect.x, cmd->clip.rect.y, cmd->clip.rect.w, cmd->clip.rect.h);
 			} break;
