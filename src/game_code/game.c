@@ -444,9 +444,9 @@ GameLevel *create_level(GameData *data, size floors)
 	GameLevel *level = calloc(1, sizeof(GameLevel));
 	level->floors_count = floors;
 
-	f32 floor_height = 32;
+	f32 floor_height = TILE_TURRET_SIZE;
 	f32 floor_padding = 8;
-	f32 turret_width = 32;
+	f32 turret_width = TILE_TURRET_SIZE;
 	f32 tower_width = 64;
 	f32 tower_health = 400;
 	f32 ground_height = 50;
@@ -518,7 +518,6 @@ GameLevel *create_level(GameData *data, size floors)
 
 	// Turrets
 	for (i32 i = 0; i < max_turrets; i++) {
-		f32 fire_rate = GetRandf32(0.2, 1);
 		V2 pos = {0, canvas.y - ground_height};
 		i32 floor = 0;
 		// Left side
@@ -537,30 +536,14 @@ GameLevel *create_level(GameData *data, size floors)
 		}
 
 		if (floor > floors -2 ) {
-			spawn_turret(level, create_turret((Turret) {
-				.type = EntityTurretSpot,
-				.pos = pos,
-				.size = Vec2(turret_width, floor_height),
-				.render.tint = ColorAlpha(GRAY, 0.05),
-				.fire_rate = fire_rate,
-				.damage = 4,
-				.range = 30,
-				.health = 100,
-				.floor = floor,
-			}));
+			spawn_turret(level, create_turret_prefab(TURRET_SPOT), floor, pos);
 		} 
 		else {
-			spawn_turret(level, create_turret((Turret) {
-				.type = EntityTurret,
-				.pos = pos,
-				.size = Vec2(turret_width, floor_height),
-				.render.tint = RED,
-				.fire_rate = fire_rate,
-				.damage = 4,
-				.range = 30,
-				.health = 100,
-				.floor = floor,
-			}));
+			if (GetRandomValue(0, 100) > 80) {
+				spawn_turret(level, create_turret_prefab(TURRET_MACHINEGUN), floor, pos);
+			} else {
+				spawn_turret(level, create_turret_prefab(TURRET_BASIC), floor, pos);
+			}
 		}
 	}
 

@@ -185,6 +185,58 @@ b32 entity_in_range(GenericEntity *from, GenericEntity *to, f32 range)
 	return (CheckCollisionRecs(from_rec, to_rec));
 }
 
+Turret create_turret_prefab(TurretPrefabs type) 
+{
+	Turret turret = {0};
+
+	switch (type) {
+		case TURRET_SPOT: {
+			turret = (Turret) {
+				.type = EntityTurretSpot,
+				.pos = Vec2v(0),
+				.size = Vec2v(TILE_TURRET_SIZE),
+				.render.tint = ColorAlpha(GRAY, 0.05f),
+				.fire_rate = 0.9f,
+				.damage = 10,
+				.range = 50,
+				.health = 100,
+				.floor = 0,
+			};
+		} break ;
+		case TURRET_BASIC: {
+			turret = (Turret) {
+				.type = EntityTurret,
+				.pos = Vec2v(0),
+				.size = Vec2v(TILE_TURRET_SIZE),
+				.render.tint = ColorAlpha(BLUE, 1),
+				.fire_rate = 0.9f,
+				.damage = 10,
+				.range = 50,
+				.health = 100,
+				.floor = 0,
+			};
+		} break ;
+		case TURRET_MACHINEGUN: {
+			turret = (Turret) {
+				.type = EntityTurret,
+				.pos = Vec2v(0),
+				.size = Vec2v(TILE_TURRET_SIZE),
+				.render.tint = ColorAlpha(BLACK, 1),
+				.fire_rate = 0.1f,
+				.damage = 1.0f,
+				.range = 30,
+				.health = 200,
+				.floor = 0,
+			};
+		} break ;
+		default: {
+			TraceLog(LOG_WARNING, "create_turret_prefab: type not implemented or invalid: %d \n", type);
+		} break;
+	}
+
+	return (create_turret(turret));
+}
+
 Turret create_turret(Turret turret)
 {
 	if (V2Compare(turret.render.size, V2Zero())) {
@@ -196,8 +248,10 @@ Turret create_turret(Turret turret)
 	return (turret);
 }
 
-bool spawn_turret(GameLevel *level, Turret turret) 
+bool spawn_turret(GameLevel *level, Turret turret, i32 floor, V2 pos) 
 {
+	turret.pos = pos;
+	turret.floor = floor;
 	{da_iterate(level->turrets, TurretDa) {
 		Turret *e = iterate_get();
 		if (e->type == EntityEmpty) {

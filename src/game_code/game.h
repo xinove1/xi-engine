@@ -37,6 +37,7 @@
 #define iterate_get() &__da.items[__i]
 
 #define MAX_GAME_SPEED 4
+#define TILE_TURRET_SIZE 32
 
 typedef struct {
 	byte *items;
@@ -116,7 +117,8 @@ bool spawn_enemy(GameLevel *level, Enemy enemy);
 b32 entity_in_range(GenericEntity *from, GenericEntity *to, f32 range);
 Turret *enemy_get_turret(TurretDa turrets, i32 floor, i32 side);
 Turret create_turret(Turret entity);
-bool spawn_turret(GameLevel *level, Turret turret) ;
+Turret create_turret_prefab(TurretPrefabs type);
+bool spawn_turret(GameLevel *level, Turret turret, i32 floor, V2 pos);
 Enemy *turret_get_target(EnemyDa enemys, Turret turret, i32 floor_variance);
 
 // Wave Manager

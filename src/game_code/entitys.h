@@ -29,6 +29,14 @@ introspect() typedef struct {
 	f32 health_max;
 } GenericEntity;
 
+introspect() typedef enum {
+	TURRET_NONE,
+	TURRET_BASIC, // TEMPORARY
+	TURRET_MACHINEGUN,
+	TURRET_SPOT,
+	TURRET_COUNT,
+} TurretPrefabs;
+
 typedef struct {
 	EntityType type;
 	Sprite render;
