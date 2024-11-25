@@ -323,7 +323,14 @@ internal b32 update_game(void)
 			e->attack_rate_count += GetFrameTime();
 			if (e->attack_rate_count >= e->attack_rate) {
 				e->attack_rate_count = 0;
-				damage_entity(Level, target, e->damage);
+				if (e->melee == true) {
+					damage_entity(Level, target, e->damage);
+				} else {
+					V2 pe = V2Add(e->pos, V2Scale(e->size, 0.5));
+					V2 pt = V2Add(target->pos, V2Scale(target->size, 0.5));
+					if (target == &Level->cake) { pt = Vec2(target->pos.x, pe.y); }
+					spawn_projectile(pe, pt, .size = Vec2(3, 2), .targeting = target->type, .speed = 200, .damage = e->damage); 
+				}
 			}
 		} else { // Move Towards Turret
 			e->pos = V2Add(e->pos, V2Scale(dir, e->speed * GetFrameTime()));
@@ -346,8 +353,9 @@ internal b32 update_game(void)
 			e->fire_rate_count = 0;
 			Enemy *target = turret_get_target(Level->enemys, *e, 1); // TODO  Add floor range to turret
 			if (target) {
-				V2 p = V2Add(e->pos, V2Scale(e->size, 0.5));
-				spawn_projectile(p, target->pos, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 400, .damage = 10); 
+				V2 pe = V2Add(e->pos, V2Scale(e->size, 0.5));
+				V2 pt = V2Add(target->pos, V2Scale(target->size, 0.5));
+				spawn_projectile(pe, pt, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 400, .damage = 10); 
 			}
 		}
 	}}
@@ -380,27 +388,39 @@ internal b32 update_game(void)
 		}
 
 		Rect rec = RecV2(e->pos, e->size);
-		if (e->targeting == EntityTurret) {
-			{da_iterate(Level->turrets, TurretDa){
-				Turret *turret = iterate_get();
-				iterate_check_entity(turret, EntityTurret);
-				if (CheckCollisionRecs(rec, RecV2(turret->pos, turret->size))) {
-					damage_entity(Level, (GenericEntity* )turret, e->damage);
-					e->health -= turret->health;
+		switch (e->targeting) {
+			case EntityTurret: {
+				{da_iterate(Level->turrets, TurretDa){
+					Turret *turret = iterate_get();
+					iterate_check_entity(turret, EntityTurret);
+					if (CheckCollisionRecs(rec, RecV2(turret->pos, turret->size))) {
+						damage_entity(Level, (GenericEntity *)turret, e->damage);
+						e->health -= turret->health;
+						continue;
+					}
+				}}
+			} break;
+			case EntityEnemy: {
+				{da_iterate(Level->enemys, EnemyDa){
+					Enemy *enemy = iterate_get();
+					iterate_check_entity(enemy, EntityEnemy);
+					if (CheckCollisionRecs(rec, RecV2(enemy->pos, enemy->size))) {
+						damage_entity(Level, (GenericEntity *)enemy, e->damage);
+						e->health -= enemy->health;
+						continue;
+					}
+				}}
+			} break;
+			case EntityCake: {
+				if (CheckCollisionRecs(rec, RecV2(Level->cake.pos, Level->cake.size))) {
+					damage_entity(Level, (GenericEntity *) &Level->cake, e->damage);
+					e->health -= Level->cake.health;
 					continue;
 				}
-			}}
-		}
-		if (e->targeting == EntityEnemy) {
-			{da_iterate(Level->enemys, EnemyDa){
-				Enemy *enemy = iterate_get();
-				iterate_check_entity(enemy, EntityEnemy);
-				if (CheckCollisionRecs(rec, RecV2(enemy->pos, enemy->size))) {
-					damage_entity(Level, (GenericEntity* )enemy, e->damage);
-					e->health -= enemy->health;
-					continue;
-				}
-			}}
+			} break;
+			default: {
+				TraceLog(LOG_WARNING, "projectile update: targeting type not implemented %s\n", EntityTypeNames[e->targeting]);
+			} break ;
 		}
 	}}
 	return (false);

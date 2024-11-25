@@ -19,7 +19,6 @@ introspect() typedef enum {
 	EntityTypeCount
 } EntityType;
 
-// TODO  introspected GenericEntity to have macro to generate header on all other entitys
 introspect() typedef struct {
 	EntityType type;
 	Sprite render;
@@ -51,6 +50,13 @@ typedef struct {
 	size count;
 	size capacity;
 } TurretDa;
+
+introspect() typedef enum {
+	ENEMY_NONE,
+	ENEMY_ANT,
+	ENEMY_BEE,
+	ENEMY_COUNT,
+} EnemyPrefabs;
 
 typedef struct {
 	EntityType type;
@@ -133,7 +139,7 @@ typedef struct {
 typedef struct {
 	V2 size;
 	f32 health;
-	Color color;
+	Sprite render;
 	i32 floor;
 	f32 speed;
 	b32 melee;

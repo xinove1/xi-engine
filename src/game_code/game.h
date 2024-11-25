@@ -107,7 +107,8 @@ void apply_func_entitys(GameLevel *l, void (*func)(GenericEntity *entity));
 Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params);
 #define spawn_projectile(from, to, ...) spawn_projectile_ex(from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
 Enemy create_enemy_ex(V2 pos, CreateEnemyParams params);
-#define create_enemy(pos, ...) create_enemy_ex(pos, (CreateEnemyParams) {__VA_ARGS__})
+Enemy create_enemy_prefab(EnemyPrefabs type);
+//#define create_enemy(pos, ...) create_enemy_ex(pos, (CreateEnemyParams) {__VA_ARGS__})
 bool spawn_enemy(GameLevel *level, Enemy enemy);
 b32 entity_in_range(GenericEntity *from, GenericEntity *to, f32 range);
 Turret *enemy_get_turret(TurretDa turrets, i32 floor, i32 side);

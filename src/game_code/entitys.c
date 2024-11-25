@@ -5,18 +5,14 @@ void damage_entity(GameLevel *rt, GenericEntity *entity, f32 damage)
 	assert(entity && rt);
 	
 	switch (entity->type) {
-		case EntityEmpty:
-		{
+		case EntityEmpty: {
 			TraceLog(LOG_WARNING, "damage_entity: can't damage %s", EntityTypeNames[entity->type]);
 		} break;
 
 		case EntityTurret:
 		case EntityProjectile:
 		case EntityCake:
-		case EntityEnemy:
-		{
-			// TODO  Apply effect
-		//	push_effect(&rt->effects, create_flash_effect(entity, 0.5f, RED, &entity->health, &damage, sizeof(damage)));
+		case EntityEnemy: {
 			apply_flash_effect(entity, BLACK, 0.25f);
 			apply_shake_effect(entity, 0.25f);
 			entity->health -= damage;
@@ -155,7 +151,7 @@ Enemy create_enemy_ex(V2 pos, CreateEnemyParams params)
 		.type = EntityEnemy,
 		.pos = pos,
 		.size = params.size,
-		.render.tint = params.color,
+		.render = params.render,
 		.health = params.health,
 		.floor = params.floor,
 		.speed = params.speed,
@@ -170,6 +166,48 @@ Enemy create_enemy_ex(V2 pos, CreateEnemyParams params)
 	}
 	if (enemy.health_max == 0) {
 		enemy.health_max = enemy.health;
+	}
+
+	return (enemy);
+}
+
+Enemy create_enemy_prefab(EnemyPrefabs type) 
+{
+	Enemy enemy = {0};
+	Texture2D empty = {0};
+
+	switch (type) {
+		case ENEMY_ANT: {
+			enemy = create_enemy_ex(Vec2v(0), (CreateEnemyParams) {
+				.size = Vec2(32, 32),
+				.health = 100,
+				.render = CreateSpriteAnimation(Data->assets.sheet_ant, Vec2v(32), .frame_duration = 0.13, .frame_start = 0, .tint = BROWN),
+				.speed = 70,
+				.floor = 0,
+				.melee = true,
+				.damage = 2,
+				.range = 10,
+				.attack_rate = 0.7f
+			});
+		} break;
+		case ENEMY_BEE: {
+			enemy = create_enemy_ex(Vec2v(0), (CreateEnemyParams) {
+				.size = Vec2(32, 32),
+				.health = 80,
+				.render = CreateSpriteAnimation(empty, Vec2v(32), .frame_duration = 0.13, .frame_start = 0, .tint = YELLOW),
+				.speed = 120,
+				.floor = 0,
+				.melee = false,
+				.damage = 5,
+				.range = 100,
+				.attack_rate = 1.1f
+			});
+		} break;
+		case ENEMY_NONE:
+		case ENEMY_COUNT:
+		default: {
+			TraceLog(LOG_WARNING, "create_enemy_prefab: type not implemented or invalid: %d \n", type);
+		} break;
 	}
 
 	return (enemy);

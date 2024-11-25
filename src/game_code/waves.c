@@ -15,19 +15,12 @@ local void generate_packets(GameLevel *l)
 	}
 	w->packets_amount = amount;
 	for (size i = 0; i < w->packets_amount; i++) {
-		Enemy enemy =  create_enemy_ex(Vec2v(0), (CreateEnemyParams) {
-			.size = Vec2(32, 32),
-			.health = 50,
-			.color = WHITE,
-			.speed = 70,
-			.floor = 0,
-			.melee = false,
-			.damage = 1,
-			.range = 10,
-			.attack_rate = 0.5f
-		});
-		enemy.render = CreateSpriteAnimation(Data->assets.sheet_ant, Vec2v(32), .frame_duration = 0.13, .frame_start = 0);
-
+		Enemy enemy = {0};
+		if (GetRandomValue(0, 100) > 70) {
+			enemy = create_enemy_prefab(ENEMY_BEE);
+		} else {
+			enemy = create_enemy_prefab(ENEMY_ANT);
+		}
 		SpawnPacket packet = { .enemy = enemy, .cooldown = 1.3f };
 		w->packets[i] = packet;
 	}
