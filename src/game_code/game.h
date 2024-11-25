@@ -32,11 +32,9 @@
 //#define da_simple_append(da, item) (da)->items[(da)->count++] = (item)
 
 #define da_iterate(da, da_type) da_type __da = da; for (size __i = 0; __i < __da.count; __i++) 
-#define entitys_iterate(da) da_iterate(da, EntityDa)
-#define effects_iterate(da) da_iterate(da, EffectDa)
 #define iterate_get() &__da.items[__i]
 
-#define MAX_GAME_SPEED 4
+#define TILE_SIZE 16
 
 typedef struct {
 	byte *items;
@@ -46,22 +44,16 @@ typedef struct {
 
 typedef struct {
 	char *name;
-	i32 floors_count;
-	Turret *turret_hovered;
-	Turret *turret_selected;
-	GenericEntity cake;
-	WaveManager wave_manager;
-	TurretDa turrets;
-	EnemyDa enemys;
-	ProjectileDa projectiles;
-	EnvSprite enviromnent_sprites[50];
+	Player player;
+	Obstacles obstacles[500];
+	EnvSprite enviromnent_sprites[500];
 } GameLevel;
 
 typedef struct
 {
 	mu_Context *mu;
-	GenericEntity *selected;
-	GenericEntity *hovered;
+	Entity *selected;
+	Entity *hovered;
 	b32 debug_window;
 	b32 no_lose;
 	b32 debug_select; // TODO BETTER NAME
@@ -78,61 +70,33 @@ typedef struct {
 } GameUi;
 
 typedef struct {
-	Font font;
-	Texture sheet_ui;
-	Texture sheet_ant;
-} GameAssets;
-
-typedef struct {
 	b32 paused;
 	b32 lost;
 	b32 menu_screen;
-	i32 game_speed;
 	V2 canvas_size;
 	UiContainer menu;
-	GameEditor editor;
+	GameEditor editor; // TODO rename debug editor
 	Particle particles[5000];
-	GameLevel *level;
-	GameAssets assets;
+	GameLevel level;
 	GameUi ui;
+	Font font;
+	Texture2D sheet;
 } GameData;
 
 extern GameData *Data;
 
 void pause_game(void);
 
-// Entitys
-void damage_entity(GameLevel *rt, GenericEntity *entity, f32 damage);
-void apply_func_entitys(GameLevel *l, void (*func)(GenericEntity *entity));
-Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params);
-#define spawn_projectile(from, to, ...) spawn_projectile_ex(from, to, (CreateProjectileParams) {.size = (V2) {1,1}, .health = 1, .speed = 10, .color = BLACK, .damage = 1, __VA_ARGS__})
-Enemy create_enemy_ex(V2 pos, CreateEnemyParams params);
-#define create_enemy(pos, ...) create_enemy_ex(pos, (CreateEnemyParams) {__VA_ARGS__})
-bool spawn_enemy(GameLevel *level, Enemy enemy);
-b32 entity_in_range(GenericEntity *from, GenericEntity *to, f32 range);
-Turret *enemy_get_turret(TurretDa turrets, i32 floor, i32 side);
-Turret create_turret(Turret entity);
-bool spawn_turret(GameLevel *level, Turret turret) ;
-Enemy *turret_get_target(EnemyDa enemys, Turret turret, i32 floor_variance);
-
-// Wave Manager
-typedef enum {right_side = 1, left_side = -1} FloorSides;
-void update_wave_manager(GameLevel *l);
-SpawnLocation *get_spawn_point(GameLevel *l, i32 floor, i32 side);
-void start_wave(GameLevel *l);
-
 // Render
-void render_entity(GenericEntity *entity);
-void update_entity_veffects(GenericEntity *entity);
-void update_entity_animations(GenericEntity *entity);
-void apply_flash_effect(GenericEntity *entity, Color color, f32 duration);
-void apply_shake_effect(GenericEntity *entity, f32 duration);
+void render_entity(Entity *entity);
+void update_entity_veffects(Entity *entity);
+void update_entity_animations(Entity *entity);
+void apply_flash_effect(Entity *entity, Color color, f32 duration);
+void apply_shake_effect(Entity *entity, f32 duration);
 void render_particle(Particle p);
 void create_particle_ex(CreateParticleParams param);
 void create_env_sprite(EnvSprite *arr, i32 arr_size, EnvSprite env_sprite);
 void render_env_sprites(EnvSprite *arr, i32 arr_size);
-
-
 
 // Prototype for not hot reloadable version
 GameFunctions game_init_functions();

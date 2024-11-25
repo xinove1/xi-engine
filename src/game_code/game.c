@@ -1,4 +1,5 @@
 #include "game.h"
+#include "collision.h"
 #include "input.h"
  
 #ifdef HOT_RELOAD
@@ -7,7 +8,8 @@
 # define hot static
 #endif
 
-GameLevel *create_level(GameData *data, size floors);
+void init_level(GameLevel *level);
+void collide_player(Player *player);
 internal b32 update_game(void);
 internal b32 update_input(void);
 internal b32 update_ui(void);
@@ -33,13 +35,12 @@ hot GameConfig init_pre_raylib(void **data)
 		.particles = {0},
 		.paused = false,
 		.level = NULL,
-		.game_speed = 1,
 		.menu_screen = false,
 	};
 	Data->ui.mu = calloc(1, sizeof(mu_Context));
 	return ((GameConfig) {
 		.canvas_size = Data->canvas_size,
-		.window_name = "Cake Defense",
+		.window_name = "Mini Jam",
 		.window_flags = FLAG_WINDOW_RESIZABLE,
 		.target_fps = 60,
 	});
@@ -48,15 +49,11 @@ hot GameConfig init_pre_raylib(void **data)
 hot void init_pos_raylib(void) 
 {
 	Image image = LoadImage("assets/monogram-bitmap.png");
-	Data->assets.font = LoadFontFromImageSheet(image, Vec2(6, 12), 32);
+	Data->font = LoadFontFromImageSheet(image, Vec2(6, 12), 32);
 	UnloadImage(image);
-	Data->assets.sheet_ui = LoadTexture("assets/ui_sheet.png");
-	Data->assets.sheet_ant = LoadTexture("assets/ant_sheet.png");
-	Data->ui.paused = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 0);
-	Data->ui.speed = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 2);
-	Data->ui.next_wave = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 8);
-	Data->ui.buy_turret = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 7);
-	MUiInit(Data->ui.mu, &Data->assets.font, Data->canvas_size);
+	// Data->assets.sheet_ant = LoadTexture("assets/ant_sheet.png");
+	// Data->ui.paused = CreateSpriteSheeted(Data->assets.sheet_ui, Vec2v(16), 0);
+	MUiInit(Data->ui.mu, &Data->font, Data->canvas_size);
 
 	Data->menu = XUiCreateContainer((V2) {Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.3f}, 0, (UiConfig) {
 			.alignment = UiAlignCentralized,
@@ -78,9 +75,9 @@ hot void init_pos_raylib(void)
 			.color_font_highlight = BLACK,
 			.color_borders = BLACK,
 	});
-	Data->level = create_level(Data, 5);
-	Level = Data->level;
 	init_editor(Data);
+	Level = &Data->level;
+	init_level(Level);
 }
 
 hot void pre_reload(void)
@@ -91,11 +88,8 @@ hot void pre_reload(void)
 hot void pos_reload(void *data)
 {
 	Data = data;
-	Level = Data->level;
+	Level = &Data->level;
 	pos_reload_editor(Data);
-	// size offset = offset_of(GameLevel, entitys);
-	// printf("offset: %ld \n", offset);
-	// printf("sizeof entity: %ld \n", sizeof(Entity));
 }
 
 
@@ -103,24 +97,17 @@ hot b32 update(void)
 {
 	assert(Data && Level);
 
-	update_editor();
+	update_input();
 	update_ui();
+	update_editor();
 
 	if (Data->menu_screen || Data->lost) {
 		return (false);
 	}
 
-	if (Level->cake.health <= 0) {
-		Data->lost = true;
-	}
-
-	update_input();
-
 	if (Data->paused) return (false);
 
-	for (i32 i = 0; i < Data->game_speed; i++) {
-		if (update_game()) return (true);
-	}
+	update_game();
 
 	return (false);
 }
@@ -129,94 +116,10 @@ internal b32 update_ui(void)
 {
 	i32 window_flag = MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_AUTOSIZE | MU_OPT_NORESIZE;
 	i32 texture_button = 22;
-	mu_begin(Data->ui.mu); {
-		mu_Context *ctx = Data->ui.mu;
-		if (mu_begin_window_ex(ctx, "PauseUi", MuRec(0, 0, GetCanvasRec().width + 1, 42), window_flag ^ MU_OPT_AUTOSIZE)) {
-			mu_Rect cnt_rect = mu_get_current_container(ctx)->rect;
-			i32 w = mu_get_current_container(ctx)->rect.w;
-			mu_layout_row(ctx, 3, (const int[]) {w * 0.25, w * 0.50, w * 0.25}, 24);
+	mu_Context *ctx = Data->ui.mu; 
+	mu_begin(ctx); {
 
-			mu_layout_begin_column(ctx);
-			mu_layout_row(ctx, 3, (const int[]) {texture_button, texture_button, texture_button}, texture_button);
-
-			// Buttons
-			mu_layout_set_next(ctx, mu_rect(0, (cnt_rect.h - texture_button) / 4, texture_button, texture_button), 1);
-			mu_tooltip(ctx, (Data->paused) ? "Unpause game" : "Pause Game");
-			Data->ui.paused.frame = Data->paused ? 1 : 0;
-			if (MUiTextureButton(ctx, &Data->ui.paused, MU_OPT_ALIGNCENTER)) {
-				Data->paused = Data->paused ? false : true;
-			}
-			mu_layout_set_next(ctx, mu_rect(texture_button, (cnt_rect.h - texture_button) / 4, texture_button, texture_button), 1);
-			mu_tooltip(ctx, "Change the game speed");
-			if (MUiTextureButton(ctx, &Data->ui.speed, MU_OPT_ALIGNCENTER)) {
-					Data->game_speed += 1;
-					if (Data->game_speed > MAX_GAME_SPEED) {
-						Data->game_speed = 1;
-					}
-				Data->ui.speed.frame = Data->game_speed + 1;
-			}
-			mu_layout_set_next(ctx, mu_rect(texture_button * 2, (cnt_rect.h - texture_button) / 4, texture_button, texture_button), 1);
-			mu_tooltip(ctx, "Begin Wave Early");
-			if (MUiTextureButton(ctx, &Data->ui.next_wave, MU_OPT_ALIGNCENTER)) {
-				start_wave(Data->level);
-			}
-			mu_layout_end_column(ctx);
-
-			mu_end_window(ctx);
-		}
-		if (Level->turret_selected) { 
-			Turret *t = Level->turret_selected;
-			V2 size = {texture_button * 2.5, texture_button * 2.5};
-			V2 pos = t->pos;
-			f32 padding = 5;
-			i32 options = MU_OPT_NOCLOSE | MU_OPT_NOTITLE | MU_OPT_NOHOLD_POS | MU_OPT_NOHOLD_SIZE;
-			if (CheckCollisionRecs(GetCanvasRec(), RecV2(Vec2(pos.x, pos.y - size.y - padding), size))) {
-				pos.y -= size.y - padding;
-			} else {
-				pos.y += size.y + padding;
-			}
-
-			mu_push_id(ctx, t, sizeof(Turret));
-			if (t->type == EntityTurret) {
-				// mu_layout_width(ctx, 0);
-				// if (mu_begin_window_ex(ctx, "Upgrade Tower", MuRecV2(pos, size), options)) {
-				// 	mu_end_window(ctx);
-				// }
-			} 
-			else if (t->type == EntityTurretSpot) {
-				if (mu_begin_window_ex(ctx, "Buy Turret", MuRecV2(pos, size), options)) {
-				mu_layout_row(ctx, 1, (const int[]) {texture_button * 2}, texture_button * 2);
-				mu_tooltip(ctx, "Buy Turret");
-				if (MUiTextureButton(ctx, &Data->ui.buy_turret, MU_OPT_ALIGNCENTER)) {
-						// TODO  Kill any Enemy that's on turret spot
-						*t = create_turret((Turret) {
-							.type = EntityTurret,
-							.pos = t->pos,
-							.size = t->size,
-							.render.tint = RED,
-							.fire_rate = 0.1,
-							.damage = 4,
-							.range = 30,
-							.health = 100,
-							.floor = t->floor,
-						});
-					}
-					mu_end_window(ctx);
-				}
-			}
-			else {
-				TraceLog(LOG_WARNING, "Turret selected does not have a valid type.");
-			}
-			mu_pop_id(ctx);
-		}
-		if (mu_begin_window_ex(ctx, "GameInfo", MuRec(GetCanvasRec().width * 0.35, 10, 300, 50), window_flag )) {
-			
-			mu_layout_row(ctx, 2, (const int[]) {150, 0}, 24);
-
-			mu_end_window(ctx);
-		}
-
-	} mu_end(Data->ui.mu);
+	} mu_end(ctx);
 
 	return (false);
 }
@@ -225,51 +128,67 @@ internal b32 update_input(void)
 {
 	MUiPoolInput(Data->ui.mu);
 
+	Player *player = &Level->player;
+
 	V2 input_dir = {0, 0};
-	if (IsActionPressed(RIGHT)) {
+	if (IsActionDown(RIGHT)) {
 		input_dir.x += 1;
 	}
-	if (IsActionPressed(LEFT)) {
+	if (IsActionDown(LEFT)) {
 		input_dir.x -= 1;
 	}
-	if (IsActionPressed(DOWN)) {
+	if (IsActionDown(DOWN)) {
 		input_dir.y += 1;
 	}
-	if (IsActionPressed(UP)) {
+	if (IsActionDown(UP)) {
 		input_dir.y -= 1;
 	}
+	if (IsActionDown(ACTION_1) && player->state == PlayerStateWalking) {
+		player->state = PlayerStateCharging;
+	}
 
-	// Mouse turret Selection
-	if (!Level->turret_selected || (Level->turret_selected && !MUiIsMouseInsideContainer(Data->ui.mu))) { 
-		local i32 frame_count = 0;
-		frame_count++;
-		if (frame_count >= 5) {
-			V2 mouse_pos = GetMousePosition();
-			Level->turret_hovered = NULL;
-			{da_iterate(Level->turrets, TurretDa) {
-				Turret *e = iterate_get();
-				if (e->type == EntityEmpty) continue;
-				if (CheckCollisionPointRec(mouse_pos, RecV2(e->pos, e->size))) {
-					Level->turret_hovered = e;
-					break ;
-				}
-			}}
-			frame_count = 0;
+	player->dir = input_dir;
+	
+	f32 walking_max_vel = 2;
+	f32 sliding_max_vel = 20;
+
+	if (player->state == PlayerStateWalking) {
+		f32 friction = 0.85f;
+		f32 decay = 10;
+		f32 speed = 5;
+		player->velocity = ExpDecayV2(player->velocity, V2Add(player->velocity, V2Scale(player->dir, speed)), decay);
+	///	player->velocity = V2Add(player->velocity, V2Scale(player->dir, speed));
+		player->velocity = V2Scale(player->velocity, friction);
+		player->velocity = V2ClampValue(player->velocity, -walking_max_vel, walking_max_vel);
+		collide_player(player);
+		player->pos = V2Add(player->pos, player->velocity);
+	} 
+	else if (player->state == PlayerStateSliding) {
+		f32 friction = 0.95f;
+		f32 decay = 15;
+		f32 speed = 5;
+		player->velocity = ExpDecayV2(player->velocity, V2Add(player->velocity, V2Scale(player->dir, speed)), decay);
+		player->velocity = V2Scale(player->velocity, friction);
+		player->velocity = V2ClampValue(player->velocity, -sliding_max_vel, sliding_max_vel);
+		collide_player(player);
+		player->pos = V2Add(player->pos, player->velocity);
+		if (V2Length(player->velocity) < walking_max_vel) { 
+			player->state = PlayerStateWalking;
 		}
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-			if (!Level->turret_hovered || Level->turret_hovered == Level->turret_selected) {
-				Level->turret_selected = NULL;
-			} else if (Level->turret_hovered) {
-				Level->turret_selected = Level->turret_hovered;
-			}
-		}
-		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-				Level->turret_selected = NULL;
-				Level->turret_hovered = NULL;
+	} else if (player->state == PlayerStateCharging) {
+		if (IsActionReleased(ACTION_1)) {
+			player->velocity = V2Scale(player->dir, sliding_max_vel * 0.8f);
+			player->state = PlayerStateSliding;
 		}
 	}
-	
+	 
 	#ifdef BUILD_DEBUG
+	if (IsKeyPressed(KEY_R)) {
+		Level->player.pos = Vec2(Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.5f);
+	}
+	if (IsKeyPressed(KEY_T)) {
+		Level->player.velocity = Vec2v(0);
+	}
 	if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 		for (i32 j = 0; j < 100; j++){
 			create_particle( 
@@ -293,195 +212,33 @@ internal b32 update_input(void)
 
 internal b32 update_game(void) 
 {
+	//apply_func_entitys(Level, update_entity_veffects);
 
-	// ----------- Particles -----------
-	
-	apply_func_entitys(Level, update_entity_veffects);
+	//pply_func_entitys(Level, update_entity_animations);
 
-
-	// ----------- Update Entitys ----------- 
-	
-	apply_func_entitys(Level, update_entity_animations);
-
-	update_wave_manager(Level);
-
-	// ----------- Enemys ----------- 
-	{da_iterate(Level->enemys, EnemyDa) {
-		Enemy *e = iterate_get();
-		iterate_check_entity(e, EntityEnemy);
-
-		if (e->health <= 0 ) {
-			e->type = EntityEmpty;
-			continue;
-		}
-
-		V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
-		GenericEntity *target = (GenericEntity *)enemy_get_turret(Level->turrets, e->floor, dir.x);
-		if (!target) target = &Level->cake; // Attack Main tower instead
-
-		if (entity_in_range((GenericEntity *)e, (GenericEntity *)target, e->range)) {
-			e->attack_rate_count += GetFrameTime();
-			if (e->attack_rate_count >= e->attack_rate) {
-				e->attack_rate_count = 0;
-				damage_entity(Level, target, e->damage);
-			}
-		} else { // Move Towards Turret
-			e->pos = V2Add(e->pos, V2Scale(dir, e->speed * GetFrameTime()));
-		}
-	}}
-
-
-	// ----------- Turrets ----------- 
-	{da_iterate(Level->turrets, TurretDa) {
-		Turret *e = iterate_get();
-		iterate_check_entity(e, EntityTurret);
-
-		if (e->health <= 0) {
-			e->type = EntityEmpty;
-			continue;
-		}
-
-		e->fire_rate_count += GetFrameTime();
-		if (e->fire_rate && e->fire_rate_count >= e->fire_rate) {
-			e->fire_rate_count = 0;
-			Enemy *target = turret_get_target(Level->enemys, *e, 1); // TODO  Add floor range to turret
-			if (target) {
-				V2 p = V2Add(e->pos, V2Scale(e->size, 0.5));
-				spawn_projectile(p, target->pos, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 400, .damage = 10); 
-			}
-		}
-	}}
-
-	// ----------- Projectiles ----------- 
-	{da_iterate(Level->projectiles, ProjectileDa) {
-		Projectile *e = iterate_get();
-		iterate_check_entity(e, EntityProjectile);
-
-		if (e->health <= 0) {
-			// TODO  Move this to after hit a enemy an splatter the particles in ther direction of the collision
-			for (i32 i = 0; i < 10; i++) {
-				create_particle( 
-					.dir = Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1)),
-					.velocity = GetRandf32(50, 200),
-					.pos = V2Add(e->pos, Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1))),
-					.size = Vec2v(1),
-					.duration = GetRandf32(0.1f, 0.4f),
-					.color_initial = ColA(255, 0, 0, 255),
-					.color_end = ColA(255, 0, 0, 0),
-				);
-			}
-			e->type = EntityEmpty;
-		}
-
-		e->pos = V2Add(e->pos, V2Scale(e->dir, e->speed * GetFrameTime()));
-		if (!CheckCollisionRecs(RecV2(V2Zero(), Data->canvas_size), RecV2(e->pos, e->size))) {
-			e->type = EntityEmpty;
-			continue ;
-		}
-
-		Rect rec = RecV2(e->pos, e->size);
-		if (e->targeting == EntityTurret) {
-			{da_iterate(Level->turrets, TurretDa){
-				Turret *turret = iterate_get();
-				iterate_check_entity(turret, EntityTurret);
-				if (CheckCollisionRecs(rec, RecV2(turret->pos, turret->size))) {
-					damage_entity(Level, (GenericEntity* )turret, e->damage);
-					e->health -= turret->health;
-					continue;
-				}
-			}}
-		}
-		if (e->targeting == EntityEnemy) {
-			{da_iterate(Level->enemys, EnemyDa){
-				Enemy *enemy = iterate_get();
-				iterate_check_entity(enemy, EntityEnemy);
-				if (CheckCollisionRecs(rec, RecV2(enemy->pos, enemy->size))) {
-					damage_entity(Level, (GenericEntity* )enemy, e->damage);
-					e->health -= enemy->health;
-					continue;
-				}
-			}}
-		}
-	}}
 	return (false);
 }
 
 hot void draw(void)
 {
-	//DrawRectangle(0, 0, Data->canvas_size.x, Data->canvas_size.y, BLACK);
-	ClearBackground((Color){130,200,229, 255});
-	apply_func_entitys(Level, render_entity);
+	render_entity((Entity *) &Level->player);
 
-	render_env_sprites(Level->enviromnent_sprites, length_of(Level->enviromnent_sprites));
-
-	for (i32 i = 0; i < count_of(Data->particles); i++) {
-		if (Data->particles[i].type == ParticleEmpty) continue;
-		Particle *p = &Data->particles[i];
-		p->pos = V2Add(p->pos, V2Scale(p->dir, p->velocity * GetFrameTime()));
-		p->duration_count += GetFrameTime();
-		if (p->duration_count >= p->duration) {
-			*p = (Particle) { 0 };
-			continue;
-		}
-		render_particle(Data->particles[i]);
+	DrawTextEx(Data->font, TextFormat("%d", Level->player.state), Vec2(10, 10), Data->font.baseSize, 2, BLACK);
+	DrawTextEx(Data->font, TextFormat("player->velocity: %.3f, %.3f\n", Level->player.velocity.x, Level->player.velocity.y), Vec2(10, 15), Data->font.baseSize, 2, BLACK);
+	if (Level->player.state == PlayerStateCharging) {
+		V2 start = V2Add(Level->player.pos, V2Scale(Level->player.render.size, 0.5f));
+		V2 end = V2Add(start, V2Scale(Level->player.dir, 10));
+		DrawLineV(start, end, BLUE);
 	}
 
-	if (Level->turret_selected) {
-		Turret *t = Level->turret_selected;
-		Rect rec = RecV2(V2Add(t->pos, t->render.pos), t->render.size);
-		DrawRectangleLinesEx(rec, 1, BLACK); // TODO Fix Color
+	for (i32 i = 0; i < length_of(Level->obstacles); i++) {
+		if (Level->obstacles[i].type == EntityEmpty) continue;
+		render_entity((Entity *) &Level->obstacles[i]);
 	}
-
-	if (Level->turret_hovered && Level->turret_hovered != Level->turret_selected) {
-		Turret *t = Level->turret_hovered;
-		Rect rec = RecV2(V2Add(t->pos, t->render.pos), t->render.size);
-		DrawRectangleLinesEx(rec, 1, PURPLE); // TODO Fix Color
-	}
-
-	// ---- Text ---
-	MUiRender(Data->ui.mu);
-	Font font = Data->assets.font;
-	i32 font_size = Data->assets.font.baseSize;
-	f32 font_spacing = 2;
-	Color font_color = PURPLE;
-	{ 
-		const cstr *health_text = TextFormat("Cake health: %.f/%.f", Level->cake.health, Level->cake.health_max);
-		V2 cake_size = MeasureTextEx(font, health_text, font_size, font_spacing);
-		V2 cake_pos = Vec2(Data->canvas_size.x * 0.5f - cake_size.x * 0.5f, 12);
-		DrawTextEx(font, health_text, V2i32(cake_pos), font_size, font_spacing, font_color);
-
-		{
-			const cstr *text = TextFormat("Wave: %d", Level->wave_manager.wave);
-			V2 size = MeasureTextEx(font, text, font_size, font_spacing);
-			i32 c = cake_pos.x + cake_size.x;
-			c +=  (Data->canvas_size.x - c) * 0.5f;
-			//DrawCircleV(Vec2(c, 10), 5, RED);
-			V2 pos = Vec2(c - size.x * 0.5f, cake_pos.y);
-			DrawTextEx(font, text, V2i32(pos), font_size, font_spacing, font_color);
-		}
-		if (Level->wave_manager.time_count != 0) { 
-			const cstr *text = TextFormat("Next wave in: %.f", Level->wave_manager.time_until_next_wave - Level->wave_manager.time_count);
-			V2 size = MeasureTextEx(font, text, font_size, font_spacing);
-			V2 pos = Vec2(Data->canvas_size.x * 0.5f - size.x * 0.5f, cake_pos.y + cake_size.y + 5);
-			DrawTextEx(font, text, V2i32(pos), font_size, font_spacing, font_color);
-		}
-	}
-
-	if (Data->lost) {
-		const cstr *text = TextFormat("You Lost!");
-		V2 size = MeasureTextEx(font, text, font_size, font_spacing);
-		V2 pos = Vec2(Data->canvas_size.x * 0.5f - size.x * 0.5f, Data->canvas_size.y * 0.5f);
-		DrawTextEx(Data->assets.font, text, pos, font_size, font_spacing, BLACK);
-	}
-
-	#ifdef BUILD_DEBUG 
-		for (size i = 0; i < Level->floors_count * 2; i++) {
-			V2 p = Level->wave_manager.locations[i].point;
-			DrawCircleV(p, 2, GRAY);
-		}
-	#endif
+	collide_player(&Level->player);
 
 	// ---- Ui -----
+	MUiRender(Data->ui.mu);
 
 	if (Data->menu_screen) {
 		UiContainer *c = &Data->menu;
@@ -501,7 +258,6 @@ hot void draw(void)
 		return ;
 	}
 
-
 	draw_editor();
 }
 
@@ -517,130 +273,80 @@ GameFunctions game_init_functions()
 	};
 }
 
-GameLevel *create_level(GameData *data, size floors) 
+void collide_player(Player *player)
 {
-	GameLevel *level = calloc(1, sizeof(GameLevel));
-	level->floors_count = floors;
-
-	f32 floor_height = 32;
-	f32 floor_padding = 8;
-	f32 turret_width = 32;
-	f32 tower_width = 64;
-	f32 tower_health = 400;
-	f32 ground_height = 50;
-
-	V2 canvas = data->canvas_size;
-	V2 canvas_middle = Vec2(canvas.x * 0.5f, canvas.y * 0.5f);
-	V2 tower_size = Vec2(tower_width, (floor_height * floors) + (floor_padding * floors));
-	V2 tower_pos = Vec2(canvas_middle.x - (tower_size.x * 0.5f), canvas.y - (tower_size.y + ground_height));
-	level->cake = (GenericEntity) {
-		.type = EntityCake,
-		.render.size = tower_size,
-		.render.tint = PURPLE,
-		.pos = tower_pos,
-		.size = tower_size,
-		.health = tower_health,
-		.health_max = tower_health,
-	};
-
-	// Enviroment
-	Texture2D sprite_ground = {0};
-	EnvSprite env_sprite_ground = (EnvSprite) {
-		.type = EnvSpriteStatic,
-		.pos = {0, Data->canvas_size.y - ground_height},
-		.sprite = CreateSprite(sprite_ground, .size = {data->canvas_size.x, ground_height}, .tint = BROWN),
-	};
-	create_env_sprite(level->enviromnent_sprites, length_of(level->enviromnent_sprites), env_sprite_ground);
-
-	// Init Entitys
-	size max_turrets = floors * 2;
-	size max_projectiles = 400;
-	size max_enemys = floors * 100 * 2;
-	da_init_and_alloc(level->turrets, max_turrets, sizeof(Turret));
-	da_init_and_alloc(level->projectiles, max_projectiles, sizeof(Projectile));
-	da_init_and_alloc(level->enemys, max_enemys, sizeof(Enemy));
-
-
-	// Init Wave Manager
-	{
-		level->wave_manager = (WaveManager) { 0 };
-		level->wave_manager.floor_limit = 1;
-		level->wave_manager.time_until_next_wave = 5;
-		level->wave_manager.packets_max = max_enemys;
-		level->wave_manager.packets = calloc(level->wave_manager.packets_max, sizeof(SpawnPacket));
-		level->wave_manager.locations = calloc(floors * 2, sizeof(SpawnLocation));
-		// Spawn Locations
-		size max_locations = floors * 2;
-		for (i32 i = 0; i < max_locations; i++) {
-			V2 pos = {0, canvas.y - ground_height};
-			f32 padding = 5; // Padding from screen border
-			i32 floor = 0;
-			if (i < max_locations * 0.5f) {
-				floor += i;
-				pos.x = padding;
+	Obstacles against[10] = {0};
+	i32 count = 0;
+	for (i32 i = 0; i < length_of(Level->obstacles); i++) {
+		Obstacles *ob = &Level->obstacles[i];
+		if (ob->type == EntityEmpty) continue;
+		if (V2Distance(player->pos, ob->pos) < TILE_SIZE * 2) {
+			against[count] = *ob;
+			count++;
+			if (count >= length_of(against)) {
+				TraceLog(LOG_INFO, "collide_player breaking early");
 			}
-			else { // Right side
-				floor += i - max_locations/2.f;
-				pos.x = canvas.x - padding;
-			}
-			if (floor == 0) {
-				pos.y -= (floor_height * 0.5f) * (floor + 1);
-			} else {
-				pos.y -= (floor_padding + floor_height) * floor + (floor_height * 0.5f);
-			}
-			
-			level->wave_manager.locations[i].point = pos; // TODO  Get middle of floor instead of ceiling
-			level->wave_manager.locations[i].floor = floor;
 		}
 	}
-
-	// Turrets
-	for (i32 i = 0; i < max_turrets; i++) {
-		f32 fire_rate = GetRandf32(0.2, 1);
-		V2 pos = {0, canvas.y - ground_height};
-		i32 floor = 0;
-		// Left side
-		if (i < max_turrets * 0.5f) {
-			floor += i;
-			pos.x = tower_pos.x -  turret_width;
-		}
-		else { // Right side
-			floor += i - max_turrets/2.f;
-			pos.x = tower_pos.x + tower_width;
-		}
-		if (floor == 0) {
-			pos.y -= floor_height * (floor + 1);
-		} else {
-			pos.y -= (floor_padding + floor_height) * floor + floor_height;
-		}
-
-		if (floor > floors -2 ) {
-			spawn_turret(level, create_turret((Turret) {
-				.type = EntityTurretSpot,
-				.pos = pos,
-				.size = Vec2(turret_width, floor_height),
-				.render.tint = ColorAlpha(GRAY, 0.05),
-				.fire_rate = fire_rate,
-				.damage = 4,
-				.range = 30,
-				.health = 100,
-				.floor = floor,
-			}));
-		} 
-		else {
-			spawn_turret(level, create_turret((Turret) {
-				.type = EntityTurret,
-				.pos = pos,
-				.size = Vec2(turret_width, floor_height),
-				.render.tint = RED,
-				.fire_rate = fire_rate,
-				.damage = 4,
-				.range = 30,
-				.health = 100,
-				.floor = floor,
-			}));
+	// Rect player_rec = player->collision;
+	// player_rec.x += player->pos.x;
+	// player_rec.y += player->pos.y;
+	// DrawRectangleRec(player_rec, PURPLE);
+	for (i32 i = 0; i < count; i++) {
+		V2 contact_p = {0};
+		V2 contact_n = {0};
+		f32 contact_t = 0;
+		Rect target_rec = against[i].collision;
+		target_rec.x += against[i].pos.x;
+		target_rec.y += against[i].pos.y;
+		DrawRectangleRec(target_rec, BLUE);
+		if (CheckCollisionDynamicRectRect(player->pos, player->collision, player->velocity, target_rec, &contact_p, &contact_n, &contact_t, GetFrameTime()) && contact_t < 1) {
+			V2 vel = {fabsf(player->velocity.x), fabsf(player->velocity.y)};
+			player->velocity = V2Add(player->velocity, V2Multiply(contact_n, V2Scale(vel, 1 - contact_t)));
+			DrawCircleV(contact_p, 4, RED);
 		}
 	}
+}
 
-	return (level);
+void create_obstacle(GameLevel *level, Obstacles ob) 
+{
+	for (i32 i = 0; i < length_of(level->obstacles); i++) {
+		if (level->obstacles[i].type == EntityEmpty) {
+			level->obstacles[i] = ob;
+			return ;
+		}
+	}
+	TraceLog(LOG_WARNING, "create_obstacle: level obstacles array is full.");
+}
+
+void init_level(GameLevel *level)
+{
+	level->name = "level 1";
+
+	level->player = (Player) {
+		.type = EntityPlayer,
+		.pos = Vec2(Data->canvas_size.x * 0.5f, Data->canvas_size.y * 0.5f),
+		.collision = Rec(0, 0, 8, 15),
+		.render = CreateSprite(Data->sheet, .size = Vec2v(16), .tint = GREEN),
+	};
+
+	V2 tiles_amount = Vec2(Data->canvas_size.x / TILE_SIZE, Data->canvas_size.y / TILE_SIZE);
+	for (i32 i = 0; i < tiles_amount.x; i ++) {
+		create_obstacle(level, (Obstacles) {
+			.type = EntityStatic,
+			.pos = Vec2(i * TILE_SIZE, TILE_SIZE),
+			.render = CreateSprite(Data->sheet, .size = Vec2v(16), .tint = GRAY),
+			.collision = Rec(0, 0, TILE_SIZE, TILE_SIZE),
+		});
+	};
+	for (i32 i = 0; i < tiles_amount.x; i ++) {
+		create_obstacle(level, (Obstacles) {
+			.type = EntityStatic,
+			.pos = Vec2(i * TILE_SIZE, Data->canvas_size.y - TILE_SIZE),
+			.render = CreateSprite(Data->sheet, .size = Vec2v(16), .tint = GRAY),
+			.collision = Rec(0, 0, TILE_SIZE, TILE_SIZE),
+		});
+	};
+	
+	// V2 grid = Vec2(Data->canvas_size.x / TILE_SIZE, Data->canvas_size.y / TILE_SIZE);
 }

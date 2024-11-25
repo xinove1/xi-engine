@@ -27,16 +27,6 @@ global cstr *EntityTypeNames[] = {
 	 "EntityTypeCount",
 }; 
 
-global MetaMember MembersOf_GenericEntity[] = { 
-	{MetaType_EntityType, "type", offset_of(GenericEntity, type)},
-	{MetaType_RenderData, "render", offset_of(GenericEntity, render)},
-	{MetaType_VEffect, "veffects", offset_of(GenericEntity, veffects)},
-	{MetaType_TODO, "pos", offset_of(GenericEntity, pos)},
-	{MetaType_V2, "size", offset_of(GenericEntity, size)},
-	{MetaType_f32, "health", offset_of(GenericEntity, health)},
-	{MetaType_f32, "health_max", offset_of(GenericEntity, health_max)},
-}; 
-
 global cstr *VEffectTypeNames[] = { 
 	 "VEffectEmpty",
 	 "VEffectFlashColor",

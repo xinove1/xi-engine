@@ -72,9 +72,7 @@ const global cstr *Src_Game[] = {
 	"./src/game_code/game.c",
 	"./src/game_code/editor.c",
 	"./src/game_code/utils.c",
-	"./src/game_code/entitys.c",
 	"./src/game_code/render.c",
-	"./src/game_code/waves.c",
 };
 const global cstr *Dep_Game[] = { "./src/game_code/game.h", "./src/game_code/entitys.h", "./src/game_code/render.h", };
 
@@ -532,6 +530,7 @@ internal void build_test_file(cstr *file)
 	if (Debug) nob_da_append_many(&cmd, DebugFlags, count_of(DebugFlags));
 
 	nob_cmd_append(&cmd, file);
+	nob_cmd_append(&cmd, "src/implementations.c");
 
 	nob_cmd_append(&cmd, "-o", "test");
 

@@ -8,19 +8,19 @@ void render_particle(Particle p)
 	DrawRectangleRec(rec, color);
 }
 
-void render_entity(GenericEntity *entity)
+void render_entity(Entity *entity)
 {
 	if (entity->type == EntityEmpty) return ;
 
 	Sprite sprite = entity->render;
 	sprite.pos = V2Add(entity->pos, entity->render.pos);
 	DrawSprite(sprite);
-	// Rect rec = RecV2(V2Add(entity->pos, entity->render.pos), entity->render.size);
-	// DrawRectangleRec(rec, entity->render.tint);
 
-	// cstr *text = TextFormat("%d", entity->floor);
-	// i32 text_size = MeasureText(text, 10);
-	// DrawText(text, entity->pos.x, entity->pos.y - text_size * 2, 10, RED);
+	#ifdef BUILD_DEBUG
+	Color collision_debug = ColorAlpha(RED, 0.2f);
+	V2 pos = V2Add(entity->pos, Vec2(entity->collision.x, entity->collision.y));
+	// DrawRectangleV(pos, Vec2(entity->collision.width, entity->collision.height), collision_debug);
+	#endif
 
 	return ;
 }
@@ -36,29 +36,12 @@ void render_env_sprites(EnvSprite *arr, i32 arr_size)
 	}
 }
 
-void draw_health_bar(GenericEntity *entity) 
-{
-	if (entity->health_max == 0 || entity->type == EntityProjectile) {
-		//printf("%s has health_max as zero. \n", EntityTypeNames[entity->type]);
-		return ;
-	}
-	Rect rec = RecV2(V2Add(entity->pos, entity->render.pos), entity->render.size);
-	V2 health_size = Vec2(6, 3);
-	V2 health_pos = RecPos(rec);
-	health_pos.y -= health_size.y + 3;
-	f32 current_health_scalar = entity->health / entity->health_max;
-	Rect health_max = RecV2(health_pos, health_size);
-	Rect health_current = RecV2(health_pos, Vec2(health_size.x * current_health_scalar, health_size.y * 0.9f));
-	DrawRectangleRec(health_max, BLACK);
-	DrawRectangleRec(health_current, RED);
-}
-
-void update_entity_animations(GenericEntity *entity)
+void update_entity_animations(Entity *entity)
 {
 	UpdateSprite(&entity->render, GetFrameTime());
 }
 
-void update_entity_veffects(GenericEntity *entity) 
+void update_entity_veffects(Entity *entity) 
 {
 	for (i32 i = 0; i < VEffectTypeCount; i++) {
 		VEffect *effect = &entity->veffects[i];
@@ -107,7 +90,7 @@ void update_entity_veffects(GenericEntity *entity)
 	}
 }
 
-void apply_flash_effect(GenericEntity *entity, Color color, f32 duration) 
+void apply_flash_effect(Entity *entity, Color color, f32 duration) 
 {
 	VEffect *effect = &entity->veffects[VEffectFlashColor];
 	if (effect->finished || effect->type == VEffectEmpty) {
@@ -120,7 +103,7 @@ void apply_flash_effect(GenericEntity *entity, Color color, f32 duration)
 	}
 }
 
-void apply_shake_effect(GenericEntity *entity, f32 duration) 
+void apply_shake_effect(Entity *entity, f32 duration) 
 {
 	VEffect *effect = &entity->veffects[VEffectShake];
 	if (effect->finished || effect->type == VEffectEmpty) {

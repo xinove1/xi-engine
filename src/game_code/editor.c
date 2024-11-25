@@ -3,8 +3,8 @@
 
 global GameEditor *Ed = NULL;
 
-internal void edit_entity(GenericEntity *e);
-internal void is_entity_under_mouse(GenericEntity *e);
+internal void edit_entity(Entity *e);
+internal void is_entity_under_mouse(Entity *e);
 
 void init_editor(GameData *data)
 {
@@ -14,7 +14,7 @@ void init_editor(GameData *data)
 
 	// TODO  Change game and editor to use same mu context
 	Ed->mu = calloc(1, sizeof(mu_Context));
-	MUiInit(Ed->mu, &Data->assets.font, Data->canvas_size);
+	MUiInit(Ed->mu, &Data->font, Data->canvas_size);
 	MUiLoadStyle(Ed->mu, "assets/ui_style");
 	Data->ui.mu->style = Ed->mu->style;
 }
@@ -28,21 +28,14 @@ void update_editor()
 {
 	V2 mouse_pos = GetMousePosition();
 
-	if (IsKeyPressed(KEY_D)) {
+	if (IsKeyPressed(KEY_U)) {
 		Ed->debug_window = Ed->debug_window ? false : true;
-	}
-	if (Ed->no_lose) {
-		Data->level->cake.health = 99999999.f;
 	}
 
 	// ----- Ui -----
 	MUiPoolInput(Ed->mu);
 	mu_begin(Ed->mu); {
 		mu_Context *ctx = Ed->mu;
-		if (Ed->selected && mu_begin_window(ctx, EntityTypeNames[Ed->selected->type], mu_rect(Data->canvas_size.x * 0.1f, Data->canvas_size.y * 0.1f, 150, 200))) {
-			edit_entity(Ed->selected);
-			mu_end_window(ctx);
-		}
 		if (Ed->debug_window) {
 			if (mu_begin_window(ctx, "Debug window", mu_rect(Data->canvas_size.x * 0.1f, Data->canvas_size.y * 0.1f, 150, 200))) {
 				mu_layout_row(ctx, 2, (int[]){0, -1}, 0);
@@ -85,7 +78,6 @@ void update_editor()
 	// ----- Editor ----- 
 	if (Ed->debug_select) {
 		Ed->hovered = NULL;
-		apply_func_entitys(Data->level, is_entity_under_mouse);
 
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 			if (Ed->hovered) {
@@ -93,7 +85,6 @@ void update_editor()
 				Ed->hovered = NULL;
 
 				// If clicking on same entity that window was closed, open it back up
-				mu_Container *cnt = mu_get_container(Ed->mu, EntityTypeNames[Ed->selected->type]); cnt->open = true;
 			} else Ed->selected = NULL;
 		}
 	} 
@@ -105,16 +96,16 @@ void draw_editor()
 	Color selected_highlight = BLACK;
 	Color hover_highlight = PURPLE;
 	if (Ed->selected) {
-		DrawRectangleLinesEx(RecV2(Ed->selected->pos, Ed->selected->size), 1, selected_highlight);
+		DrawRectangleLinesEx(RecV2(Ed->selected->pos, Ed->selected->render.size), 1, selected_highlight);
 	}
 	if (Ed->hovered) {
-		DrawRectangleLinesEx(RecV2(Ed->hovered->pos, Ed->hovered->size), 1, hover_highlight);
+		DrawRectangleLinesEx(RecV2(Ed->hovered->pos, Ed->hovered->render.size), 1, hover_highlight);
 	}
 
 	MUiRender(Ed->mu);
 }
 
-internal void edit_entity(GenericEntity *e) 
+internal void edit_entity(Entity *e) 
 {
 	mu_Context *ctx = Ed->mu;
 
@@ -142,26 +133,13 @@ internal void edit_entity(GenericEntity *e)
 		//apply_shake_effect(entity, 0.25f);
 	}
 
-
-	if (e->type == EntityEnemy || e->type == EntityTurret) {
-		mu_layout_row(ctx, 2, (int[]) {label_w, -1}, 0);
-		mu_label(ctx, "Floor");
-		mu_label(ctx, TextFormat("%d", ((Enemy*) e)->floor));
-	}
-
 	mu_layout_row(ctx, 3, (int[]) {label_w, width, -1}, 0);
 	mu_label(ctx, "Position");
 	mu_number_ex(ctx, &e->pos.x, 3, "%.1f", MU_OPT_ALIGNCENTER);
 	mu_number_ex(ctx, &e->pos.y, 3, "%.1f", MU_OPT_ALIGNCENTER);
 	mu_label(ctx, "Size");
-	mu_number_ex(ctx, &e->size.x, 3, "%.1f", MU_OPT_ALIGNCENTER);
-	mu_number_ex(ctx, &e->size.y, 3, "%.1f", MU_OPT_ALIGNCENTER);
-
-	mu_layout_row(ctx, 2, (int[]) {label_w, -1}, 0);
-	mu_label(ctx, "Health");
-	mu_number_ex(ctx, &e->health, 3, "%.1f", MU_OPT_ALIGNCENTER);
-	mu_label(ctx, "Health Max");
-	mu_number_ex(ctx, &e->health_max, 3, "%.1f", MU_OPT_ALIGNCENTER);
+	mu_number_ex(ctx, &e->render.size.x, 3, "%.1f", MU_OPT_ALIGNCENTER);
+	mu_number_ex(ctx, &e->render.size.y, 3, "%.1f", MU_OPT_ALIGNCENTER);
 
 	width = body_width * 0.14;
 	mu_layout_row(ctx, 6, (int[]) {label_w, width, width, width, width, -1}, 0);
@@ -173,10 +151,10 @@ internal void edit_entity(GenericEntity *e)
 	mu_draw_rect(ctx, mu_layout_next(ctx), ColorToMu(e->render.tint));
 }
 
-internal void is_entity_under_mouse(GenericEntity *e) 
+internal void is_entity_under_mouse(Entity *e) 
 {
 	V2 mouse_pos = GetMousePosition();
-	Rect e_rec = RecV2(e->pos, e->size);
+	Rect e_rec = RecV2(e->pos, e->render.size);
 	if (CheckCollisionPointRec(mouse_pos, e_rec)) {
 		Ed->hovered = e;
 		return ;
