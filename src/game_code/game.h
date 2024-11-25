@@ -102,6 +102,9 @@ extern GameData *Data;
 void pause_game(void);
 
 // Entitys
+void update_turret(GameLevel *l, Turret *turret);
+void update_enemy(GameLevel *l, Enemy *enemy);
+void update_projectile(GameLevel *l, Projectile *projectile);
 void damage_entity(GameLevel *rt, GenericEntity *entity, f32 damage);
 void apply_func_entitys(GameLevel *l, void (*func)(GenericEntity *entity));
 Projectile *spawn_projectile_ex(V2 from, V2 to, CreateProjectileParams params);

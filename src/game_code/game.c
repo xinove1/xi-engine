@@ -309,119 +309,21 @@ internal b32 update_game(void)
 	{da_iterate(Level->enemys, EnemyDa) {
 		Enemy *e = iterate_get();
 		iterate_check_entity(e, EntityEnemy);
-
-		if (e->health <= 0 ) {
-			e->type = EntityEmpty;
-			continue;
-		}
-
-		V2 dir = V2DirTo(e->pos, Vec2(Data->canvas_size.x * 0.5f, e->pos.y));
-		GenericEntity *target = (GenericEntity *)enemy_get_turret(Level->turrets, e->floor, dir.x);
-		if (!target) target = &Level->cake; // Attack Main tower instead
-
-		if (entity_in_range((GenericEntity *)e, (GenericEntity *)target, e->range)) {
-			e->attack_rate_count += GetFrameTime();
-			if (e->attack_rate_count >= e->attack_rate) {
-				e->attack_rate_count = 0;
-				if (e->melee == true) {
-					damage_entity(Level, target, e->damage);
-				} else {
-					V2 pe = V2Add(e->pos, V2Scale(e->size, 0.5));
-					V2 pt = V2Add(target->pos, V2Scale(target->size, 0.5));
-					if (target == &Level->cake) { pt = Vec2(target->pos.x, pe.y); }
-					spawn_projectile(pe, pt, .size = Vec2(3, 2), .targeting = target->type, .speed = 200, .damage = e->damage); 
-				}
-			}
-		} else { // Move Towards Turret
-			e->pos = V2Add(e->pos, V2Scale(dir, e->speed * GetFrameTime()));
-		}
+		update_enemy(Level, e);
 	}}
-
 
 	// ----------- Turrets ----------- 
 	{da_iterate(Level->turrets, TurretDa) {
 		Turret *e = iterate_get();
 		iterate_check_entity(e, EntityTurret);
-
-		if (e->health <= 0) {
-			e->type = EntityEmpty;
-			continue;
-		}
-
-		e->fire_rate_count += GetFrameTime();
-		if (e->fire_rate && e->fire_rate_count >= e->fire_rate) {
-			e->fire_rate_count = 0;
-			Enemy *target = turret_get_target(Level->enemys, *e, 1); // TODO  Add floor range to turret
-			if (target) {
-				V2 pe = V2Add(e->pos, V2Scale(e->size, 0.5));
-				V2 pt = V2Add(target->pos, V2Scale(target->size, 0.5));
-				spawn_projectile(pe, pt, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 400, .damage = 10); 
-			}
-		}
+		update_turret(Level, e);
 	}}
 
 	// ----------- Projectiles ----------- 
 	{da_iterate(Level->projectiles, ProjectileDa) {
 		Projectile *e = iterate_get();
 		iterate_check_entity(e, EntityProjectile);
-
-		if (e->health <= 0) {
-			// TODO  Move this to after hit a enemy an splatter the particles in ther direction of the collision
-			for (i32 i = 0; i < 10; i++) {
-				create_particle( 
-					.dir = Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1)),
-					.velocity = GetRandf32(50, 200),
-					.pos = V2Add(e->pos, Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1))),
-					.size = Vec2v(1),
-					.duration = GetRandf32(0.1f, 0.4f),
-					.color_initial = ColA(255, 0, 0, 255),
-					.color_end = ColA(255, 0, 0, 0),
-				);
-			}
-			e->type = EntityEmpty;
-		}
-
-		e->pos = V2Add(e->pos, V2Scale(e->dir, e->speed * GetFrameTime()));
-		if (!CheckCollisionRecs(RecV2(V2Zero(), Data->canvas_size), RecV2(e->pos, e->size))) {
-			e->type = EntityEmpty;
-			continue ;
-		}
-
-		Rect rec = RecV2(e->pos, e->size);
-		switch (e->targeting) {
-			case EntityTurret: {
-				{da_iterate(Level->turrets, TurretDa){
-					Turret *turret = iterate_get();
-					iterate_check_entity(turret, EntityTurret);
-					if (CheckCollisionRecs(rec, RecV2(turret->pos, turret->size))) {
-						damage_entity(Level, (GenericEntity *)turret, e->damage);
-						e->health -= turret->health;
-						continue;
-					}
-				}}
-			} break;
-			case EntityEnemy: {
-				{da_iterate(Level->enemys, EnemyDa){
-					Enemy *enemy = iterate_get();
-					iterate_check_entity(enemy, EntityEnemy);
-					if (CheckCollisionRecs(rec, RecV2(enemy->pos, enemy->size))) {
-						damage_entity(Level, (GenericEntity *)enemy, e->damage);
-						e->health -= enemy->health;
-						continue;
-					}
-				}}
-			} break;
-			case EntityCake: {
-				if (CheckCollisionRecs(rec, RecV2(Level->cake.pos, Level->cake.size))) {
-					damage_entity(Level, (GenericEntity *) &Level->cake, e->damage);
-					e->health -= Level->cake.health;
-					continue;
-				}
-			} break;
-			default: {
-				TraceLog(LOG_WARNING, "projectile update: targeting type not implemented %s\n", EntityTypeNames[e->targeting]);
-			} break ;
-		}
+		update_projectile(Level, e);
 	}}
 	return (false);
 }

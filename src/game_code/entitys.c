@@ -1,5 +1,113 @@
 #include "game.h"
 
+void update_turret(GameLevel *l, Turret *turret) 
+{
+	if (turret->health <= 0) {
+		turret->type = EntityEmpty;
+		return ;
+	}
+
+	turret->fire_rate_count += GetFrameTime();
+	if (turret->fire_rate && turret->fire_rate_count >= turret->fire_rate) {
+		turret->fire_rate_count = 0;
+		Enemy *target = turret_get_target(l->enemys, *turret, 1); // TODO  Add floor range to turret
+		if (target) {
+			V2 pe = V2Add(turret->pos, V2Scale(turret->size, 0.5));
+			V2 pt = V2Add(target->pos, V2Scale(target->size, 0.5));
+			spawn_projectile(pe, pt, .size = Vec2(2, 2), .targeting = EntityEnemy, .speed = 400, .damage = 10); 
+		}
+	}
+}
+
+void update_enemy(GameLevel *l, Enemy *enemy)
+{
+	if (enemy->health <= 0 ) {
+		enemy->type = EntityEmpty;
+		return;
+	}
+
+	V2 dir = V2DirTo(enemy->pos, Vec2(Data->canvas_size.x * 0.5f, enemy->pos.y));
+	GenericEntity *target = (GenericEntity *)enemy_get_turret(l->turrets, enemy->floor, dir.x);
+	if (!target) target = &l->cake; // Attack Main tower instead
+
+	if (entity_in_range((GenericEntity *)enemy, (GenericEntity *)target, enemy->range)) {
+		enemy->attack_rate_count += GetFrameTime();
+		if (enemy->attack_rate_count >= enemy->attack_rate) {
+			enemy->attack_rate_count = 0;
+			if (enemy->melee == true) {
+				damage_entity(l, target, enemy->damage);
+			} else {
+				V2 pe = V2Add(enemy->pos, V2Scale(enemy->size, 0.5));
+				V2 pt = V2Add(target->pos, V2Scale(target->size, 0.5));
+				if (target == &l->cake) { pt = Vec2(target->pos.x, pe.y); }
+				spawn_projectile(pe, pt, .size = Vec2(3, 2), .targeting = target->type, .speed = 200, .damage = enemy->damage); 
+			}
+		}
+	} else { // Move Towards Turret
+		enemy->pos = V2Add(enemy->pos, V2Scale(dir, enemy->speed * GetFrameTime()));
+	}
+}
+
+void update_projectile(GameLevel *l, Projectile *projectile)
+{
+	if (projectile->health <= 0) {
+		// TODO  Move this to after hit a enemy an splatter the particles in ther direction of the collision
+		for (i32 i = 0; i < 10; i++) {
+			create_particle( 
+				.dir = Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1)),
+				.velocity = GetRandf32(50, 200),
+				.pos = V2Add(projectile->pos, Vec2(GetRandf32(-1, 1), GetRandf32(-1, 1))),
+				.size = Vec2v(1),
+				.duration = GetRandf32(0.1f, 0.4f),
+				.color_initial = ColA(255, 0, 0, 255),
+				.color_end = ColA(255, 0, 0, 0),
+		);
+		}
+		projectile->type = EntityEmpty;
+	}
+
+	projectile->pos = V2Add(projectile->pos, V2Scale(projectile->dir, projectile->speed * GetFrameTime()));
+	if (!CheckCollisionRecs(RecV2(V2Zero(), Data->canvas_size), RecV2(projectile->pos, projectile->size))) {
+		projectile->type = EntityEmpty;
+		return ;
+	}
+
+	Rect rec = RecV2(projectile->pos, projectile->size);
+	switch (projectile->targeting) {
+		case EntityTurret: {
+			{da_iterate(l->turrets, TurretDa){
+				Turret *turret = iterate_get();
+				iterate_check_entity(turret, EntityTurret);
+				if (CheckCollisionRecs(rec, RecV2(turret->pos, turret->size))) {
+					damage_entity(l, (GenericEntity *)turret, projectile->damage);
+					projectile->health -= turret->health;
+					break;
+				}
+			}}
+		} break;
+		case EntityEnemy: {
+			{da_iterate(l->enemys, EnemyDa){
+				Enemy *enemy = iterate_get();
+				iterate_check_entity(enemy, EntityEnemy);
+				if (CheckCollisionRecs(rec, RecV2(enemy->pos, enemy->size))) {
+					damage_entity(l, (GenericEntity *)enemy, projectile->damage);
+					projectile->health -= enemy->health;
+					break;
+				}
+			}}
+		} break;
+		case EntityCake: {
+			if (CheckCollisionRecs(rec, RecV2(l->cake.pos, l->cake.size))) {
+				damage_entity(l, (GenericEntity *) &l->cake, projectile->damage);
+				projectile->health -= l->cake.health;
+			}
+		} break;
+		default: {
+			TraceLog(LOG_WARNING, "projectile update: targeting type not implemented %s\n", EntityTypeNames[projectile->targeting]);
+		} break ;
+	}
+}
+
 void damage_entity(GameLevel *rt, GenericEntity *entity, f32 damage)
 {
 	assert(entity && rt);
